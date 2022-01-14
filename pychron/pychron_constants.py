@@ -384,6 +384,7 @@ NE = "Ne"
 KR = "Kr"
 XE = "Xe"
 GENERIC = "Generic"
+AUTO = 'auto'
 
 QTEGRA_SOURCE_KEYS = ("extraction_lens", "ysymmetry", "zsymmetry", "zfocus")
 QTEGRA_SOURCE_NAMES = ("ExtractionLens", "Y-Symmetry", "Z-Symmetry", "Z-Focus")

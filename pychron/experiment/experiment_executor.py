@@ -110,7 +110,7 @@ from pychron.pychron_constants import (
     CANCELED,
     TRUNCATED,
     SUCCESS,
-    ARGON_KEYS,
+    ARGON_KEYS, AUTO,
 )
 
 
@@ -210,6 +210,7 @@ class ExperimentExecutor(Consoleable, PreferenceMixin):
     extracting = Bool(False)
 
     mode = "normal"
+    execution_mode = "normal"
     # ===========================================================================
     # preferences
     # ===========================================================================
@@ -364,6 +365,7 @@ class ExperimentExecutor(Consoleable, PreferenceMixin):
         self.events.extend(events)
 
     def execute(self):
+        self.debug('ExperimentExecutor.execute. mode={}'.format(self.execution_mode))
 
         prog = open_progress(100, position=(100, 100))
 
@@ -580,8 +582,9 @@ class ExperimentExecutor(Consoleable, PreferenceMixin):
             msg = 'Starting Execution "{}"'.format(name)
             self.heading(msg)
 
-        # delay before starting
-        self._delay(exp.delay_before_analyses, message="before")
+        if self.mode != AUTO:
+            # delay before starting
+            self._delay(exp.delay_before_analyses, message="before")
 
         for i, exp in enumerate(self.experiment_queues):
             self._set_thread_name(exp.name)
@@ -606,6 +609,7 @@ class ExperimentExecutor(Consoleable, PreferenceMixin):
                 break
 
         self.alive = False
+        self.execution_mode = 'normal'
 
     def _execute_queue(self, i, exp):
         """
@@ -1483,13 +1487,14 @@ class ExperimentExecutor(Consoleable, PreferenceMixin):
         handle databases in conflict
         """
         dh = self.datahub
-
-        ret = self.confirmation_dialog(
-            "Databases are in conflict. "
-            "Do you want to modify the Run Identifier to {}".format(dh.new_runid),
-            timeout_ret=True,
-            timeout=30,
-        )
+        ret = True
+        if self.execution_mode != AUTO:
+            ret = self.confirmation_dialog(
+                "Databases are in conflict. "
+                "Do you want to modify the Run Identifier to {}".format(dh.new_runid),
+                timeout_ret=True,
+                timeout=30,
+            )
         if ret:
             dh.update_spec(spec, aoffset, soffset)
             ret = True
@@ -1982,16 +1987,17 @@ class ExperimentExecutor(Consoleable, PreferenceMixin):
 
     def _check_locked_valves(self, inform):
         elm = self.extraction_line_manager
-        locks = elm.get_locked()
-        if locks:
-            if inform:
-                prep, suf = "are", "s"
-                if len(locks) == 1:
-                    prep, suf = "is", ""
-                return self.confirmation_dialog(
-                    'Valve{} "{}" {} locked. '
-                    "Do you want to continue?".format(suf, ",".join(locks), prep)
-                )
+        if self.execution_mode != AUTO:
+            locks = elm.get_locked()
+            if locks:
+                if inform:
+                    prep, suf = "are", "s"
+                    if len(locks) == 1:
+                        prep, suf = "is", ""
+                    return self.confirmation_dialog(
+                        'Valve{} "{}" {} locked. '
+                        "Do you want to continue?".format(suf, ",".join(locks), prep)
+                    )
 
         return True
 
@@ -2113,7 +2119,12 @@ class ExperimentExecutor(Consoleable, PreferenceMixin):
         """
         return True to stop execution loop
         """
+
         self.debug("pre queue check: tray={}".format(exp.tray))
+        if self.execution_mode == AUTO:
+            self.debug('pre queue check skipped: auto execution mode')
+            return
+
         if exp.tray and exp.tray != NULL_STR:
             ed = next(
                 (ci for ci in self.connectables if ci.name == exp.extract_device), None
@@ -2483,15 +2494,18 @@ Use Last "blank_{}"= {}
                         return pdbr
                     else:
                         retval = NO
-                        if inform:
-                            retval = self.confirmation_dialog(
-                                msg.format(
-                                    an.analysis_type, an.analysis_type, pdbr.record_id
-                                ),
-                                no_label="Select From Database",
-                                cancel=True,
-                                return_retval=True,
-                            )
+                        if self.execution_mode == AUTO:
+                            retval = YES
+                        else:
+                            if inform:
+                                retval = self.confirmation_dialog(
+                                    msg.format(
+                                        an.analysis_type, an.analysis_type, pdbr.record_id
+                                    ),
+                                    no_label="Select From Database",
+                                    cancel=True,
+                                    return_retval=True,
+                                )
 
                         if retval == CANCEL:
                             return
@@ -2724,6 +2738,5 @@ Use Last "blank_{}"= {}
                     "no automated run monitor available. "
                     "Make sure config file is located at setupfiles/monitors/automated_run_monitor.cfg"
                 )
-
 
 # ============= EOF =============================================

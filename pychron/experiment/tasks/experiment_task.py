@@ -67,7 +67,7 @@ from pychron.pychron_constants import (
     TRUNCATED,
     END_AFTER,
     FAILED,
-    SUCCESS,
+    SUCCESS, AUTO,
 )
 
 
@@ -100,6 +100,10 @@ class ExperimentEditorTask(EditorTask):
     dock_pane_factories = None
     activations = None
     deactivations = None
+
+    def auto_execute(self):
+        self.debug('auto execute')
+        self.execute(mode=AUTO)
 
     def save_as_current_experiment(self):
         self.debug("save as current experiment")
@@ -684,7 +688,7 @@ class ExperimentEditorTask(EditorTask):
                     pass
                 break
 
-    def execute(self):
+    def execute(self, mode=None):
         # self.debug('execute event {} {}'.format(id(self), id(obj))
         if globalv.experiment_debug:
             if not self.confirmation_dialog(
@@ -715,7 +719,7 @@ class ExperimentEditorTask(EditorTask):
             if self.active_editor:
                 qs.insert(0, self.active_editor.queue)
 
-            if self.manager.execute_queues(qs):
+            if self.manager.execute_queues(qs, mode):
                 # self._show_pane(self.wait_pane)
                 self._set_last_experiment(self.active_editor.path)
             else:

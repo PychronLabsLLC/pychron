@@ -468,6 +468,7 @@ class Paths(object):
         self.identifiers_file = join(self.appdata_dir, "identifiers.yaml")
         self.identifier_mapping_file = join(self.setup_dir, "identifier_mapping.yaml")
         self.backup_recovery_file = join(self.appdata_dir, "backup_recovery")
+        self.checkpoint_file = join(self.appdata_dir, "checkpoint.json")
         self.last_experiment = join(self.appdata_dir, "last_experiment")
         self.mftable = join(self.spectrometer_dir, "mftables", "mftable.csv")
         self.ic_mftable = join(self.spectrometer_dir, "mftables", "ic_mftable.csv")

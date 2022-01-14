@@ -151,11 +151,11 @@ class Experimentor(DVCIrradiationable):
 
                 ai.trait_set(**cache[ln])
 
-    def execute_queues(self, queues):
+    def execute_queues(self, queues, mode):
         names = ",".join([e.name for e in queues])
         self.debug("queues: n={}, names={}".format(len(queues), names))
 
-        self.executor.trait_set(experiment_queues=queues, experiment_queue=queues[0])
+        self.executor.trait_set(experiment_queues=queues, experiment_queue=queues[0], mode=mode)
 
         return self.executor.execute()
 

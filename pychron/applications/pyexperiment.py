@@ -23,12 +23,19 @@ from pychron.applications.pychron_application import PychronApplication
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
+from pychron.experiment.experiment_recovery import ExperimentRecovery
 
 
 class PyExperiment(PychronApplication):
     id = "pychron.experiment.application"
     name = "pyExperiment"
     shortname = "experiment"
+
+    def handle_application_initialized(self):
+        self.debug('Application initialized')
+
+        er = ExperimentRecovery()
+        er.init()
 
 
 # ============= EOF =============================================

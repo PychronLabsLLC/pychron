@@ -51,8 +51,15 @@ class BaseTasksApplication(TasksApplication, Loggable):
         self.init_logger()
 
     def _application_initialized_fired(self):
+        startup = True
         if globalv.use_startup_tests:
-            self.do_startup_tests()
+            startup = self.do_startup_tests()
+
+        if startup:
+            self.handle_application_initialized()
+
+    def handle_application_initialized(self):
+        pass
 
     def do_startup_tests(self, force_show_results=False, **kw):
         st = StartupTester()
@@ -65,6 +72,8 @@ class BaseTasksApplication(TasksApplication, Loggable):
             ):
                 v = ResultsView(model=st, **kw)
                 open_view(v)
+
+        return st.all_passed
 
     def get_boolean_preference(self, pid, default=None):
         return to_bool(self.preferences.get(pid, default))
