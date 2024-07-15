@@ -18,7 +18,7 @@
 from chaco.abstract_overlay import AbstractOverlay
 from chaco.array_data_source import ArrayDataSource
 from chaco.label import Label
-from chaco.plot_label import PlotLabel
+from chaco.api import PlotLabel
 from enable.enable_traits import LineStyle
 from kiva import FILL
 from kiva.trait_defs.kiva_font_trait import KivaFont
@@ -232,6 +232,8 @@ class AtmInterceptOverlay(AbstractOverlay):
     value = Float
 
     def overlay(self, component, gc, view_bounds=None, mode="normal"):
+        return
+
         x, y = component.map_screen((0, self.value))
         xo = component.x
         if x < xo:
@@ -261,6 +263,8 @@ class Isochron(BaseArArFigure):
 
 
 class InverseIsochron(Isochron):
+    use_fixed_height = True
+
     _plot_label = None
     xpad = None
     _analysis_group_klass = StepHeatAnalysisGroup
@@ -412,7 +416,7 @@ class InverseIsochron(Isochron):
             except ZeroDivisionError:
                 pe = "(Inf%)"
 
-            return "39Ar/40Ar= {} {} {} {}".format(
+            return "39Ar/40Ar = {} {} {} {}".format(
                 floatfmt(v, n=6), PLUSMINUS, floatfmt(e, n=7), pe
             )
 
@@ -443,7 +447,6 @@ class InverseIsochron(Isochron):
             self._add_info_label(plot, ts, font=self.options.info_font)
 
     def _add_inset(self, plot, reg):
-
         opt = self.options
         group = opt.get_group(self.group_id)
         insetp = InverseIsochronPointsInset(
@@ -527,7 +530,6 @@ class InverseIsochron(Isochron):
         )
 
     def _add_results_info(self, plot, label=None, text_color="black"):
-
         ag = self.analysis_group
 
         age = ag.isochron_age
@@ -557,13 +559,13 @@ class InverseIsochron(Isochron):
         sample_line = "{}({})".format(ag.identifier, ag.sample)
         mse_text = ""
         if opt.include_4036_mse:
-            mse_text = " MSE= {}".format(mse)
+            mse_text = " MSE = {}".format(mse)
 
         ptext = ""
         if opt.include_percent_error:
             ptext = " ({}%)".format(p)
 
-        ratio_line = "<sup>40</sup>Ar/<sup>36</sup>Ar= {} {} {}{}{}".format(
+        ratio_line = "<sup>40</sup>Ar/<sup>36</sup>Ar = {} {} {}{}{}".format(
             v, PLUSMINUS, e, ptext, mse_text
         )
 
@@ -586,14 +588,14 @@ class InverseIsochron(Isochron):
 
         mse_text = ""
         if opt.include_age_mse:
-            mse_text = " MSE= {}".format(floatfmt(mse_age, s=3))
+            mse_text = " MSE = {}".format(floatfmt(mse_age, s=3))
 
         pe = ""
         if opt.include_age_percent_error:
             p = format_percent_error(v, e)
             pe = " ({})%".format(p)
 
-        age_line = "Age={} {} {}{} {}{}".format(
+        age_line = "Age = {} {} {}{} {}{}".format(
             floatfmt(v, n=af),
             PLUSMINUS,
             floatfmt(e, n=af, s=3),
@@ -601,7 +603,8 @@ class InverseIsochron(Isochron):
             ag.age_units,
             mse_text,
         )
-        mswd_line = "N={} MSWD={}".format(n, mswd)
+        nt = self._build_n_label_text(n)
+        mswd_line = "{} MSWD = {}".format(nt, mswd)
 
         if opt.show_results_info_location == "Bottom Right":
             overlay_position = "inside bottom"
@@ -699,7 +702,6 @@ class InverseIsochron(Isochron):
                 fit.underlays.append(ee)
                 fit.error_envelope = ee
             else:
-
                 fit.error_envelope.invalidate()
 
                 fit.error_envelope.lower = lci

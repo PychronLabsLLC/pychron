@@ -19,6 +19,7 @@
 
 from pychron.pyscripts.decorators import verbose_skip
 from pychron.pyscripts.measurement_pyscript import MeasurementPyScript, command_register
+from traits.api import Dict
 
 ESTIMATED_DURATION_FF = 1.0
 
@@ -60,7 +61,15 @@ class ThermoMeasurementPyScript(MeasurementPyScript):
         :type detname: str
         :return: float
         """
-        return self._get_spectrometer_parameter("GetDeflection", detname)
+        v = self._get_spectrometer_parameter("GetDeflection {}".format(detname))
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            self.warning("error getting deflection")
+            self.debug_exception()
+            v = 0
+
+        return v
 
     @verbose_skip
     @command_register
@@ -185,6 +194,10 @@ class ThermoMeasurementPyScript(MeasurementPyScript):
     @command_register
     def set_accelerating_voltage(self, v=""):
         self._set_spectrometer_parameter("SetHV", v)
+
+
+class ThermoSynMeasurementPyScript(ThermoMeasurementPyScript):
+    pass
 
 
 class NGXMeasurementPyScript(MeasurementPyScript):

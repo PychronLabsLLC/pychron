@@ -32,6 +32,7 @@ from pychron.pychron_constants import LASER_PLUGINS
 logger = logging.getLogger()
 
 PACKAGE_DICT = dict(
+    UsagePlugin="pychron.usage.tasks.plugin",
     ArArConstantsPlugin="pychron.constants.tasks.arar_constants_plugin",
     DashboardServerPlugin="pychron.dashboard.tasks.server.plugin",
     DashboardClientPlugin="pychron.dashboard.tasks.client.plugin",
@@ -70,7 +71,10 @@ PACKAGE_DICT = dict(
     LDEOFurnacePlugin="pychron.furnace.tasks.ldeo.furnace_plugin",
     LDEOFurnaceControlPlugin="pychron.furnace.tasks.ldeo.furnace_control_plugin",
     ThermoFurnacePlugin="pychron.furnace.tasks.thermo.furnace_plugin",
+    RestonFurnacePlugin="pychron.furnace.tasks.reston.furnace_plugin",
     # hardware-lasers
+    TAPDiodePlugin="pychron.lasers.tasks.plugins.tap",
+    UC2000CO2Plugin="pychron.lasers.tasks.plugins.uc2000_plugin",
     OsTechDiodePlugin="pychron.lasers.tasks.plugins.ostech_diode",
     AblationCO2Plugin="pychron.lasers.tasks.plugins.ablation_co2",
     ChromiumCO2Plugin="pychron.lasers.tasks.plugins.chromium_co2",
@@ -99,7 +103,7 @@ PACKAGE_DICT = dict(
     # social
     EmailPlugin="pychron.social.email.tasks.plugin",
     GoogleCalendarPlugin="pychron.social.google_calendar.tasks.plugin",
-    TwitterPlugin="pychron.social.twitter.plugin"
+    TwitterPlugin="pychron.social.twitter.plugin",
     # WorkspacePlugin='pychron.workspace.tasks.workspace_plugin',
     # LabBookPlugin='pychron.labbook.tasks.labbook_plugin',
     # SystemMonitorPlugin='pychron.system_monitor.tasks.system_monitor_plugin',
@@ -200,7 +204,6 @@ def get_user_plugins():
     for p in ps:
         # if laser plugin add CoreLaserPlugin
         if p in LASER_PLUGINS:
-
             plugint = ip.get_plugin(p, category="hardware")
             mode = ip.get_parameter(plugint, "mode")
             if mode == "client":
@@ -266,8 +269,21 @@ def launch(klass):
     #         return
 
     app = app_factory(klass)
+    try:
+        import qdarktheme
+
+        # Apply the complete dark theme to your Qt App.
+        qdarktheme.setup_theme("light")
+    except ImportError:
+        pass
 
     try:
+        try:
+            import qdarktheme
+
+            qdarktheme.setup_theme("light")
+        except ImportError:
+            pass
 
         # root = os.path.dirname(__file__)
         # r = QtGui.QApplication.instance()

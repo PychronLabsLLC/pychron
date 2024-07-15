@@ -51,7 +51,6 @@ from pychron.experiment.utilities.runid import make_runid
 from pychron.experiment.utilities.uv_human_error_checker import UVHumanErrorChecker
 from pychron.paths import paths
 from pychron.pychron_constants import DVC_PROTOCOL
-from pychron.stage.maps.laser_stage_map import LaserStageMap
 
 
 class RepeatRunBlockView(HasTraits):
@@ -148,6 +147,8 @@ class ExperimentQueue(BaseExperimentQueue, SelectSameMixin):
         open_view(ve)
 
     def motion_saver(self):
+        from pychron.stage.maps.laser_stage_map import LaserStageMap
+
         stage_map_klass = LaserStageMap
 
         t = self.tray
@@ -177,7 +178,6 @@ class ExperimentQueue(BaseExperimentQueue, SelectSameMixin):
         p = self.open_file_dialog()
         if p is not None:
             with open(p, "r") as rfile:
-
                 positions = reversed(rfile.readlines())
                 for cpos in positions:
                     arun = next(
@@ -455,7 +455,6 @@ class ExperimentQueue(BaseExperimentQueue, SelectSameMixin):
 
         self._no_update = True
         if run is not None:
-
             self.automated_runs.remove(run)
             self.executed_runs.append(run)
 
@@ -474,7 +473,6 @@ class ExperimentQueue(BaseExperimentQueue, SelectSameMixin):
         return ci
 
     def paste_function(self, obj):
-
         ci = obj.clone_traits()
         ci.state = "not run"
         ci.aliquot = 0

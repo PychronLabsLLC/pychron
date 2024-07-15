@@ -201,7 +201,6 @@ class BaseMagnet(SpectrometerDevice, FieldMixin):
             self.af_demag_threshold = yd.get("threshold", 1)
 
     def _do_af_demagnetization(self, target, setfunc):
-
         p = paths.af_demagnetization
         if os.path.isfile(p):
             try:
@@ -362,7 +361,7 @@ class BaseMagnet(SpectrometerDevice, FieldMixin):
                             mode="slider",
                             low_name="massmin",
                             high_name="massmax",
-                            format="%0.3f",
+                            format_str="%0.3f",
                         ),
                     ),
                     HGroup(

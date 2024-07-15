@@ -106,11 +106,11 @@ class ExperimentFactory(DVCAble):
             "delay_after_blank",
             "delay_between_analyses",
             "delay_after_air",
+            "delay_after_conditional",
             "default_lighting",
             "queue_conditionals_name",
             "note",
         ):
-
             if not self._sync_queue_to_factory(eq, qf, a):
                 self._sync_factory_to_queue(eq, qf, a)
 
@@ -158,7 +158,6 @@ class ExperimentFactory(DVCAble):
                 self.debug_exception()
 
     def _add_run(self, *args, **kw):
-
         if not self.ok_add:
             missing = []
             if not bool(self.username):
@@ -187,9 +186,9 @@ class ExperimentFactory(DVCAble):
             q,
             positions=positions,
             auto_increment_position=self.auto_increment_position,
-            auto_increment_id=self.auto_increment_id_count
-            if self.auto_increment_id
-            else 0,
+            auto_increment_id=(
+                self.auto_increment_id_count if self.auto_increment_id else 0
+            ),
         )
 
         if new_runs:

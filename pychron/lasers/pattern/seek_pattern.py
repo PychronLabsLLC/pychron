@@ -18,7 +18,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from chaco.abstract_overlay import AbstractOverlay
 from chaco.default_colormaps import hot
-from chaco.scatterplot import render_markers
+from chaco.api import render_markers
 from traits.api import List, Float, Int, Enum, CFloat, Instance
 from traitsui.api import View, Item, UItem
 
@@ -163,7 +163,6 @@ class Triangle:
 
     def point_xy(self, idx=None):
         if idx is None:
-
             pts = sorted(
                 [p for p in self._points], key=lambda px: px.score, reverse=True
             )
@@ -218,7 +217,6 @@ class Triangle:
         return [(p.x, p.y, p.score) for p in self._points]
 
     def is_equilateral(self):
-
         p1, p2, p3 = self._points
         d1 = ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2) ** 0.5
         d2 = ((p1.x - p3.x) ** 2 + (p1.y - p3.y) ** 2) ** 0.5
@@ -329,7 +327,6 @@ class SeekPattern(Pattern):
 
     def point_generator(self):
         def gen():
-
             self._tri = tri = Triangle(self.base)
 
             yield tri.point_xy(0)

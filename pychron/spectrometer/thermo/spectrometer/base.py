@@ -35,6 +35,7 @@ from pychron.pychron_constants import (
 )
 from pychron.spectrometer import get_spectrometer_config_path
 from pychron.spectrometer.base_spectrometer import BaseSpectrometer
+
 from pychron.spectrometer.thermo.spectrometer import normalize_integration_time
 
 
@@ -94,6 +95,8 @@ class ThermoSpectrometer(BaseSpectrometer):
         key = "Electron Energy Set"
         if key in d:
             d[key] = float("{:0.2f}".format(d[key]))
+
+        return d
 
     def make_gains_dict(self):
         return {di.name: di.get_gain() for di in self.detectors}
@@ -213,7 +216,9 @@ class ThermoSpectrometer(BaseSpectrometer):
         if hasattr(self.source, "read_{}".format(cmd.lower())):
             return getattr(self.source, "read_{}".format(cmd.lower()))()
         else:
-            return self.ask("GetParameter {}".format(cmd))
+            if not cmd.startswith("Get"):
+                cmd = "GetParameter {}".format(cmd)
+            return self.ask(cmd)
 
     def set_deflection(self, name, value):
         det = self.get_detector(name)
@@ -332,7 +337,6 @@ class ThermoSpectrometer(BaseSpectrometer):
 
         pd = "Protection"
         if config.has_section(pd):
-
             self.magnet.use_beam_blank = self.config_get(
                 config, pd, "use_beam_blank", cast="boolean", default=False
             )
@@ -406,7 +410,6 @@ class ThermoSpectrometer(BaseSpectrometer):
         """
         data = self.get_intensities()
         if data is not None:
-
             keys, signals, _, _ = data
 
             def func(k):
@@ -535,7 +538,6 @@ class ThermoSpectrometer(BaseSpectrometer):
     def _get_config_dev(self, current, v, comp):
         dev = False
         if comp.get("compare", True):
-
             tol = comp.get("percent_tol")
             if not tol:
                 tol = comp.get("tolerance", 0.01)
@@ -611,7 +613,6 @@ class ThermoSpectrometer(BaseSpectrometer):
                     if not self.force_send_configuration:
                         comp = readout_comp.get(k, {})
                         if comp.get("compare", True):
-
                             current = self._get_source_parameter_value(k, mk)
                             try:
                                 current = float(current)
@@ -699,7 +700,6 @@ class ThermoSpectrometer(BaseSpectrometer):
                     show_progress = True
 
                 if ok:
-
                     r = StepRamper()
                     steps = abs(v - current) / step
                     if show_progress:

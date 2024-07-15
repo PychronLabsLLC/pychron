@@ -144,7 +144,6 @@ class YorkRegressor(OLSRegressor):
         return self._intercept
 
     def get_intercept_error(self):
-
         if self.error_calc_type == "CI":
             e = self.calculate_ci_error(0)[0]
         # elif self.error_calc_type in (SEM, MSEM):
@@ -353,9 +352,7 @@ class NewYorkRegressor(YorkRegressor):
 
             # now finally add to sigasq and sigbsq
             sigbsq += (
-                dthdxi**2.0 * var_xi
-                + dthdyi**2.0 * var_yi
-                + 2 * sxyi * dthdxi * dthdyi
+                dthdxi**2.0 * var_xi + dthdyi**2.0 * var_yi + 2 * sxyi * dthdxi * dthdyi
             )
             sigasq += (
                 dadxi**2.0 * var_xi + dadyi**2.0 * var_yi + 2 * sxyi * dadxi * dadyi

@@ -57,9 +57,13 @@ SWITCH_TAGS = ("switch", "valve", "rough_valve", "manual_valve")
 
 
 def get_offset(elem, default=None):
-    offset = elem.get("offset")
     if default is None:
         default = 0, 0
+
+    if isinstance(elem, (str, int)):
+        offset = None
+    else:
+        offset = elem.get("offset")
 
     txt = ""
     if offset:
@@ -140,7 +144,7 @@ class BaseLoader:
             klass = Label
 
         # tran = label_dict['translation']
-        x, y = self._get_translation(label_dict["translation"])
+        x, y = self._get_translation(label_dict)
         # x, y = 0, 0
         # trans = label.find('translation')
         # if trans is not None:

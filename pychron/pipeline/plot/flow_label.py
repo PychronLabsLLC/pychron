@@ -15,8 +15,8 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from chaco.data_label import DataLabel
-from chaco.plot_label import PlotLabel
+from chaco.api import DataLabel
+from chaco.api import PlotLabel
 
 # ============= standard library imports ========================
 from numpy import max
@@ -87,7 +87,6 @@ class FlowDataLabel(DataLabel):
     #         self.position_event = (self.x, self.y)
 
     def overlay(self, component, gc, *args, **kw):
-
         # face name was getting set to "Helvetica" by reportlab during pdf generation
         # set face_name back to "" to prevent font display issue. see issue #72
         self.font.face_name = ""

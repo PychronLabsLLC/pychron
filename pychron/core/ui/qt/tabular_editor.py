@@ -357,7 +357,6 @@ class _TableView(TableView):
             if self.pastable:
                 self._paste()
         else:
-
             self._editor.key_pressed = TabularKeyEvent(event)
 
             self._key_press_hook(event)
@@ -370,7 +369,7 @@ class _TableView(TableView):
 
     def sizeHintForColumn(self, column):
         try:
-            return super(_TableView, self).sizeHintForColumn(column)
+            return int(super(_TableView, self).sizeHintForColumn(column))
         except AttributeError:
             pass
 

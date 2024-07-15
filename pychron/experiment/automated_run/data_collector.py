@@ -212,6 +212,7 @@ class DataCollector(Consoleable):
             k, s, t, inc = data
         except (AttributeError, TypeError, ValueError) as e:
             self.debug("failed getting data {}".format(e))
+            self.debug_exception()
             return
 
         if k is not None and s is not None:
@@ -243,20 +244,21 @@ class DataCollector(Consoleable):
             return
         if data:
             keys, signals, ct, inc = data
-            if detectors:
-                # data = list(zip(*(d for d in zip(*data) if d[0] in detectors)))
-                nkeys, nsignals = [], []
-                for k, s in zip(keys, signals):
-                    if k in detectors:
-                        nkeys.append(k)
-                        nsignals.append(s)
+            if keys is not None and signals is not None:
+                if detectors:
+                    # data = list(zip(*(d for d in zip(*data) if d[0] in detectors)))
+                    nkeys, nsignals = [], []
+                    for k, s in zip(keys, signals):
+                        if k in detectors:
+                            nkeys.append(k)
+                            nsignals.append(s)
 
-                ds = (nkeys, nsignals, ct, inc)
+                    ds = (nkeys, nsignals, ct, inc)
 
-            else:
-                ds = (keys, signals, ct, inc)
+                else:
+                    ds = (keys, signals, ct, inc)
 
-            self._data = ds
+                self._data = ds
             return data
 
     def _save_data(self, x, keys, signals):
@@ -323,7 +325,6 @@ class DataCollector(Consoleable):
             self.plot_panel.update()
 
     def _set_plot_data(self, cnt, det, x, signal):
-
         iso = det.isotope
         detname = det.name
         ypadding = det.ypadding
@@ -503,7 +504,6 @@ class DataCollector(Consoleable):
                     self.equilibration_conditionals,
                 ),
             ):
-
                 if tag == "equilibration" and self.collection_kind != SNIFF:
                     continue
 
