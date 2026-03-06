@@ -46,7 +46,7 @@ class PLC2000GPActuator(GPActuator, ModbusMixin, ClientMixin):
         except (ValueError, AttributeError):
             address = int(obj)
 
-        resp = self._read_coils(int(address) - 1, 1)
+        resp = self._read_coils(int(address) - 1, count=1)
         try:
             return bool(resp.bits[0])
         except ModbusIOException:
