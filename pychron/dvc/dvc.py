@@ -225,9 +225,7 @@ class DVC(Loggable):
         temps = []
         if sp is None:
             sp = analysis_path(src_id, repo_identifier, root=root)
-            dp = analysis_path(
-                dest_id, repo_identifier, root=root, mode="w", is_temp=True
-            )
+            dp = analysis_path(dest_id, repo_identifier, root=root, mode="w", is_temp=True)
             temps = [dp]
 
         if not sp or not os.path.isfile(sp):
@@ -265,9 +263,7 @@ class DVC(Loggable):
                 "peakcenter",
                 ".data",
             ):
-                sp = analysis_path(
-                    src_id, repo_identifier, modifier=modifier, root=root
-                )
+                sp = analysis_path(src_id, repo_identifier, modifier=modifier, root=root)
 
                 dp = analysis_path(
                     dest_id,
@@ -287,9 +283,7 @@ class DVC(Loggable):
 
     def generate_currents(self):
         if not self.update_currents_enabled:
-            self.information_dialog(
-                'You must enable "Current Values" in Preferences/DVC'
-            )
+            self.information_dialog('You must enable "Current Values" in Preferences/DVC')
             return
 
         if not self.confirmation_dialog(
@@ -312,9 +306,7 @@ class DVC(Loggable):
         def func(ai, prog, i, n):
             if prog:
                 if not i % 10:
-                    prog.change_message(
-                        "Updating Currents {} {}/{}".format(ai.record_id, i, n)
-                    )
+                    prog.change_message("Updating Currents {} {}/{}".format(ai.record_id, i, n))
                 else:
                     prog.increment()
 
@@ -324,9 +316,7 @@ class DVC(Loggable):
                 try:
                     self._update_current_age(ai, dban=dban, force=True)
                 except BaseException as e:
-                    self.warning(
-                        "Failed making current age for {}: {}".format(ai.record_id, e)
-                    )
+                    self.warning("Failed making current age for {}: {}".format(ai.record_id, e))
 
             if not ai.analysis_type.lower().startswith("blank"):
                 try:
@@ -334,19 +324,11 @@ class DVC(Loggable):
                         ai, dban=dban, force=True, update_age=False, commit=False
                     )
                 except BaseException as e:
-                    self.warning(
-                        "Failed making current blanks for {}: {}".format(
-                            ai.record_id, e
-                        )
-                    )
+                    self.warning("Failed making current blanks for {}: {}".format(ai.record_id, e))
             try:
-                self._update_current(
-                    ai, dban=dban, force=True, update_age=False, commit=False
-                )
+                self._update_current(ai, dban=dban, force=True, update_age=False, commit=False)
             except BaseException as e:
-                self.warning(
-                    "Failed making intensities for {}: {}".format(ai.record_id, e)
-                )
+                self.warning("Failed making intensities for {}: {}".format(ai.record_id, e))
 
             # if not i % 100:
             #     db.commit()
@@ -368,9 +350,7 @@ class DVC(Loggable):
                     tans = db.get_repository_analysis_count(repo.name)
 
                     ans = db.get_analyses_no_current(repo.name)
-                    self.debug(
-                        "Total repo analyses={}, filtered={}".format(tans, len(ans))
-                    )
+                    self.debug("Total repo analyses={}, filtered={}".format(tans, len(ans)))
 
                     if not ans:
                         continue
@@ -390,15 +370,12 @@ class DVC(Loggable):
 
                     self.info(
                         "Elapsed time {}: n={}, "
-                        "{:0.2f} min".format(repo.name, len(ans), (time.time() - st))
-                        / 60.0
+                        "{:0.2f} min".format(repo.name, len(ans), (time.time() - st)) / 60.0
                     )
                     db.commit()
                     db.flush()
                 except BaseException as e:
-                    self.warning(
-                        "Failed making analyses for {}: {}".format(repo.name, e)
-                    )
+                    self.warning("Failed making analyses for {}: {}".format(repo.name, e))
 
         db.commit_on_add = ocoa
         db.close_session()
@@ -420,16 +397,12 @@ class DVC(Loggable):
 
     def find_record(self, r):
         def update_record(jobj):
-            r.record_id = make_runid(
-                jobj["identifier"], jobj["aliquot"], jobj["increment"]
-            )
+            r.record_id = make_runid(jobj["identifier"], jobj["aliquot"], jobj["increment"])
             r.irradiation = jobj["irradiation"]
             r.irradiation_level = jobj["irradiation_level"]
             r.irradiation_position = jobj["irradiation_position"]
 
-        path = analysis_path(
-            (r.uuid, r.record_id), r.repository_identifier, root=r.repository_root
-        )
+        path = analysis_path((r.uuid, r.record_id), r.repository_identifier, root=r.repository_root)
         if path:
             with open(path, "r") as rfile:
                 jobj = json.load(rfile)
@@ -483,9 +456,7 @@ class DVC(Loggable):
             repos.extend(["{}_cocktail{}1".format(mi, year) for mi in mss])
 
         irradiation_project_prefix = self.irradiation_project_prefix
-        repos.extend(
-            ["{}{}".format(irradiation_project_prefix, ir) for ir in irradiations]
-        )
+        repos.extend(["{}{}".format(irradiation_project_prefix, ir) for ir in irradiations])
         self.debug("reference repos {}".format(repos))
         return list(set(repos))
 
@@ -612,9 +583,7 @@ class DVC(Loggable):
             # repo.pull()
             repo.add_paths(ps)
             repo.commit(
-                "<SYNC> Synced repository with database {}".format(
-                    self.db.public_datasource_url
-                )
+                "<SYNC> Synced repository with database {}".format(self.db.public_datasource_url)
             )
             repo.push()
         self.info("finished db-repo sync for {}".format(reponame))
@@ -712,9 +681,7 @@ class DVC(Loggable):
         def func(x, prog, i, n):
             repo, irrad, level, d = x
             if prog:
-                prog.change_message(
-                    "Freezing Flux {}{} Repository={}".format(irrad, level, repo)
-                )
+                prog.change_message("Freezing Flux {}{} Repository={}".format(irrad, level, repo))
 
             root = repository_path(repo, "flux", irrad)
             r_mkdir(root)
@@ -780,9 +747,7 @@ class DVC(Loggable):
         return path
 
     def manual_edit(self, runid, repository_identifier, values, errors, modifier):
-        self.debug(
-            "manual edit {} {} {}".format(runid, repository_identifier, modifier)
-        )
+        self.debug("manual edit {} {} {}".format(runid, repository_identifier, modifier))
         self.debug("values {}".format(values))
         self.debug("errors {}".format(errors))
         path = analysis_path(runid, repository_identifier, modifier=modifier)
@@ -1055,11 +1020,7 @@ class DVC(Loggable):
 
         if not local_path:
             if repo.add_paths(p):
-                repo.commit(
-                    '<CSV> {} dataset "{}"'.format(
-                        "Modified" if exists else "Added", name
-                    )
-                )
+                repo.commit('<CSV> {} dataset "{}"'.format("Modified" if exists else "Added", name))
 
         return p
 
@@ -1106,9 +1067,7 @@ class DVC(Loggable):
                 records = self.make_analyses(records)
             return records
 
-    def find_references(
-        self, times, atypes, hours, exclude=None, make_records=True, **kw
-    ):
+    def find_references(self, times, atypes, hours, exclude=None, make_records=True, **kw):
         records = self.db.find_references(times, atypes, hours, exclude=exclude, **kw)
 
         if records:
@@ -1131,15 +1090,13 @@ class DVC(Loggable):
             obj = dvc_load(x.path)
             self.debug("loading interpreted age path=%s", x.path)
             ia = DVCInterpretedAge()
-            ia.repository_identifier = os.path.relpath(
-                x.path, paths.repository_dataset_dir
-            ).split(os.sep)[0]
+            ia.repository_identifier = os.path.relpath(x.path, paths.repository_dataset_dir).split(
+                os.sep
+            )[0]
             ia.from_json(obj)
 
             try:
-                ta = reduction_path(
-                    ia, ia.repository_identifier, modifier=REDUCTION_TAGS
-                )
+                ta = reduction_path(ia, ia.repository_identifier, modifier=REDUCTION_TAGS)
                 if ta is not None:
                     ia.load_tag(dvc_load(ta))
             except AnalysisNotAnvailableError:
@@ -1242,9 +1199,7 @@ class DVC(Loggable):
         n = len(ret)
         if n:
             self.debug(
-                "Make analysis time, total: {}, n: {}, average: {}".format(
-                    et, n, et / float(n)
-                )
+                "Make analysis time, total: {}, n: {}, average: {}".format(et, n, et / float(n))
             )
             self.debug(
                 "Make analysis phases (s): cache={:.3f}, filter={:.3f}, branches={:.3f}, context={:.3f}, build={:.3f}".format(
@@ -1340,10 +1295,7 @@ class DVC(Loggable):
         repo = self._get_repository(repository)
         current_branch = repo.get_current_branch()
         staged_paths = repo.get_staged_paths()
-        if (
-            current_branch == DATA_COLLECTION_BRANCH
-            and self._has_reduction_artifacts(staged_paths)
-        ):
+        if current_branch == DATA_COLLECTION_BRANCH and self._has_reduction_artifacts(staged_paths):
             self.warning_dialog(
                 "Reduction artifacts cannot be committed on the data_collection branch. "
                 "Switch to a reduction branch first."
@@ -1411,18 +1363,14 @@ class DVC(Loggable):
     def sync_repo(
         self, name: str, use_progress: bool = True, pull_frequency: Optional[int] = None
     ) -> Optional[bool]:
-        return sync_repo_impl(
-            self, name, use_progress=use_progress, pull_frequency=pull_frequency
-        )
+        return sync_repo_impl(self, name, use_progress=use_progress, pull_frequency=pull_frequency)
 
     def _partition_cached_records(
         self, records: list[Any], use_cached: bool
     ) -> tuple[list[Any], list[Any]]:
         return partition_cached_records_impl(self, records, use_cached)
 
-    def _filter_records_with_repository(
-        self, records: list[Any], warn: bool = True
-    ) -> list[Any]:
+    def _filter_records_with_repository(self, records: list[Any], warn: bool = True) -> list[Any]:
         return filter_records_with_repository_impl(self, records, warn=warn)
 
     def _sync_analysis_repositories(
@@ -1484,9 +1432,7 @@ class DVC(Loggable):
     def sync_repo_from_data_collection(
         self, repo_or_name: Any, remote: str = "origin", inform: bool = False
     ) -> bool:
-        return sync_repo_from_data_collection_impl(
-            self, repo_or_name, remote=remote, inform=inform
-        )
+        return sync_repo_from_data_collection_impl(self, repo_or_name, remote=remote, inform=inform)
 
     def _sync_reduction_repo_from_data_collection(
         self, repo: Any, remote: str = "origin", inform: bool = False
@@ -1641,9 +1587,7 @@ class DVC(Loggable):
             ialabels.append("{} {} {}".format(ia.name, ia.identifier, ia.sample))
 
         if self.repository_add_paths(rid, ps):
-            sparrow = self.application.get_service(
-                "pychron.sparrow.sparrow_client.SparrowClient"
-            )
+            sparrow = self.application.get_service("pychron.sparrow.sparrow_client.SparrowClient")
             if sparrow and self.confirmation_dialog("Add to Sparrow?"):
                 if sparrow.login():
                     for p in ps:
@@ -1653,9 +1597,7 @@ class DVC(Loggable):
                 else:
                     self.warning("Connection failed. Cannot add IAs to Sparrow")
 
-            self.repository_commit(
-                rid, "<IA> added interpreted ages {}".format(",".join(ialabels))
-            )
+            self.repository_commit(rid, "<IA> added interpreted ages {}".format(",".join(ialabels)))
             return True
 
     def add_interpreted_age(self, ia):
@@ -1690,9 +1632,7 @@ class DVC(Loggable):
                     repo.add(dest, commit=False)
                 repo.commit("added repository association")
         else:
-            self.warning(
-                "{} not in the database {}".format(runspec.runid, self.db.name)
-            )
+            self.warning("{} not in the database {}".format(runspec.runid, self.db.name))
 
     def add_material(self, name, grainsize=None):
         db = self.db
@@ -1739,9 +1679,7 @@ class DVC(Loggable):
         dblevel = self.get_irradiation_level(irradiation, name)
         if dblevel is None:
             added = True
-            self.db.add_irradiation_level(
-                name, irradiation, holder, production_name, **kw
-            )
+            self.db.add_irradiation_level(name, irradiation, holder, production_name, **kw)
 
         self.meta_repo.add_level(irradiation, name)
         self.meta_repo.update_level_production(irradiation, name, production_name)
@@ -1831,9 +1769,7 @@ class DVC(Loggable):
                 if gs:
                     ret = False
                     for i, gi in enumerate(gs):
-                        self.info(
-                            "Creating repository at {}. {}".format(gi.name, identifier)
-                        )
+                        self.info("Creating repository at {}. {}".format(gi.name, identifier))
 
                         if gi.create_repo(
                             identifier,
@@ -1844,9 +1780,7 @@ class DVC(Loggable):
                             ret = True
                             if isinstance(gi, LocalGitHostService):
                                 if i == 0:
-                                    self.db.add_repository(
-                                        identifier, principal_investigator
-                                    )
+                                    self.db.add_repository(identifier, principal_investigator)
                             else:
                                 if self.default_team:
                                     gi.set_team(
@@ -1864,13 +1798,9 @@ class DVC(Loggable):
                                         self.debug("failed cloning repo. {}".format(e))
                                         ret = False
 
-                                    self.db.add_repository(
-                                        identifier, principal_investigator
-                                    )
+                                    self.db.add_repository(identifier, principal_investigator)
                                 else:
-                                    repo.create_remote(
-                                        gi.default_remote_name or "origin", url
-                                    )
+                                    repo.create_remote(gi.default_remote_name or "origin", url)
 
                 return ret
 
@@ -1943,9 +1873,7 @@ class DVC(Loggable):
                     if not isinstance(it, (InterpretedAge, DVCAnalysis)):
                         oit = self.make_analysis(it, quick=True)
                         if oit is None:
-                            self.warning(
-                                "Failed preparing analysis. Cannot tag: {}".format(it)
-                            )
+                            self.warning("Failed preparing analysis. Cannot tag: {}".format(it))
                         it = oit
 
                     if it:
@@ -2014,9 +1942,7 @@ class DVC(Loggable):
 
             if dban:
                 age_units = ai.arar_constants.age_units
-                self.db.update_current(
-                    dban, "age", ai.age, ai.age_err, age_units, force=force
-                )
+                self.db.update_current(dban, "age", ai.age, ai.age_err, age_units, force=force)
                 self.db.update_current(
                     dban,
                     "age_wo_j_error",
@@ -2026,9 +1952,7 @@ class DVC(Loggable):
                     force=force,
                 )
 
-    def _update_current(
-        self, ai, keys=None, dban=None, force=False, update_age=True, commit=True
-    ):
+    def _update_current(self, ai, keys=None, dban=None, force=False, update_age=True, commit=True):
         if self.update_currents_enabled:
             db = self.db
             if dban is None:
@@ -2061,9 +1985,7 @@ class DVC(Loggable):
                             force=force,
                         )
                     else:
-                        db.update_current(
-                            dban, "{}_n".format(k), iso.n, None, "int", force=force
-                        )
+                        db.update_current(dban, "{}_n".format(k), iso.n, None, "int", force=force)
                         db.update_current(
                             dban,
                             "{}_intercept".format(k),
@@ -2203,9 +2125,7 @@ class DVC(Loggable):
         meta_repo = self.meta_repo
         if prog:
             # this accounts for ~85% of the time!!!
-            prog.change_message(
-                "Loading analysis {}. {}/{}".format(record.record_id, i, n)
-            )
+            prog.change_message("Loading analysis {}. {}/{}".format(record.record_id, i, n))
 
         expid = record.repository_identifier
         if not expid:
@@ -2251,18 +2171,14 @@ class DVC(Loggable):
                 )
 
             try:
-                a = DVCAnalysis(
-                    uuid, rid, expid, load_modifiers=load_modifiers
-                )
+                a = DVCAnalysis(uuid, rid, expid, load_modifiers=load_modifiers)
             except AnalysisNotAnvailableError:
                 self.debug("uuid={}, rid={}, expid={}".format(uuid, rid, expid))
                 if warn:
                     self.warning_dialog(
                         "Analysis {} not in local repository {}. "
                         "You may need to pull changes. If local repository is up to date you may "
-                        "need to push changes from the data collection computer".format(
-                            rid, expid
-                        )
+                        "need to push changes from the data collection computer".format(rid, expid)
                     )
                 return
 
@@ -2288,15 +2204,10 @@ class DVC(Loggable):
 
                 # load irradiation
                 if context.sensitivities:
-                    sensitivity = context.sensitivities.get(
-                        a.mass_spectrometer.lower(), []
-                    )
+                    sensitivity = context.sensitivities.get(a.mass_spectrometer.lower(), [])
                     a.set_sensitivity(sensitivity)
 
-                if (
-                    a.analysis_type == "cocktail"
-                    and "cocktail" in context.chronos
-                ):
+                if a.analysis_type == "cocktail" and "cocktail" in context.chronos:
                     a.set_chronology(context.chronos["cocktail"])
                     a.j = context.fluxes["cocktail"]
 
@@ -2352,9 +2263,7 @@ class DVC(Loggable):
                     if not fd:
                         if context.fluxes:
                             try:
-                                level_flux = context.fluxes[a.irradiation][
-                                    a.irradiation_level
-                                ]
+                                level_flux = context.fluxes[a.irradiation][a.irradiation_level]
                                 fd = meta_repo.get_flux_from_positions(
                                     a.irradiation_position, level_flux
                                 )
@@ -2450,9 +2359,7 @@ class DVC(Loggable):
         )
 
         prefid = "pychron.entry"
-        bind_preference(
-            self, "irradiation_prefix", "{}.irradiation_prefix".format(prefid)
-        )
+        bind_preference(self, "irradiation_prefix", "{}.irradiation_prefix".format(prefid))
 
         bind_preference(
             self,
@@ -2486,14 +2393,24 @@ class DVC(Loggable):
             pass
 
         if self.data_sources:
-            self.data_source = next(
-                (d for d in self.data_sources if d.default and d.enabled), None
-            )
+            self.data_source = next((d for d in self.data_sources if d.default and d.enabled), None)
 
-    def _data_source_changed(self, old, new):
+    def _data_source_changed(self, old, new) -> None:
         self.debug("data source changed. {}, db={}".format(new, id(self.db)))
         if new is not None:
-            for attr in ("username", "password", "host", "kind", "path", "timeout"):
+            for attr in (
+                "username",
+                "password",
+                "host",
+                "kind",
+                "path",
+                "timeout",
+                "connection_method",
+                "cloudsql_instance_connection_name",
+                "cloudsql_ip_type",
+                "cloudsql_service_account_email",
+                "cloudsql_service_account_key_path",
+            ):
                 setattr(self.db, attr, getattr(new, attr))
 
             self.db.name = new.dbname

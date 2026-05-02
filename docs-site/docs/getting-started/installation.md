@@ -121,35 +121,9 @@ uv run pychron-bootstrap
 
 You will be prompted to choose an application name (`experiment`, `pipeline`, `valve`, etc.). This becomes the `<appname>` suffix in the paths above.
 
-## Step 7 — Validate the Environment
+## Step 7 — Run the Schema Migration
 
-```bash
-uv run pychron-doctor
-```
-
-`pychron-doctor` performs pre-flight checks and reports problems before you ever launch the application. It verifies:
-
-- Python version is 3.12
-- All core dependencies are importable
-- `PYCHRON_ALEMBIC_URL` is set and the target database is reachable
-- Alembic schema migrations are current (`alembic upgrade head` if not)
-- Application data directory structure exists (created by `pychron-bootstrap`)
-- Git is installed and the MetaRepo path is accessible (if configured)
-
-Fix every item `pychron-doctor` flags red before proceeding. A clean run looks like:
-
-```
-✓ Python 3.12.x
-✓ Core dependencies
-✓ PYCHRON_ALEMBIC_URL set
-✓ Database reachable
-✓ Schema up to date
-✓ App data directory
-```
-
-## Step 8 — Run the Schema Migration
-
-If `pychron-doctor` reports the schema is not current (or if this is a first-time MySQL setup):
+If this is a first-time MySQL setup or the schema is not current:
 
 ```bash
 cd alembic_dvc
@@ -157,15 +131,13 @@ alembic upgrade head
 cd ..
 ```
 
-Re-run `pychron-doctor` afterward to confirm the schema check passes.
-
 ## Common Failure Points
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | `uv: command not found` after install | Shell profile not reloaded | `source ~/.zshrc` or open a new terminal |
 | `uv sync` fails with SSL errors (macOS) | macOS system Python SSL certs not trusted | Run `/Applications/Python\ 3.12/Install\ Certificates.command` or `pip install certifi` |
-| `pychron-doctor` reports wrong Python version | `uv` picked up a system Python instead of 3.12 | Run `uv python install 3.12` then `uv sync` again |
+| Python version is not 3.12 | `uv` picked up a system Python instead of 3.12 | Run `uv python install 3.12` then `uv sync` again |
 | `PYCHRON_ALEMBIC_URL` not found | Variable set in shell but not exported | Add `export` prefix; confirm with `echo $PYCHRON_ALEMBIC_URL` |
 | MySQL connection refused | MySQL not running | `brew services start mysql` (macOS) or `systemctl start mysql` (Linux) |
 | `Access denied for user 'root'` | Wrong MySQL password in `PYCHRON_ALEMBIC_URL` | Update the URL or reset the MySQL root password |
@@ -175,7 +147,7 @@ Re-run `pychron-doctor` afterward to confirm the schema check passes.
 
 ## First Launch Verification
 
-Once `pychron-doctor` reports all green, launch the application:
+After bootstrapping the app directory and running any needed schema migration, launch the application:
 
 ```bash
 # Data reduction workstation

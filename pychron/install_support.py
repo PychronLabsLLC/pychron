@@ -2,6 +2,7 @@ import json
 import os
 import platform
 import zipfile
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, UTC
 
@@ -34,8 +35,11 @@ class InstallPlan:
 
 
 def build_install_plan(
-    profiles=None, bundles=None, root="~/Pychron", python_version="3.12"
-):
+    profiles: Sequence[str] | None = None,
+    bundles: Sequence[str] | None = None,
+    root: str = "~/Pychron",
+    python_version: str = "3.12",
+) -> InstallPlan:
     bundle_specs = resolve_bundles(bundles or ())
     profile_names = list(bundle_profiles(bundles or ()))
     for profile in profiles or ():
@@ -57,9 +61,7 @@ def build_install_plan(
             sync_cmd, " ".join("--extra {}".format(extra) for extra in extras)
         )
 
-    profile_args = " ".join(
-        "--profile {}".format(profile) for profile in merged.requested
-    )
+    profile_args = " ".join("--profile {}".format(profile) for profile in merged.requested)
     bundle_args = " ".join("--bundle {}".format(bundle.name) for bundle in bundle_specs)
     bootstrap_cmd = "pychron-bootstrap --root {}".format(root)
     if bundle_args:
@@ -71,7 +73,6 @@ def build_install_plan(
         "uv venv --python {}".format(python_version),
         sync_cmd,
         bootstrap_cmd,
-        "pychron-doctor --root {}".format(root),
     )
 
     system = platform.system()

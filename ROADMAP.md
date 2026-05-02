@@ -5,7 +5,6 @@ RoadMap
  - ~~Deprecate RPC? move to one communication mechanism.~~
  - use zeromq for all sockets
  - Improve installation and cross-platform configuration UX
-   - [x] add `pychron-doctor` environment and configuration diagnostics
    - [x] add `pychron-bootstrap` first-run setup/bootstrap command
    - [x] add a first-run setup wizard for GUI users
    - [x] ship versioned starter configuration bundles by workflow

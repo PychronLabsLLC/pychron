@@ -66,7 +66,7 @@ The repo now uses GitHub Actions CI via [`.github/workflows/ci.yml`](.github/wor
 Setup utilities
 ===============
 
-The repo now exposes a Typer-based CLI for basic setup and diagnostics:
+The repo now exposes a Typer-based CLI for setup and configuration:
 
 - `pychron bundles --verbose`
 - `pychron profiles --verbose`
@@ -75,14 +75,11 @@ The repo now exposes a Typer-based CLI for basic setup and diagnostics:
 - `pychron-bootstrap --root ~/Pychron --bundle ngx-collection`
 - `pychron-bootstrap --root ~/Pychron --profile ngx --profile chromiumco2`
 - `pychron-bootstrap --root ~/Pychron --profile experiment --source-profile felix --setupfiles-source "<setupfiles-dir>" --scripts-source "<scripts-dir>"`
-- `pychron-doctor --root ~/Pychron --profile data-reduction`
-- `pychron-doctor --root ~/Pychron --bundle ngx-collection --strict`
 - `pychron export-config --root ~/Pychron --output ~/pychron-config.zip`
 - `pychron import-config --root ~/Pychron_clone --archive ~/pychron-config.zip`
-- `python -m pychron doctor`
 
 The CLI bootstrap path is the canonical initialization flow. The GUI first-run
-wizard and startup validation now use the same runtime bootstrap and validation
+wizard and startup validation use the same runtime bootstrap and validation
 services, so operator-facing setup and repair behavior stays aligned.
 
 Typical workflow:

@@ -150,6 +150,11 @@ class DatabaseAdapter(Loggable):
     host = Str
     password = Password
     timeout = Int
+    connection_method = Str("direct")
+    cloudsql_instance_connection_name = Str
+    cloudsql_ip_type = Str("public")
+    cloudsql_service_account_email = Str
+    cloudsql_service_account_key_path = Str
 
     session_factory = None
 
@@ -179,6 +184,7 @@ class DatabaseAdapter(Loggable):
     modified = False
     _trying_to_add = False
     _test_connection_enabled = True
+    _cloudsql_connector = None
 
     def __init__(self, *args, **kw):
         super(DatabaseAdapter, self).__init__(*args, **kw)
@@ -242,8 +248,10 @@ class DatabaseAdapter(Loggable):
                 self.session = None
 
     @property
-    def enabled(self):
-        return self.kind in ["mysql", "sqlite", "postgres", "postgresql", "mssql"]
+    def enabled(self) -> bool:
+        # _get_db_kind() normalizes "postgres" -> "postgresql" so only the
+        # SQLAlchemy dialect name needs to appear here.
+        return self._get_db_kind() in ["mysql", "sqlite", "postgresql", "mssql"]
 
     @property
     def save_username(self):
@@ -251,17 +259,24 @@ class DatabaseAdapter(Loggable):
 
         return globalv.username
 
-    @on_trait_change("username,host,password,name,kind,path")
-    def reset_connection(self):
+    @on_trait_change(
+        "username,host,password,name,kind,path,connection_method,"
+        "cloudsql_instance_connection_name,cloudsql_ip_type,"
+        "cloudsql_service_account_email,cloudsql_service_account_key_path"
+    )
+    def reset_connection(self) -> None:
         """
         Trip the ``connection_parameters_changed`` flag. Next ``connect`` call with use the new values
         """
         self.connection_parameters_changed = True
         self.session_factory = None
         self.session = None
+        self._close_cloudsql_connector()
 
     # @caller
-    def connect(self, test=True, force=False, warn=True, version_warn=True, attribute_warn=False):
+    def connect(
+        self, test=True, force=False, warn=True, version_warn=True, attribute_warn=False
+    ) -> bool:
         """
         Connect to the database
 
@@ -299,7 +314,17 @@ class DatabaseAdapter(Loggable):
 
                 invoke_in_main_thread(self.warning_dialog, self.connection_error)
             else:
-                url = self.url
+                try:
+                    url = self.url
+                except ValueError as e:
+                    self.connection_error = str(e)
+                    self.warning(self.connection_error)
+                    if warn:
+                        from pychron.core.ui.gui import invoke_in_main_thread
+
+                        invoke_in_main_thread(self.warning_dialog, self.connection_error)
+                    self.connection_parameters_changed = False
+                    return False
                 if url is not None:
                     self.info("{} connecting to database {}".format(id(self), self.public_url))
 
@@ -328,12 +353,17 @@ class DatabaseAdapter(Loggable):
                             }
 
                     self.debug(f"using connect_args {connect_args}")
-                    engine = create_engine(
-                        url,
-                        echo=self.echo,
-                        pool_recycle=pool_recycle,
-                        connect_args=connect_args,
-                    )
+                    try:
+                        engine = self._create_engine(url, pool_recycle, connect_args)
+                    except (ImportError, ValueError) as e:
+                        self.connection_error = str(e)
+                        self.warning(self.connection_error)
+                        if warn:
+                            from pychron.core.ui.gui import invoke_in_main_thread
+
+                            invoke_in_main_thread(self.warning_dialog, self.connection_error)
+                        self.connection_parameters_changed = False
+                        return False
 
                     self.session_factory = sessionmaker(
                         bind=engine,
@@ -441,30 +471,34 @@ host= {}\nurl= {}'.format(
         pass
 
     @property
-    def public_datasource_url(self):
+    def public_datasource_url(self) -> str:
         if self.kind == "sqlite":
             url = "{}:{}".format(
                 os.path.basename(os.path.dirname(self.path)),
                 os.path.basename(self.path),
             )
+        elif self.connection_method == "cloudsql_iam":
+            url = "{}:{}".format(self.cloudsql_instance_connection_name, self.name)
         else:
             url = "{}:{}".format(obscure_host(self.host), self.name)
         return url
 
     @cached_property
-    def _get_datasource_url(self):
+    def _get_datasource_url(self) -> str:
         if self.kind == "sqlite":
             url = "{}:{}".format(
                 os.path.basename(os.path.dirname(self.path)),
                 os.path.basename(self.path),
             )
+        elif self.connection_method == "cloudsql_iam":
+            url = "{}:{}".format(self.cloudsql_instance_connection_name, self.name)
         else:
             url = "{}:{}".format(self.host, self.name)
         return url
 
     @property
-    def public_url(self):
-        kind = self.kind
+    def public_url(self) -> str:
+        kind = self._get_db_kind()
         user = self.username
         host = self.host
         name = self.name
@@ -473,21 +507,31 @@ host= {}\nurl= {}'.format(
                 os.path.basename(os.path.dirname(self.path)),
                 os.path.basename(self.path),
             )
+        elif self.connection_method == "cloudsql_iam":
+            user = self._get_cloudsql_iam_user(strict=False) or user
+            pu = "{}+cloudsql_iam://{}@{}/{}".format(
+                kind, user, self.cloudsql_instance_connection_name, name
+            )
         else:
             pu = "{}://{}@{}/{}".format(kind, user, host, name)
 
         return pu
 
     @cached_property
-    def _get_url(self):
-        kind = self.kind
+    def _get_url(self) -> str | None:
+        kind = self._get_db_kind()
         password = self.password
         user = self.username
         host = self.host
         name = self.name
         timeout = self.timeout
 
-        if kind in ("mysql", "postgres", "postgresql", "mssql"):
+        if self.connection_method == "cloudsql_iam":
+            return self._get_cloudsql_url(kind)
+
+        # kind is already normalized to "postgresql" by _get_db_kind() above,
+        # so we only need the SQLAlchemy dialect name in this branch list.
+        if kind in ("mysql", "postgresql", "mssql"):
             if kind == "mysql":
                 # add support for different mysql drivers
                 driver = self._import_mysql_driver()
@@ -501,9 +545,6 @@ host= {}\nurl= {}'.format(
                 driver = self._import_postgres_driver()
                 if driver is None:
                     return
-                # SQLAlchemy dialect name is "postgresql"; normalize regardless
-                # of whether the user stored "postgres" or "postgresql" in prefs.
-                kind = "postgresql"
 
             if password:
                 user = "{}:{}".format(user, password)
@@ -521,6 +562,142 @@ host= {}\nurl= {}'.format(
             url = "sqlite:///{}".format(self.path)
 
         return url
+
+    def _create_engine(self, url: str, pool_recycle: int, connect_args: dict):
+        if self.connection_method == "cloudsql_iam":
+            return self._create_cloudsql_engine(url, pool_recycle)
+
+        return create_engine(
+            url,
+            echo=self.echo,
+            pool_recycle=pool_recycle,
+            connect_args=connect_args,
+        )
+
+    def _create_cloudsql_engine(self, url: str, pool_recycle: int):
+        connector = self._make_cloudsql_connector()
+        instance_connection_name = self.cloudsql_instance_connection_name.strip()
+        if not instance_connection_name:
+            raise ValueError("CloudSQL instance connection name is required")
+
+        kind = self._get_db_kind()
+        driver = self._get_cloudsql_driver(kind)
+        user = self._get_cloudsql_iam_user()
+        database = self.name
+        ip_type = (self.cloudsql_ip_type or "public").lower()
+
+        def get_connection():
+            return connector.connect(
+                instance_connection_name,
+                driver,
+                user=user,
+                db=database,
+                enable_iam_auth=True,
+                ip_type=ip_type,
+            )
+
+        return create_engine(
+            url,
+            echo=self.echo,
+            pool_recycle=pool_recycle,
+            creator=get_connection,
+        )
+
+    def _get_cloudsql_url(self, kind: str) -> str:
+        if kind == "mysql":
+            driver = "pymysql"
+        elif kind == "postgresql":
+            driver = "pg8000"
+        else:
+            raise ValueError("CloudSQL IAM connections require mysql or postgresql")
+        return "{}+{}://".format(kind, driver)
+
+    def _get_cloudsql_driver(self, kind: str) -> str:
+        if kind == "mysql":
+            try:
+                import pymysql  # noqa
+            except ImportError:
+                raise ImportError("PyMySQL is required for CloudSQL MySQL connections")
+
+            return "pymysql"
+
+        if kind == "postgresql":
+            try:
+                import pg8000  # noqa
+            except ImportError:
+                raise ImportError("pg8000 is required for CloudSQL PostgreSQL connections")
+
+            return "pg8000"
+
+        raise ValueError("CloudSQL IAM connections require mysql or postgresql")
+
+    def _make_cloudsql_connector(self):
+        try:
+            from google.cloud.sql.connector import Connector
+        except ImportError:
+            raise ImportError("cloud-sql-python-connector is required for CloudSQL IAM")
+
+        credentials = self._get_cloudsql_credentials()
+        kw = {"refresh_strategy": "lazy"}
+        if credentials is not None:
+            kw["credentials"] = credentials
+
+        self._close_cloudsql_connector()
+        self._cloudsql_connector = Connector(**kw)
+        return self._cloudsql_connector
+
+    def _get_cloudsql_credentials(self):
+        path = self.cloudsql_service_account_key_path
+        if not path:
+            return None
+
+        path = os.path.expanduser(path)
+        if not os.path.isfile(path):
+            raise ValueError("CloudSQL service account key file does not exist")
+
+        try:
+            from google.oauth2 import service_account
+        except ImportError:
+            raise ImportError("google-auth is required to load service account keys")
+
+        credentials = service_account.Credentials.from_service_account_file(path)
+        if getattr(credentials, "requires_scopes", False):
+            credentials = credentials.with_scopes(
+                ["https://www.googleapis.com/auth/cloud-platform"]
+            )
+
+        return credentials
+
+    def _get_cloudsql_iam_user(self, strict: bool = True) -> str:
+        user = (self.cloudsql_service_account_email or self.username or "").strip()
+        if not user:
+            if strict:
+                raise ValueError("CloudSQL service account email or username is required")
+            return ""
+
+        kind = self._get_db_kind()
+        if kind == "mysql":
+            return user.split("@", 1)[0]
+        elif kind == "postgresql":
+            suffix = ".gserviceaccount.com"
+            if user.endswith(suffix):
+                return user[: -len(suffix)]
+
+        return user
+
+    def _close_cloudsql_connector(self) -> None:
+        connector = self._cloudsql_connector
+        if connector is not None:
+            close = getattr(connector, "close", None)
+            if close is not None:
+                close()
+            self._cloudsql_connector = None
+
+    def _get_db_kind(self) -> str:
+        kind = self.kind
+        if kind == "postgres":
+            kind = "postgresql"
+        return kind
 
     def _import_mssql_driver(self):
         driver = None

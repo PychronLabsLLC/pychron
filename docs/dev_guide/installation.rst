@@ -10,7 +10,7 @@ Recommended workflow
 1. Create an environment with Python 3.12.
 2. Install dependencies with ``uv sync`` and any profile-specific extras.
 3. Bootstrap the runtime tree with ``pychron-bootstrap``.
-4. Validate the result with ``pychron-doctor``.
+4. Launch Pychron and address any startup validation messages.
 
 ``pychron-bootstrap`` is the supported initialization and repair entrypoint.
 The GUI first-run wizard and startup validation use the same bootstrap and
@@ -67,13 +67,6 @@ Bootstrap using generic profiles plus external example bundles:
      --setupfiles-source "/path/to/setupfiles" \
      --scripts-source "/path/to/scripts"
 
-Validate an installation:
-
-.. code-block:: bash
-
-   pychron-doctor --root ~/Pychron --profile data-reduction
-   pychron-doctor --root ~/Pychron --bundle ngx-collection --strict
-
 Export and import site configuration bundles:
 
 .. code-block:: bash
@@ -98,5 +91,5 @@ installation intent clearer when using ``uv sync --extra ...``.
 Bootstrap-managed files include the default ``initialization.xml``,
 ``startup_tests.yaml``, and ``.appdata`` support files. Profile-specific files
 with shipped defaults are also created when missing. Files without defaults are
-still treated as lab-authored configuration and are reported by
-``pychron-doctor`` with guidance instead of being silently overwritten.
+still treated as lab-authored configuration and are reported at startup with
+guidance instead of being silently overwritten.

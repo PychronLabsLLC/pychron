@@ -48,13 +48,13 @@ class BaseTasksApplication(TasksApplication, Loggable):
     uis = List
     available_task_extensions = ExtensionPoint(id="pychron.available_task_extensions")
 
-    def __init__(self, *args, **kw):
+    def __init__(self, *args: object, **kw: object) -> None:
         super().__init__(*args, **kw)
         self.init_logger()
         self._task_window_layouts = self._load_task_window_layouts()
         self._first_run_prompted = False
 
-    def _application_initialized_fired(self):
+    def _application_initialized_fired(self) -> None:
         self._report_startup_validation()
         self._maybe_open_first_run_wizard()
         if globalv.use_startup_tests:
@@ -62,9 +62,7 @@ class BaseTasksApplication(TasksApplication, Loggable):
 
     def _report_startup_validation(self):
         report = build_runtime_validation_report(paths.root_dir)
-        issues = [
-            issue for issue in report.issues if issue.status in ("FAIL", "WARN")
-        ]
+        issues = [issue for issue in report.issues if issue.status in ("FAIL", "WARN")]
         if not issues:
             return
 
@@ -80,7 +78,7 @@ class BaseTasksApplication(TasksApplication, Loggable):
         if report.blocking_issues:
             self.warning_dialog("\n".join(report.summary_lines()))
 
-    def _maybe_open_first_run_wizard(self):
+    def _maybe_open_first_run_wizard(self) -> None:
         if self._first_run_prompted:
             return
 
@@ -118,9 +116,7 @@ class BaseTasksApplication(TasksApplication, Loggable):
             st.test_plugin(plugin)
 
         if st.results:
-            if force_show_results or (
-                globalv.show_startup_results or not st.all_passed
-            ):
+            if force_show_results or (globalv.show_startup_results or not st.all_passed):
                 v = ResultsView(model=st, **kw)
                 open_view(v)
 
@@ -225,20 +221,19 @@ class BaseTasksApplication(TasksApplication, Loggable):
             try:
                 with open(path, "rb") as rfile:
                     loaded = pickle.load(rfile)
-                
+
                 # Debug: log what was loaded
                 debug_file = "/tmp/pychron_layout_debug.txt"
                 with open(debug_file, "a") as f:
                     f.write(f"\n=== LOAD: All keys loaded from file: {list(loaded.keys())}\n")
-                
+
                 # Filter out extraction_line layouts - always use fresh defaults
-                filtered = {k: v for k, v in loaded.items() 
-                           if 'extraction_line' not in k}
-                
+                filtered = {k: v for k, v in loaded.items() if "extraction_line" not in k}
+
                 # Debug: log what we're actually using
                 with open(debug_file, "a") as f:
                     f.write(f"=== LOAD: Filtered keys being used: {list(filtered.keys())}\n")
-                
+
                 return filtered
             except BaseException:
                 logger.exception("Restoring task window layouts from %s", path)
@@ -249,20 +244,23 @@ class BaseTasksApplication(TasksApplication, Loggable):
         try:
             # Ensure parent directory exists
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            
+
             # Debug: log all keys before filtering
             debug_file = "/tmp/pychron_layout_debug.txt"
             with open(debug_file, "a") as f:
-                f.write(f"\n=== SAVE: All keys in _task_window_layouts: {list(self._task_window_layouts.keys())}\n")
-            
+                f.write(
+                    f"\n=== SAVE: All keys in _task_window_layouts: {list(self._task_window_layouts.keys())}\n"
+                )
+
             # Never persist extraction_line task layout - always use fresh defaults
-            layouts_to_save = {k: v for k, v in self._task_window_layouts.items() 
-                             if 'extraction_line' not in k}
-            
+            layouts_to_save = {
+                k: v for k, v in self._task_window_layouts.items() if "extraction_line" not in k
+            }
+
             # Debug: log what we're actually saving
             with open(debug_file, "a") as f:
                 f.write(f"=== SAVE: Filtered keys to save: {list(layouts_to_save.keys())}\n")
-            
+
             with open(path, "wb") as wfile:
                 pickle.dump(layouts_to_save, wfile)
         except BaseException:
