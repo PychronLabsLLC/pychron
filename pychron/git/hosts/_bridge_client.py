@@ -23,6 +23,7 @@ Run accepts the request at all) and a lab-scoped bridge bearer in
 This module wraps both flows so the rest of pychrondc can call simple
 methods like `ensure_repository(...)`.
 """
+
 from __future__ import absolute_import
 
 import logging
@@ -94,11 +95,31 @@ class BridgeClient(object):
     # -- public API ----------------------------------------------------
 
     def healthz(self):
-        """Cheap unauthenticated probe. Returns True iff the bridge is up."""
+        """Authenticated probe. Returns True iff the bridge is ready.
+
+        Hits ``/readyz`` (the bridge's actual readiness endpoint, which also
+        verifies the database and Forgejo upstream) with the same auth headers
+        as other endpoints, since Cloud Run invoker auth gates the whole
+        service. Returns False on any transport, auth, or non-200 response so
+        callers can use it as a boolean reachability check.
+        """
         try:
-            resp = requests.get(self._base_url + "/healthz", timeout=self._timeout)
-            return resp.status_code == 200 and resp.json().get("status") == "ok"
+            resp = requests.get(
+                self._base_url + "/readyz",
+                headers=self._headers(),
+                timeout=self._timeout,
+            )
+            if resp.status_code != 200:
+                return False
+            try:
+                return resp.json().get("status") == "ready"
+            except ValueError:
+                return False
         except requests.RequestException:
+            return False
+        except Exception:
+            # _headers() can raise if the SA key is missing or token mint
+            # fails. Treat as "bridge not reachable" for the probe.
             return False
 
     def ensure_repository(
@@ -129,15 +150,11 @@ class BridgeClient(object):
 
     def lookup_repository(self, repository_identifier):
         try:
-            return self._request(
-                "GET", "/v1/repositories/{}".format(repository_identifier)
-            )
+            return self._request("GET", "/v1/repositories/{}".format(repository_identifier))
         except BridgeNotFound:
             return None
 
-    def list_repositories(
-        self, lab=None, instrument=None, project=None, limit=100, offset=0
-    ):
+    def list_repositories(self, lab=None, instrument=None, project=None, limit=100, offset=0):
         params = {"limit": limit, "offset": offset}
         if lab:
             params["lab"] = lab
@@ -192,9 +209,7 @@ class BridgeClient(object):
                 if attempt == 1:
                     time.sleep(self._retry_backoff)
                     continue
-                raise BridgeUpstreamError(
-                    "transport failed after retry: {}".format(exc)
-                ) from exc
+                raise BridgeUpstreamError("transport failed after retry: {}".format(exc)) from exc
 
             if 500 <= resp.status_code < 600:
                 logger.warning(
@@ -208,9 +223,7 @@ class BridgeClient(object):
                 if attempt == 1:
                     time.sleep(self._retry_backoff)
                     continue
-                raise BridgeUpstreamError(
-                    "{} {} -> {}".format(method, path, resp.status_code)
-                )
+                raise BridgeUpstreamError("{} {} -> {}".format(method, path, resp.status_code))
 
             self._raise_for_status(method, path, resp)
             logger.info(
@@ -230,15 +243,11 @@ class BridgeClient(object):
         if resp.status_code == 401:
             raise BridgeAuthError("{} {} -> 401 {}".format(method, path, resp.text))
         if resp.status_code == 403:
-            raise BridgePermissionError(
-                "{} {} -> 403 {}".format(method, path, resp.text)
-            )
+            raise BridgePermissionError("{} {} -> 403 {}".format(method, path, resp.text))
         if resp.status_code == 404:
             raise BridgeNotFound("{} {} -> 404".format(method, path))
         if resp.status_code == 409:
-            raise BridgeLabMismatch(
-                "{} {} -> 409 {}".format(method, path, resp.text)
-            )
+            raise BridgeLabMismatch("{} {} -> 409 {}".format(method, path, resp.text))
         if resp.status_code >= 400:
             raise BridgeError("{} {} -> {} {}".format(method, path, resp.status_code, resp.text))
 

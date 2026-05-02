@@ -19,6 +19,7 @@ Implements the IGitHost interface against the Pychron Forgejo Bridge so
 the existing add_repository / clone / make_url orchestration can route
 through the bridge with no changes to its callers.
 """
+
 from __future__ import absolute_import
 
 from apptools.preferences.api import bind_preference
@@ -38,7 +39,7 @@ from pychron.git.hosts._bridge_client import (
 class BridgeService(GitHostService):
     """Routes repository operations through the Pychron Forgejo Bridge."""
 
-    name = "Bridge"
+    name = "Bridge"  # type: ignore[assignment]
     preference_path = "pychron.bridge"
 
     enabled = Bool(False)
@@ -55,9 +56,7 @@ class BridgeService(GitHostService):
     def bind_preferences(self):
         bind_preference(self, "enabled", "{}.enabled".format(self.preference_path))
         bind_preference(self, "base_url", "{}.base_url".format(self.preference_path))
-        bind_preference(
-            self, "bearer_token", "{}.bearer_token".format(self.preference_path)
-        )
+        bind_preference(self, "bearer_token", "{}.bearer_token".format(self.preference_path))
         bind_preference(
             self,
             "service_account_key_path",
@@ -72,10 +71,22 @@ class BridgeService(GitHostService):
         return
 
     def test_api(self):
+        """Validate the bridge is reachable AND the configured bearer is
+        accepted for ``self.lab_name``.
+
+        Calls ``list_repositories(lab=...)`` rather than ``healthz`` so a
+        successful result also confirms the lab-scoped bearer is valid.
+        Returns False on any transport, auth, or permission failure.
+        """
         c = self._get_client()
         if c is None:
             return False
-        return c.healthz()
+        try:
+            c.list_repositories(lab=self.lab_name, limit=1)
+        except BridgeError as exc:
+            self.warning("Bridge test_api failed: {}".format(exc))
+            return False
+        return True
 
     def create_repo(self, name, organization, **kw):
         """Ensure the repository exists in Forgejo, creating it if needed.

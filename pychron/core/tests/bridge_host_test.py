@@ -18,8 +18,10 @@ from unittest.mock import MagicMock
 
 from pychron.git.hosts._bridge_client import (
     BridgeAuthError,
+    BridgeError,
     BridgeLabMismatch,
     BridgeNotFound,
+    BridgePermissionError,
 )
 from pychron.git.hosts.bridge import BridgeService
 
@@ -120,6 +122,37 @@ class BridgeServiceListsTestCase(unittest.TestCase):
         client.lookup_repository.side_effect = BridgeNotFound("404")
         svc = _make_service(client=client)
         self.assertFalse(svc.remote_exists("ignored", "Missing"))
+
+
+class BridgeServiceTestApiTestCase(unittest.TestCase):
+    def test_test_api_calls_list_repositories_with_lab(self):
+        client = MagicMock()
+        client.list_repositories.return_value = {"repositories": []}
+        svc = _make_service(client=client)
+        self.assertTrue(svc.test_api())
+        client.list_repositories.assert_called_once_with(lab="NMGRL", limit=1)
+
+    def test_test_api_returns_false_on_auth_error(self):
+        client = MagicMock()
+        client.list_repositories.side_effect = BridgeAuthError("bad")
+        svc = _make_service(client=client)
+        self.assertFalse(svc.test_api())
+
+    def test_test_api_returns_false_on_permission_error(self):
+        client = MagicMock()
+        client.list_repositories.side_effect = BridgePermissionError("nope")
+        svc = _make_service(client=client)
+        self.assertFalse(svc.test_api())
+
+    def test_test_api_returns_false_on_generic_bridge_error(self):
+        client = MagicMock()
+        client.list_repositories.side_effect = BridgeError("boom")
+        svc = _make_service(client=client)
+        self.assertFalse(svc.test_api())
+
+    def test_test_api_returns_false_when_disabled(self):
+        svc = _make_service(client=None, enabled=False)
+        self.assertFalse(svc.test_api())
 
 
 if __name__ == "__main__":
