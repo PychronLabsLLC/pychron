@@ -39,15 +39,11 @@ class InstallValidationTestCase(unittest.TestCase):
             os.makedirs(os.path.join(root, "setupfiles", "pipeline"), exist_ok=True)
             os.makedirs(os.path.join(root, "scripts", "pipeline"), exist_ok=True)
             os.makedirs(os.path.join(root, "preferences"), exist_ok=True)
-            os.makedirs(
-                os.path.join(root, "data", ".dvc", "repositories"), exist_ok=True
-            )
+            os.makedirs(os.path.join(root, "data", ".dvc", "repositories"), exist_ok=True)
             os.makedirs(os.path.join(root, "scripts"), exist_ok=True)
             with open(os.path.join(root, "setupfiles", "flux_constants.yaml"), "w"):
                 pass
-            with open(
-                os.path.join(root, "setupfiles", "experiment_defaults.yaml"), "w"
-            ):
+            with open(os.path.join(root, "setupfiles", "experiment_defaults.yaml"), "w"):
                 pass
             with open(os.path.join(root, "setupfiles", "initialization.xml"), "w"):
                 pass
@@ -62,18 +58,20 @@ class InstallValidationTestCase(unittest.TestCase):
             self.assertTrue(any(issue.name == "Bundles" for issue in issues))
             self.assertTrue(any(issue.name == "Profiles" for issue in issues))
 
-    def test_build_runtime_validation_report_detects_first_run_state(self):
+    def test_build_runtime_validation_report_detects_blocking_setup_state(self) -> None:
         with tempfile.TemporaryDirectory() as base:
             root = os.path.join(base, "Pychron")
             report = build_runtime_validation_report(root)
-            self.assertTrue(report.should_prompt_first_run)
             self.assertTrue(report.blocking_issues)
+            self.assertTrue(report.should_prompt_first_run)
+            self.assertTrue(any(issue.category == "root" for issue in report.blocking_issues))
 
-    def test_build_runtime_validation_report_summarizes_blocking_issues(self):
+    def test_build_runtime_validation_report_summarizes_blocking_issues(self) -> None:
         with tempfile.TemporaryDirectory() as base:
             root = os.path.join(base, "Pychron")
             report = build_runtime_validation_report(root)
             self.assertIn("Pychron setup is incomplete", report.summary_lines()[0])
+            self.assertIn("pychron-bootstrap", report.summary_lines()[-1])
 
 
 if __name__ == "__main__":

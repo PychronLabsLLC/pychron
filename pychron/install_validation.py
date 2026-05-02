@@ -51,7 +51,7 @@ class RuntimeValidationReport:
             ]
         )
 
-    def summary_lines(self, limit=5):
+    def summary_lines(self, limit: int = 5) -> tuple[str, ...]:
         if not self.blocking_issues:
             return ()
 
@@ -62,7 +62,11 @@ class RuntimeValidationReport:
         ]
         for issue in self.blocking_issues[:limit]:
             lines.append("- {}: {}".format(issue.name, issue.detail))
-        lines.append("Run `pychron-doctor --root {}` for a full report.".format(self.root))
+        lines.append(
+            "Run `pychron-bootstrap --root {}` to initialize or repair this runtime.".format(
+                self.root
+            )
+        )
         return tuple(lines)
 
 
@@ -112,9 +116,7 @@ def build_runtime_validation_report(root, profiles=None, bundles=None):
     bundle_specs = resolve_bundles(bundle_names)
 
     issues = []
-    bootstrap_hint = _bootstrap_hint(
-        layout.root, profiles=requested_profiles, bundles=bundle_names
-    )
+    bootstrap_hint = _bootstrap_hint(layout.root, profiles=requested_profiles, bundles=bundle_names)
 
     if os.path.isdir(layout.root):
         issues.append(ValidationIssue("Path root", "OK", layout.root, category="root"))
@@ -185,9 +187,7 @@ def build_runtime_validation_report(root, profiles=None, bundles=None):
             )
 
     if bundle_specs:
-        detail = ", ".join(
-            "{}@{}".format(bundle.name, bundle.version) for bundle in bundle_specs
-        )
+        detail = ", ".join("{}@{}".format(bundle.name, bundle.version) for bundle in bundle_specs)
         issues.append(ValidationIssue("Bundles", "OK", detail))
 
     if merged.resolved:
@@ -236,16 +236,20 @@ def build_runtime_validation_report(root, profiles=None, bundles=None):
                 status,
                 "{} ({})".format(
                     full_path,
-                    "missing for selected profile"
-                    if file_spec.required
-                    else "recommended by selected profile",
+                    (
+                        "missing for selected profile"
+                        if file_spec.required
+                        else "recommended by selected profile"
+                    ),
                 ),
-                bootstrap_hint
-                if file_spec.default_text is not None
-                else (
-                    "This file is required for the selected workflow and must be supplied by the lab."
-                    if file_spec.required
-                    else "Create this file when the workflow needs it."
+                (
+                    bootstrap_hint
+                    if file_spec.default_text is not None
+                    else (
+                        "This file is required for the selected workflow and must be supplied by the lab."
+                        if file_spec.required
+                        else "Create this file when the workflow needs it."
+                    )
                 ),
                 category="profile_file",
                 managed_by=_profile_file_managed_by(file_spec),
@@ -269,9 +273,7 @@ def build_runtime_validation_report(root, profiles=None, bundles=None):
         if saved_state.get("requested"):
             details.append("profiles={}".format(",".join(saved_state["requested"])))
         if saved_state.get("source_profiles"):
-            details.append(
-                "source_profiles={}".format(",".join(saved_state["source_profiles"]))
-            )
+            details.append("source_profiles={}".format(",".join(saved_state["source_profiles"])))
         issues.append(
             ValidationIssue(
                 "Bootstrap state",
@@ -285,6 +287,4 @@ def build_runtime_validation_report(root, profiles=None, bundles=None):
 
 
 def validate_runtime_root(root, profiles=None, bundles=None):
-    return list(
-        build_runtime_validation_report(root, profiles=profiles, bundles=bundles).issues
-    )
+    return list(build_runtime_validation_report(root, profiles=profiles, bundles=bundles).issues)

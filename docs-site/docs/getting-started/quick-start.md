@@ -13,7 +13,7 @@ This guide walks through the five things to verify on first launch and what to d
 
 Confirm each of these before launching:
 
-- [ ] `pychron-doctor` reports all checks green (see [Installation Guide](./installation))
+- [ ] `pychron-bootstrap` has completed for the target app (see [Installation Guide](./installation))
 - [ ] `initialization.xml` exists at `~/.pychron.<appname>/setupfiles/initialization.xml`
 - [ ] Your DVC git host choice (GitHub, GitLab, or LocalGit) plugin is listed in `initialization.xml`
 - [ ] The `DVC` plugin is listed in `initialization.xml`

@@ -34,8 +34,6 @@ The runtime tree under `~/Pychron` is now bootstrap-managed. The supported
 operator and developer setup flow uses:
 
 - `pychron-bootstrap`
-- `pychron-doctor`
-- `python -m pychron doctor`
 
 See `docs/dev_guide/running_pychron.rst` and `docs/dev_guide/installation.rst`
 for the current startup and install flow.
