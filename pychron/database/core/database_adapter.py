@@ -249,6 +249,8 @@ class DatabaseAdapter(Loggable):
 
     @property
     def enabled(self) -> bool:
+        # _get_db_kind() normalizes "postgres" -> "postgresql" so only the
+        # SQLAlchemy dialect name needs to appear here.
         return self._get_db_kind() in ["mysql", "sqlite", "postgresql", "mssql"]
 
     @property
@@ -527,6 +529,8 @@ host= {}\nurl= {}'.format(
         if self.connection_method == "cloudsql_iam":
             return self._get_cloudsql_url(kind)
 
+        # kind is already normalized to "postgresql" by _get_db_kind() above,
+        # so we only need the SQLAlchemy dialect name in this branch list.
         if kind in ("mysql", "postgresql", "mssql"):
             if kind == "mysql":
                 # add support for different mysql drivers
@@ -538,7 +542,9 @@ host= {}\nurl= {}'.format(
                 if driver is None:
                     return
             else:
-                driver = "pg8000"
+                driver = self._import_postgres_driver()
+                if driver is None:
+                    return
 
             if password:
                 user = "{}:{}".format(user, password)
@@ -709,6 +715,23 @@ host= {}\nurl= {}'.format(
                 pass
 
         self.info('using mssql driver="{}"'.format(driver))
+        return driver
+
+    def _import_postgres_driver(self):
+        try:
+            import pg8000  # noqa: F401
+
+            driver = "pg8000"
+        except ImportError:
+            try:
+                import psycopg2  # noqa: F401
+
+                driver = "psycopg2"
+            except ImportError:
+                self.warning_dialog("A postgres driver was not found. Install pg8000 or psycopg2.")
+                return
+
+        self.info('using postgres driver="{}"'.format(driver))
         return driver
 
     def _import_mysql_driver(self):
@@ -1118,7 +1141,7 @@ class PathDatabaseAdapter(DatabaseAdapter):
 
 
 class SQLiteDatabaseAdapter(DatabaseAdapter):
-    kind = "sqlite"
+    kind = "sqlite"  # type: ignore[assignment]
 
     def build_database(self):
         self.connect(test=False)

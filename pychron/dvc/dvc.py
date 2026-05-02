@@ -148,6 +148,7 @@ class DVC(Loggable):
     max_cache_size = Int
     irradiation_prefix = Str
     irradiation_project_prefix = Str
+    repository_root = Str
 
     git_service = None
     _cache = None
@@ -1332,6 +1333,21 @@ class DVC(Loggable):
         return git_service.test_connection(self.organization)
 
     def make_url(self, name, **kw):
+        # Pychron Forgejo Bridge takes priority when registered and enabled
+        # so workstations resolve repository_identifier through the bridge
+        # instead of a legacy hardcoded host. Empty URL from the bridge or
+        # any failure falls through to the existing GitHub/GitLab path.
+        services = self.application.get_services(IGitHost) or []
+        for svc in services:
+            if getattr(svc, "name", None) == "Bridge" and getattr(svc, "enabled", False):
+                bridge_url = svc.make_url(name, self.organization, **kw)
+                if bridge_url:
+                    return bridge_url
+                self.warning(
+                    "Bridge returned no URL for {}; falling back to legacy git host".format(name)
+                )
+                break
+
         git_service = self.application.get_service(IGitHost)
         return git_service.make_url(name, self.organization, **kw)
 
@@ -2488,9 +2504,8 @@ class DVC(Loggable):
         except AttributeError:
             try:
                 return getattr(self.meta_repo, item)
-            except AttributeError as e:
-                print(e, item)
-                # raise DVCException(item)
+            except AttributeError:
+                raise DVCException(item)
 
     # defaults
     def _db_default(self):

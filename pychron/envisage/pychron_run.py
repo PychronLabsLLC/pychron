@@ -15,6 +15,8 @@
 # ===============================================================================
 # ============= enthought library imports =======================
 import logging
+import signal
+import sys
 from operator import attrgetter
 
 from envisage.core_plugin import CorePlugin
@@ -45,6 +47,7 @@ PACKAGE_DICT = dict(
     DVCPlugin="pychron.dvc.tasks.dvc_plugin",
     GitLabPlugin="pychron.git.tasks.gitlab_plugin",
     GitHubPlugin="pychron.git.tasks.github_plugin",
+    BridgePlugin="pychron.git.tasks.bridge_plugin",
     LocalGitPlugin="pychron.git.tasks.local_plugin",
     PipelinePlugin="pychron.pipeline.tasks.plugin",
     SparrowPlugin="pychron.sparrow.tasks.plugin",
@@ -273,6 +276,15 @@ def app_factory(klass):
     return app
 
 
+def _handle_bus_error(signum: int, frame) -> None:
+    """Handle bus error (SIGBUS) by gracefully shutting down."""
+    logger.critical(
+        "Bus error signal received. Attempting graceful shutdown.",
+        extra={"threadName_": "SignalHandler"},
+    )
+    sys.exit(1)
+
+
 def launch(klass):
     """ """
     # login protection
@@ -286,6 +298,10 @@ def launch(klass):
     #     if not check_login(fp.read()):
     #         logger.critical('Login failed')
     #         return
+
+    # Register signal handler for SIGBUS (bus error, signal 10) to gracefully quit
+    # instead of crashing
+    signal.signal(signal.SIGBUS, _handle_bus_error)
 
     app = app_factory(klass)
     try:
