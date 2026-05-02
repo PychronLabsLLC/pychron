@@ -55,7 +55,7 @@ class BridgeClientHeadersTestCase(unittest.TestCase):
 
     def test_headers_include_id_token_and_bridge_bearer(self):
         with patch.object(_bridge_client.requests, "request") as req:
-            req.return_value = _make_response(200, {"status": "ok"})
+            req.return_value = _make_response(200, {"status": "ready"})
             self.client.lookup_repository("Foo_001")
 
         kwargs = req.call_args.kwargs
@@ -67,9 +67,7 @@ class BridgeClientHeadersTestCase(unittest.TestCase):
 
 class BridgeClientStatusMappingTestCase(unittest.TestCase):
     def setUp(self):
-        self._id_patch = patch.object(
-            _bridge_client, "_load_id_token", return_value="fake"
-        )
+        self._id_patch = patch.object(_bridge_client, "_load_id_token", return_value="fake")
         self._id_patch.start()
         self.client = BridgeClient(
             base_url="https://bridge.test",
@@ -82,9 +80,7 @@ class BridgeClientStatusMappingTestCase(unittest.TestCase):
         self._id_patch.stop()
 
     def _patch_request(self, response):
-        return patch.object(
-            _bridge_client.requests, "request", return_value=response
-        )
+        return patch.object(_bridge_client.requests, "request", return_value=response)
 
     def test_401_maps_to_auth_error(self):
         with self._patch_request(_make_response(401)):
@@ -113,9 +109,7 @@ class BridgeClientStatusMappingTestCase(unittest.TestCase):
 
 class BridgeClientRetryTestCase(unittest.TestCase):
     def setUp(self):
-        self._id_patch = patch.object(
-            _bridge_client, "_load_id_token", return_value="fake"
-        )
+        self._id_patch = patch.object(_bridge_client, "_load_id_token", return_value="fake")
         self._id_patch.start()
         self._sleep_patch = patch.object(_bridge_client.time, "sleep")
         self._sleep_patch.start()
@@ -152,9 +146,7 @@ class BridgeClientRetryTestCase(unittest.TestCase):
                 },
             ),
         ]
-        with patch.object(
-            _bridge_client.requests, "request", side_effect=responses
-        ) as req:
+        with patch.object(_bridge_client.requests, "request", side_effect=responses) as req:
             payload = self.client.lookup_repository("Foo")
         self.assertEqual(req.call_count, 2)
         self.assertEqual(payload["clone_url_ssh"], "ssh://x")
@@ -171,17 +163,51 @@ class BridgeClientRetryTestCase(unittest.TestCase):
 
 
 class BridgeClientHealthzTestCase(unittest.TestCase):
-    def test_healthz_does_not_send_auth_headers(self):
-        client = BridgeClient(
+    def setUp(self):
+        self._id_patch = patch.object(
+            _bridge_client, "_load_id_token", return_value="fake-id-token"
+        )
+        self._id_patch.start()
+        self.client = BridgeClient(
             base_url="https://bridge.test",
             bearer_token="bear",
             service_account_key_path="/dev/null",
         )
+
+    def tearDown(self):
+        self._id_patch.stop()
+
+    def test_healthz_sends_auth_headers(self):
         with patch.object(_bridge_client.requests, "get") as g:
-            g.return_value = _make_response(200, {"status": "ok"})
-            self.assertTrue(client.healthz())
-            self.assertEqual(g.call_args.args[0], "https://bridge.test/healthz")
-            self.assertNotIn("headers", g.call_args.kwargs)
+            g.return_value = _make_response(200, {"status": "ready"})
+            self.assertTrue(self.client.healthz())
+            self.assertEqual(g.call_args.args[0], "https://bridge.test/readyz")
+            headers = g.call_args.kwargs["headers"]
+            self.assertEqual(headers["Authorization"], "Bearer fake-id-token")
+            self.assertEqual(headers["X-Bridge-Token"], "bear")
+
+    def test_healthz_returns_false_on_non_200(self):
+        with patch.object(_bridge_client.requests, "get") as g:
+            g.return_value = _make_response(403)
+            self.assertFalse(self.client.healthz())
+
+    def test_healthz_returns_false_on_status_not_ready(self):
+        with patch.object(_bridge_client.requests, "get") as g:
+            g.return_value = _make_response(200, {"status": "degraded"})
+            self.assertFalse(self.client.healthz())
+
+    def test_healthz_returns_false_on_token_mint_failure(self):
+        # _load_id_token raises if the SA key is missing/unreadable.
+        self._id_patch.stop()
+        try:
+            with patch.object(
+                _bridge_client,
+                "_load_id_token",
+                side_effect=FileNotFoundError("no key"),
+            ):
+                self.assertFalse(self.client.healthz())
+        finally:
+            self._id_patch.start()
 
 
 if __name__ == "__main__":
