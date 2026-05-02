@@ -33,6 +33,7 @@ The write test creates a uniquely-suffixed repository through the bridge.
 The bridge currently exposes no delete endpoint, so the artifact persists
 in Forgejo until removed manually.
 """
+
 from __future__ import absolute_import
 
 import os
@@ -45,7 +46,6 @@ from pychron.git.hosts._bridge_client import (
     BridgeError,
 )
 from pychron.git.hosts.bridge import BridgeService
-
 
 _INTEGRATION_FLAG = "PYCHRON_BRIDGE_INTEGRATION"
 _WRITE_FLAG = "PYCHRON_BRIDGE_INTEGRATION_WRITE"
