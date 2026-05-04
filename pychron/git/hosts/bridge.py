@@ -18,6 +18,14 @@
 Implements the IGitHost interface against the Pychron Forgejo Bridge so
 the existing add_repository / clone / make_url orchestration can route
 through the bridge with no changes to its callers.
+
+DEPRECATED (M7): superseded by direct pychronAPI integration in
+``pychron.cloud`` (workstation onboarding, SSH key registration, repo
+discovery). This module is kept for the M7 rollout overlap so existing
+NMGRL workstations continue to function while ``enable_pychron_cloud``
+is opt-in. Slated for removal after P5 (repo register / migration) ships
+and dogfooding on NMGRL passes — see
+``docs/architecture/forgejo-cloud-onboarding.md``. Do not extend.
 """
 
 from __future__ import absolute_import

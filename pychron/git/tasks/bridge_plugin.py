@@ -13,6 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+"""Bridge plugin.
+
+DEPRECATED (M7): superseded by ``pychron.cloud.tasks.cloud_plugin``.
+Retained for rollout overlap; remove after P5 dogfood passes.
+"""
+
 from __future__ import absolute_import
 
 from pychron.git.hosts.bridge import BridgeService
