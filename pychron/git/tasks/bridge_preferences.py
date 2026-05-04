@@ -14,6 +14,13 @@
 # limitations under the License.
 # ===============================================================================
 
+"""Bridge preferences pane.
+
+DEPRECATED (M7): superseded by
+``pychron.cloud.tasks.preferences.CloudPreferencesPane``. Retained for
+rollout overlap; remove after P5 dogfood passes.
+"""
+
 import requests
 from envisage.ui.tasks.preferences_pane import PreferencesPane
 from traits.api import Bool, Button, Password, Str

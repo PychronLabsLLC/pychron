@@ -126,6 +126,23 @@ P1 → P2 → P3 land as separate PRs, each behind feature flag
 `enable_pychron_cloud`. P4–P5 follow. P6 lands alongside P2. P7 runs
 continuously.
 
+## Bridge retirement
+
+The M0–M6 `BridgeService` (`pychron/git/hosts/bridge.py`) and
+`BridgePlugin` are functionally superseded by P3–P5. They are marked
+DEPRECATED in M7 P1 but kept for rollout overlap. Retire after:
+
+- P5 ships (repo register + migration).
+- pychronAPI exposes equivalent metadata fields on register
+  (`instrument`, `project`, `principal_investigator`, `irradiation`,
+  `material`).
+- Dogfood on NMGRL confirms no regressions.
+
+Removing means deleting `pychron/git/hosts/bridge.py`,
+`pychron/git/hosts/_bridge_client.py`, `pychron/git/tasks/bridge_plugin.py`,
+`pychron/git/tasks/bridge_preferences.py`, and dropping `BridgePlugin`
+from `pychron/envisage/pychron_run.py`.
+
 ## Coupling with pychronAPI
 
 - P4 may need a new endpoint
