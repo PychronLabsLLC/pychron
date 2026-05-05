@@ -2358,16 +2358,52 @@ anaylsis_type={}
         self._plot_panel_ready_event = TEvent()
         self._plot_panel_ready_event.clear()
         
+        import threading
+        import time as time_module
+        current_thread = threading.current_thread()
+        self.debug(
+            "_setup_measurement_collection entry: "
+            "thread={}, create={}, active_detectors={}".format(
+                current_thread.name, create, len(self._active_detectors)
+            )
+        )
+        
+        setup_start = time_module.time()
         invoke_in_main_thread(
             self._setup_plot_panel_on_main_thread, create, self._active_detectors
         )
         
         # Wait for plot panel to be ready on main thread before returning
         # Timeout after 5 seconds to avoid indefinite hang
-        self.debug("waiting for plot panel setup on main thread...")
+        self.debug(
+            "waiting for plot panel setup on main thread... "
+            "thread={}, event_is_set={}".format(
+                current_thread.name, self._plot_panel_ready_event.is_set()
+            )
+        )
+        wait_start = time_module.time()
         if not self._plot_panel_ready_event.wait(timeout=5.0):
-            self.warning("plot panel setup timed out after 5 seconds")
-        self.debug("plot panel ready, continuing with data collection")
+            self.warning(
+                "plot panel setup timed out after 5 seconds. "
+                "event_is_set={}, wait_duration={:.3f}s, total_duration={:.3f}s, "
+                "thread={}".format(
+                    self._plot_panel_ready_event.is_set(),
+                    time_module.time() - wait_start,
+                    time_module.time() - setup_start,
+                    current_thread.name
+                )
+            )
+        else:
+            self.debug(
+                "plot panel ready, continuing with data collection. "
+                "event_is_set={}, wait_duration={:.3f}s, total_duration={:.3f}s, "
+                "thread={}".format(
+                    self._plot_panel_ready_event.is_set(),
+                    time_module.time() - wait_start,
+                    time_module.time() - setup_start,
+                    current_thread.name
+                )
+            )
 
     def _setup_plot_panel_on_main_thread(self, create, active_detectors):
         """
@@ -2379,32 +2415,112 @@ anaylsis_type={}
         :param create: bool - whether to create new PlotPanel
         :param active_detectors: list of detectors to activate
         """
+        import threading
+        import time as time_module
+        current_thread = threading.current_thread()
+        overall_start = time_module.time()
+        
+        self.debug(
+            "_setup_plot_panel_on_main_thread: entry create={}, "
+            "thread={}, event_is_set={}".format(
+                create, current_thread.name, self._plot_panel_ready_event.is_set()
+            )
+        )
+        
         try:
-            self.debug("setup_plot_panel_on_main_thread: create={}".format(create))
+            step_start = time_module.time()
+            self.debug("plot panel setup: create={}".format(create))
             
             if create:
+                self.debug("plot panel setup: creating new plot panel...")
                 p = self._new_plot_panel(stack_order="top_to_bottom")
+                step_duration = time_module.time() - step_start
+                self.debug(
+                    "plot panel setup: new panel created in {:.3f}s, "
+                    "thread={}".format(step_duration, current_thread.name)
+                )
+                
                 try:
+                    step_start = time_module.time()
                     p.create(active_detectors)
+                    step_duration = time_module.time() - step_start
+                    self.debug(
+                        "plot panel setup: panel.create() completed in {:.3f}s, "
+                        "thread={}".format(step_duration, current_thread.name)
+                    )
                 except Exception as e:
-                    self.debug("ERROR creating plot panel: {}".format(e))
+                    step_duration = time_module.time() - step_start
+                    self.debug(
+                        "ERROR creating plot panel (after {:.3f}s): {}".format(
+                            step_duration, e
+                        )
+                    )
                     import traceback
                     self.debug(traceback.format_exc())
             else:
+                self.debug("plot panel setup: reusing existing panel")
                 p = self.plot_panel
                 if p:
+                    step_start = time_module.time()
                     p.isotope_graph.clear_plots()
+                    step_duration = time_module.time() - step_start
+                    self.debug(
+                        "plot panel setup: cleared plots in {:.3f}s, "
+                        "thread={}".format(step_duration, current_thread.name)
+                    )
             
             # Load analysis view and assign plot panel
             if p:
-                self.debug('load analysis view')
+                self.debug(
+                    "plot panel setup: loading analysis view, thread={}".format(
+                        current_thread.name
+                    )
+                )
+                step_start = time_module.time()
                 p.analysis_view.load(self)
+                step_duration = time_module.time() - step_start
+                self.debug(
+                    "plot panel setup: analysis view loaded in {:.3f}s, "
+                    "thread={}".format(step_duration, current_thread.name)
+                )
                 self.plot_panel = p
                 
-            self.debug("plot panel setup complete")
+            overall_duration = time_module.time() - overall_start
+            self.debug(
+                "plot panel setup complete in {:.3f}s, "
+                "thread={}, event_is_set={}".format(
+                    overall_duration, current_thread.name,
+                    self._plot_panel_ready_event.is_set()
+                )
+            )
+        except Exception as e:
+            overall_duration = time_module.time() - overall_start
+            self.warning(
+                "Unexpected exception in _setup_plot_panel_on_main_thread "
+                "(after {:.3f}s): {}".format(overall_duration, e)
+            )
+            import traceback
+            self.debug(traceback.format_exc())
         finally:
             # Signal that setup is complete (even if there was an error)
-            self._plot_panel_ready_event.set()
+            try:
+                self.debug(
+                    "_setup_plot_panel_on_main_thread: setting event, "
+                    "thread={}, event_is_set_before={}".format(
+                        current_thread.name, self._plot_panel_ready_event.is_set()
+                    )
+                )
+                self._plot_panel_ready_event.set()
+                self.debug(
+                    "_setup_plot_panel_on_main_thread: event set, "
+                    "thread={}, event_is_set_after={}".format(
+                        current_thread.name, self._plot_panel_ready_event.is_set()
+                    )
+                )
+            except Exception as e:
+                self.warning(
+                    "Exception setting plot panel ready event: {}".format(e)
+                )
 
     def _load_previous(self):
         # this is necessary for measuring the baseline before doing a peakhop or multicollect
