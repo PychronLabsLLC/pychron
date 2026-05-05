@@ -15,7 +15,7 @@
 # ===============================================================================
 
 # ============= standard library imports ========================
-from threading import current_thread, Timer
+from threading import current_thread
 from typing import Any, Callable
 
 # ============= enthought library imports =======================
@@ -43,7 +43,7 @@ class WaitControl(Loggable):
 
     auto_start = Bool(False)
     timer = None
-    _backup_timer: Timer | None = None
+    _backup_timer: QTimer | None = None
     _on_finished: Callable[[], None] | None = None
 
     continue_button = Button("Continue")
@@ -81,63 +81,48 @@ class WaitControl(Loggable):
 
     def _start_timer(self) -> None:
         timer = self._get_timer()
-        if timer.isActive():
-            timer.stop()
-            # Disconnect signal if timer is being reused
-            try:
-                timer.timeout.disconnect()
-            except (RuntimeError, AttributeError, TypeError):
-                pass
-            self.debug(
-                "wait_control timer restarted page={} timer_id={} current_time={} status={} thread={}".format(
-                    self.page_name,
-                    id(timer),
-                    self.current_time,
-                    self.status,
-                    current_thread().name,
-                )
-            )
-        else:
-            self.debug(
-                "wait_control timer starting page={} timer_id={} current_time={} status={} thread={}".format(
-                    self.page_name,
-                    id(timer),
-                    self.current_time,
-                    self.status,
-                    current_thread().name,
-                )
-            )
-        
-        # Reconnect signal to ensure clean state
-        try:
-            timer.timeout.disconnect()
-        except (RuntimeError, AttributeError, TypeError):
-            pass
-        timer.timeout.connect(self._update_time)
-        timer.start()
-        
-        # Start backup threading timer as safety net in case Qt timer never fires
-        # (can happen if main thread event loop is blocked)
-        self._stop_backup_timer()
-        backup_duration = max(self.duration + 2.0, 3.0)  # Add 2s buffer, minimum 3s
-        self._backup_timer = Timer(backup_duration, self._backup_timer_fired)
-        self._backup_timer.daemon = True
-        self._backup_timer.start()
         self.debug(
-            "wait_control backup timer started page={} duration={} thread={}".format(
-                self.page_name, backup_duration, current_thread().name
+            "wait_control timer starting page={} timer_id={} current_time={} status={} thread={}".format(
+                self.page_name,
+                id(timer),
+                self.current_time,
+                self.status,
+                current_thread().name,
+            )
+        )
+        timer.start()
+
+        # Backup safety net: a Qt single-shot timer (NOT threading.Timer).
+        # threading.Timer fires on a worker thread, and the resulting Qt calls
+        # in _stop_timer/_finish crash on macOS ARM64 due to thread-affinity
+        # enforcement. Keeping the backup as a QTimer ensures _end() runs on
+        # the Qt thread.
+        self._stop_backup_timer()
+        backup_duration_ms = int(max(self.duration + 2.0, 3.0) * 1000)
+        backup = self._get_backup_timer()
+        backup.start(backup_duration_ms)
+        self.debug(
+            "wait_control backup timer started page={} duration_ms={} thread={}".format(
+                self.page_name, backup_duration_ms, current_thread().name
             )
         )
 
+    def _get_backup_timer(self) -> QTimer:
+        timer = self._backup_timer
+        if timer is None:
+            app = QApplication.instance()
+            timer = QTimer(app) if app is not None else QTimer()
+            timer.setSingleShot(True)
+            timer.timeout.connect(self._backup_timer_fired)
+            self._backup_timer = timer
+        return timer
+
     def _stop_backup_timer(self) -> None:
-        """Cancel the backup threading timer"""
-        if self._backup_timer is not None:
-            if self._backup_timer.is_alive():
-                self._backup_timer.cancel()
-            self._backup_timer = None
+        timer = self._backup_timer
+        if timer is not None and timer.isActive():
+            timer.stop()
 
     def _backup_timer_fired(self) -> None:
-        """Backup timer fired - force completion if on_finished not already called"""
         if self._on_finished is not None:
             self.warning(
                 "wait_control backup timer triggered - Qt timer may be hung page={} status={} current_time={} thread={}".format(
@@ -147,7 +132,6 @@ class WaitControl(Loggable):
                     current_thread().name,
                 )
             )
-            # Force end to trigger on_finished callback
             self._end()
 
     def _stop_timer(self) -> None:
@@ -162,20 +146,11 @@ class WaitControl(Loggable):
                     current_thread().name,
                 )
             )
-            try:
-                timer.stop()
-                timer.timeout.disconnect()
-            except (RuntimeError, AttributeError, TypeError):
-                pass
-        
-        # Also stop backup timer
+            timer.stop()
         self._stop_backup_timer()
 
     def is_active(self) -> bool:
         return bool(self.timer and self.timer.isActive())
-
-    def _is_timer_active(self) -> bool:
-        return self.is_active()
 
     def is_canceled(self) -> bool:
         return self.status in ("canceled", "stopped")
@@ -339,43 +314,33 @@ class WaitControl(Loggable):
         self._finish("completed", remaining_time=0, message="")
 
     def _update_time(self) -> None:
-        try:
-            if self._paused:
-                self.debug(
-                    "wait_control tick skipped page={} current_time={} status={} paused={} thread={}".format(
-                        self.page_name,
-                        self.current_time,
-                        self.status,
-                        self._paused,
-                        current_thread().name,
-                    )
+        if self._paused:
+            self.debug(
+                "wait_control tick skipped page={} current_time={} status={} paused={} thread={}".format(
+                    self.page_name,
+                    self.current_time,
+                    self.status,
+                    self._paused,
+                    current_thread().name,
                 )
-                return
-            ct = self.current_time
-            if self._is_timer_active():
-                ct -= 1
-                self.debug(
-                    "wait_control tick page={} next_time={} current_time={} status={} thread={}".format(
-                        self.page_name,
-                        ct,
-                        self.current_time,
-                        self.status,
-                        current_thread().name,
-                    )
-                )
-                # self.debug('Current Time={}/{}'.format(ct, self.duration))
-                if ct <= 0:
-                    self._end()
-                else:
-                    self.set_remaining_time(ct)
-        except (RuntimeError, AttributeError, ReferenceError):
-            # Object was deleted or is being cleaned up
-            pass
-
-                # def _current_time_changed(self):
-                # if self.current_time <= 0:
-                # self._end()
-                # self._canceled = False
+            )
+            return
+        if not self.is_active():
+            return
+        ct = self.current_time - 1
+        self.debug(
+            "wait_control tick page={} next_time={} current_time={} status={} thread={}".format(
+                self.page_name,
+                ct,
+                self.current_time,
+                self.status,
+                current_thread().name,
+            )
+        )
+        if ct <= 0:
+            self._end()
+        else:
+            self.set_remaining_time(ct)
 
     def _get_current_display_time(self) -> str:
         return "{:03d}".format(int(self.current_time))
@@ -398,27 +363,6 @@ class WaitControl(Loggable):
 
         self.duration = v
         self.set_remaining_time(v)
-
-        # def traits_view(self):
-        # v = View(VGroup(
-        #         CustomLabel('message',
-        #                     size=14,
-        #                     weight='bold',
-        #                     color_name='message_color'),
-        #
-        #         HGroup(Spring(width=-5, springy=False),
-        #                Item('high', label='Set Max. Seconds'),
-        #                spring, UItem('continue_button')),
-        #         HGroup(Spring(width=-5, springy=False),
-        #                Item('current_time', show_label=False,
-        #                     editor=RangeEditor(mode='slider',
-        #                                        low=1,
-        #                                        # low_name='low_name',
-        #                                        high_name='duration')),
-        #                CustomLabel('current_time',
-        #                            size=14,
-        #                            weight='bold'))))
-        #     return v
 
 
 # ============= EOF =============================================
