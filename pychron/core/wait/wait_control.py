@@ -15,10 +15,12 @@
 # ===============================================================================
 
 # ============= standard library imports ========================
-from threading import current_thread, Timer, Event
+from threading import current_thread
 from typing import Any, Callable
 
 # ============= enthought library imports =======================
+from pyface.qt.QtCore import QTimer
+from pyface.qt.QtWidgets import QApplication
 from traits.api import Str, Button, Float, Bool, Property, Int, Event as TEvent
 from pyface.ui_traits import PyfaceColor
 
@@ -40,8 +42,8 @@ class WaitControl(Loggable):
     current_display_time = Property(depends_on="current_time")
 
     auto_start = Bool(False)
-    _timer: Timer | None = None  # Pure threading.Timer, not Qt timer
-    _backup_timer: Timer | None = None
+    timer = None
+    _backup_timer: QTimer | None = None
     _on_finished: Callable[[], None] | None = None
 
     continue_button = Button("Continue")
@@ -59,90 +61,68 @@ class WaitControl(Loggable):
         if self.auto_start:
             self.start(block=False)
 
-    def _start_timer(self) -> None:
-        """Start the countdown timer using pure Python threading.
-        
-        Uses threading.Timer instead of Qt to avoid Qt lifecycle issues.
-        threading.Timer is single-use, so we create a fresh one each time.
-        """
-        self.debug(
-            "wait_control _start_timer() entry page={} status={} current_time={} thread={}".format(
-                self.page_name, self.status, self.current_time, current_thread().name
-            )
-        )
-        
-        # Cancel any existing timer
-        self._stop_timer()
-        
-        self.debug(
-            "wait_control creating threading.Timer page={} duration={} thread={}".format(
-                self.page_name, self.duration, current_thread().name
-            )
-        )
-        
-        # Create new threading.Timer that fires every 1 second
-        # We use 0.1s interval and count down in callback for more frequent updates
-        self._timer = Timer(1.0, self._on_timer_tick)
-        self._timer.daemon = True
-        
-        self.debug(
-            "wait_control before timer.start() page={} duration={} thread={}".format(
-                self.page_name, self.duration, current_thread().name
-            )
-        )
-        
-        self._timer.start()
-        
-        self.debug(
-            "wait_control timer started page={} duration={} thread={}".format(
-                self.page_name, self.duration, current_thread().name
-            )
-        )
-        
-        # Start backup threading timer as safety net in case main timer never fires
-        self._stop_backup_timer()
-        backup_duration = max(self.duration + 2.0, 3.0)  # Add 2s buffer, minimum 3s
-        self._backup_timer = Timer(backup_duration, self._backup_timer_fired)
-        self._backup_timer.daemon = True
-        self._backup_timer.start()
-        self.debug(
-            "wait_control backup timer started page={} duration={} thread={}".format(
-                self.page_name, backup_duration, current_thread().name
-            )
-        )
-    
-    def _on_timer_tick(self) -> None:
-        """Called when main timer fires - reschedule itself and update time."""
-        try:
+    def _get_timer(self) -> QTimer:
+        timer = self.timer
+        if timer is None:
+            app = QApplication.instance()
+            timer = QTimer(app) if app is not None else QTimer()
+            timer.setInterval(1000)
+            timer.timeout.connect(self._update_time)
+            self.timer = timer
             self.debug(
-                "wait_control timer tick page={} current_time={} status={} thread={}".format(
-                    self.page_name, self.current_time, self.status, current_thread().name
+                "wait_control timer created page={} timer_id={} app_present={} thread={}".format(
+                    self.page_name,
+                    id(timer),
+                    app is not None,
+                    current_thread().name,
                 )
             )
-            self._update_time()
-            
-            # Reschedule timer for next second if still running
-            if self.status == "running" and not self._paused:
-                self._timer = Timer(1.0, self._on_timer_tick)
-                self._timer.daemon = True
-                self._timer.start()
-                self.debug(
-                    "wait_control timer rescheduled page={} current_time={} thread={}".format(
-                        self.page_name, self.current_time, current_thread().name
-                    )
-                )
-        except Exception as e:
-            self.warning(f"wait_control timer tick error: {type(e).__name__}: {e}")
+        return timer
+
+    def _start_timer(self) -> None:
+        timer = self._get_timer()
+        self.debug(
+            "wait_control timer starting page={} timer_id={} current_time={} status={} thread={}".format(
+                self.page_name,
+                id(timer),
+                self.current_time,
+                self.status,
+                current_thread().name,
+            )
+        )
+        timer.start()
+
+        # Backup safety net: a Qt single-shot timer (NOT threading.Timer).
+        # threading.Timer fires on a worker thread, and the resulting Qt calls
+        # in _stop_timer/_finish crash on macOS ARM64 due to thread-affinity
+        # enforcement. Keeping the backup as a QTimer ensures _end() runs on
+        # the Qt thread.
+        self._stop_backup_timer()
+        backup_duration_ms = int(max(self.duration + 2.0, 3.0) * 1000)
+        backup = self._get_backup_timer()
+        backup.start(backup_duration_ms)
+        self.debug(
+            "wait_control backup timer started page={} duration_ms={} thread={}".format(
+                self.page_name, backup_duration_ms, current_thread().name
+            )
+        )
+
+    def _get_backup_timer(self) -> QTimer:
+        timer = self._backup_timer
+        if timer is None:
+            app = QApplication.instance()
+            timer = QTimer(app) if app is not None else QTimer()
+            timer.setSingleShot(True)
+            timer.timeout.connect(self._backup_timer_fired)
+            self._backup_timer = timer
+        return timer
 
     def _stop_backup_timer(self) -> None:
-        """Cancel the backup threading timer"""
-        if self._backup_timer is not None:
-            if self._backup_timer.is_alive():
-                self._backup_timer.cancel()
-            self._backup_timer = None
+        timer = self._backup_timer
+        if timer is not None and timer.isActive():
+            timer.stop()
 
     def _backup_timer_fired(self) -> None:
-        """Backup timer fired - force completion if on_finished not already called"""
         if self._on_finished is not None:
             self.warning(
                 "wait_control backup timer triggered - Qt timer may be hung page={} status={} current_time={} thread={}".format(
@@ -152,41 +132,25 @@ class WaitControl(Loggable):
                     current_thread().name,
                 )
             )
-            # Force end to trigger on_finished callback
             self._end()
 
     def _stop_timer(self) -> None:
-        """Stop and clean up timer"""
-        self.debug(
-            "wait_control _stop_timer() entry page={} thread={}".format(
-                self.page_name, current_thread().name
+        timer = self.timer
+        if timer is not None and timer.isActive():
+            self.debug(
+                "wait_control timer stopping page={} timer_id={} current_time={} status={} thread={}".format(
+                    self.page_name,
+                    id(timer),
+                    self.current_time,
+                    self.status,
+                    current_thread().name,
+                )
             )
-        )
-        
-        if self._timer is not None:
-            try:
-                self._timer.cancel()
-                self.debug(
-                    "wait_control timer cancelled page={} thread={}".format(
-                        self.page_name, current_thread().name
-                    )
-                )
-            except Exception as e:
-                self.debug(
-                    "wait_control timer cancel failed page={} error={} thread={}".format(
-                        self.page_name, type(e).__name__, current_thread().name
-                    )
-                )
-            self._timer = None
-        
-        # Also stop backup timer
+            timer.stop()
         self._stop_backup_timer()
 
     def is_active(self) -> bool:
-        return self._timer is not None
-
-    def _is_timer_active(self) -> bool:
-        return self._timer is not None
+        return bool(self.timer and self.timer.isActive())
 
     def is_canceled(self) -> bool:
         return self.status in ("canceled", "stopped")
@@ -343,60 +307,40 @@ class WaitControl(Loggable):
 
     def _end(self) -> None:
         self.debug(
-            "wait_control _end() called page={} current_time={} status={} thread={}".format(
+            "wait_control end page={} current_time={} status={} thread={}".format(
                 self.page_name, self.current_time, self.status, current_thread().name
             )
         )
         self._finish("completed", remaining_time=0, message="")
 
     def _update_time(self) -> None:
-        try:
-            if self._paused:
-                self.debug(
-                    "wait_control tick skipped page={} current_time={} status={} paused={} thread={}".format(
-                        self.page_name,
-                        self.current_time,
-                        self.status,
-                        self._paused,
-                        current_thread().name,
-                    )
+        if self._paused:
+            self.debug(
+                "wait_control tick skipped page={} current_time={} status={} paused={} thread={}".format(
+                    self.page_name,
+                    self.current_time,
+                    self.status,
+                    self._paused,
+                    current_thread().name,
                 )
-                return
-            ct = self.current_time
-            if self._is_timer_active():
-                ct -= 1
-                self.debug(
-                    "wait_control tick page={} next_time={} current_time={} status={} thread={}".format(
-                        self.page_name,
-                        ct,
-                        self.current_time,
-                        self.status,
-                        current_thread().name,
-                    )
-                )
-                # self.debug('Current Time={}/{}'.format(ct, self.duration))
-                if ct <= 0:
-                    self._end()
-                else:
-                    self.set_remaining_time(ct)
-        except (RuntimeError, AttributeError, ReferenceError, ValueError, TypeError) as e:
-            # Object was deleted, being cleaned up, or in invalid state
-            # Common during shutdown or rapid state changes
-            try:
-                self.debug(f"wait_control timer tick error: {type(e).__name__}: {e}")
-            except:
-                pass
-        except Exception as e:
-            # Catch any other exceptions to prevent Qt segfault
-            try:
-                self.warning(f"wait_control timer unexpected error: {type(e).__name__}: {e}")
-            except:
-                pass
-
-                # def _current_time_changed(self):
-                # if self.current_time <= 0:
-                # self._end()
-                # self._canceled = False
+            )
+            return
+        if not self.is_active():
+            return
+        ct = self.current_time - 1
+        self.debug(
+            "wait_control tick page={} next_time={} current_time={} status={} thread={}".format(
+                self.page_name,
+                ct,
+                self.current_time,
+                self.status,
+                current_thread().name,
+            )
+        )
+        if ct <= 0:
+            self._end()
+        else:
+            self.set_remaining_time(ct)
 
     def _get_current_display_time(self) -> str:
         return "{:03d}".format(int(self.current_time))
@@ -419,27 +363,6 @@ class WaitControl(Loggable):
 
         self.duration = v
         self.set_remaining_time(v)
-
-        # def traits_view(self):
-        # v = View(VGroup(
-        #         CustomLabel('message',
-        #                     size=14,
-        #                     weight='bold',
-        #                     color_name='message_color'),
-        #
-        #         HGroup(Spring(width=-5, springy=False),
-        #                Item('high', label='Set Max. Seconds'),
-        #                spring, UItem('continue_button')),
-        #         HGroup(Spring(width=-5, springy=False),
-        #                Item('current_time', show_label=False,
-        #                     editor=RangeEditor(mode='slider',
-        #                                        low=1,
-        #                                        # low_name='low_name',
-        #                                        high_name='duration')),
-        #                CustomLabel('current_time',
-        #                            size=14,
-        #                            weight='bold'))))
-        #     return v
 
 
 # ============= EOF =============================================
