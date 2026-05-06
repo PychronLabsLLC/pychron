@@ -15,6 +15,9 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
+import faulthandler
+import os
+import time
 from threading import Event, current_thread, main_thread
 from typing import Any as TypingAny, Callable, Optional
 
@@ -24,6 +27,36 @@ from traits.api import HasTraits, List, Any, Property
 # ============= local library imports  ==========================
 from pychron.core.ui.gui import invoke_in_main_thread
 from pychron.core.wait.wait_control import WaitControl
+
+
+def _dump_all_thread_tracebacks(page_name: str, logger: TypingAny) -> None:
+    """Dump tracebacks for all threads to a file in the log dir.
+
+    Used to diagnose hangs when the WaitGroup safety timeout fires - the
+    main thread is presumably blocked on something, and this captures what.
+    """
+    try:
+        from pychron.paths import paths
+
+        log_dir = getattr(paths, "log_dir", None)
+        if not log_dir or not os.path.isdir(log_dir):
+            logger.warning(
+                "wait_group cannot dump tracebacks: log_dir not available"
+            )
+            return
+
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        safe_page = "".join(c if c.isalnum() else "_" for c in page_name)[:40]
+        path = os.path.join(log_dir, "wait_hang_{}_{}.txt".format(ts, safe_page))
+        with open(path, "w") as fh:
+            fh.write(
+                "WaitGroup safety timeout traceback dump\n"
+                "page={} timestamp={}\n\n".format(page_name, ts)
+            )
+            faulthandler.dump_traceback(file=fh, all_threads=True)
+        logger.warning("wait_group thread traceback dumped to {}".format(path))
+    except Exception as e:
+        logger.warning("wait_group failed to dump tracebacks: {}".format(e))
 
 
 class WaitGroup(HasTraits):
@@ -197,6 +230,10 @@ class WaitGroup(HasTraits):
                         current_thread().name,
                     )
                 )
+                # Diagnostic: dump all thread tracebacks so we can see what the
+                # main thread was busy with. Done from this (experiment) thread
+                # so it works even when the main thread is fully blocked.
+                _dump_all_thread_tracebacks(control.page_name, control)
                 # Force completion - use wait=False because the main thread may
                 # still be blocked; we must not deadlock the experiment thread here.
                 self._invoke_on_main_thread(control._end, wait=False)
