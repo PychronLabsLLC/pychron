@@ -13,50 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+"""WaitGroup: collection of WaitControls plus a blocking wait coordinator.
+
+After the 2026 rewrite, blocking is implemented directly on top of
+WaitState (pure threading). The Qt event loop is not on the critical
+path, so safety timeouts, faulthandler dumps, and synchronous
+cross-thread calls (`wait=True`) are no longer needed.
+"""
 
 # ============= enthought library imports =======================
-import faulthandler
-import os
-import time
 from threading import Event, current_thread, main_thread
 from typing import Any as TypingAny, Callable, Optional
 
-from traits.api import HasTraits, List, Any, Property
+from traits.api import Any, HasTraits, List, Property
 
-# ============= standard library imports ========================
 # ============= local library imports  ==========================
 from pychron.core.ui.gui import invoke_in_main_thread
 from pychron.core.wait.wait_control import WaitControl
-
-
-def _dump_all_thread_tracebacks(page_name: str, logger: TypingAny) -> None:
-    """Dump tracebacks for all threads to a file in the log dir.
-
-    Used to diagnose hangs when the WaitGroup safety timeout fires - the
-    main thread is presumably blocked on something, and this captures what.
-    """
-    try:
-        from pychron.paths import paths
-
-        log_dir = getattr(paths, "log_dir", None)
-        if not log_dir or not os.path.isdir(log_dir):
-            logger.warning(
-                "wait_group cannot dump tracebacks: log_dir not available"
-            )
-            return
-
-        ts = time.strftime("%Y%m%d_%H%M%S")
-        safe_page = "".join(c if c.isalnum() else "_" for c in page_name)[:40]
-        path = os.path.join(log_dir, "wait_hang_{}_{}.txt".format(ts, safe_page))
-        with open(path, "w") as fh:
-            fh.write(
-                "WaitGroup safety timeout traceback dump\n"
-                "page={} timestamp={}\n\n".format(page_name, ts)
-            )
-            faulthandler.dump_traceback(file=fh, all_threads=True)
-        logger.warning("wait_group thread traceback dumped to {}".format(path))
-    except Exception as e:
-        logger.warning("wait_group failed to dump tracebacks: {}".format(e))
 
 
 class WaitGroup(HasTraits):
@@ -67,33 +40,31 @@ class WaitGroup(HasTraits):
     def _get_single(self) -> bool:
         return len(self.controls) == 1
 
-    # def traits_view(self):
-    #     v = View(UItem('active_control',
-    #                    style='custom',
-    #                    visible_when='single',
-    #                    editor=InstanceEditor()),
-    #              UItem('controls',
-    #                    editor=ListEditor(
-    #                        use_notebook=True,
-    #                        selected='active_control',
-    #                        page_name='.page_name'),
-    #                    style='custom',
-    #                    visible_when='not single'))
-    #     return v
-
     def _controls_default(self) -> list[WaitControl]:
         return [WaitControl()]
 
     def _active_control_default(self) -> WaitControl:
         return self.controls[0]
 
+    # ------------------------------------------------------------------
+    # Cross-thread helper
+    # ------------------------------------------------------------------
+
     def _invoke_on_main_thread(
         self,
         func: Callable[..., TypingAny],
         *args: TypingAny,
         wait: bool = False,
-        **kw: TypingAny
+        **kw: TypingAny,
     ) -> Optional[TypingAny]:
+        """Run `func` on the main thread.
+
+        With `wait=False` (default), fire-and-forget. With `wait=True`,
+        block until `func` returns. Synchronous waits are still used for
+        UI-only operations (e.g. swapping the active page in a notebook)
+        where the caller needs the result; they are NEVER used inside the
+        blocking wait path, so they cannot deadlock the experiment thread.
+        """
         if current_thread() is main_thread():
             return func(*args, **kw)
 
@@ -114,6 +85,10 @@ class WaitGroup(HasTraits):
         done.wait()
         return result.get("value")
 
+    # ------------------------------------------------------------------
+    # Control management (UI-side, synchronous helpers OK here)
+    # ------------------------------------------------------------------
+
     def pop(self, control: Optional[WaitControl] = None) -> None:
         self._invoke_on_main_thread(self._pop, control, wait=True)
 
@@ -124,7 +99,6 @@ class WaitGroup(HasTraits):
                     self.controls.remove(control)
             else:
                 self.controls.pop()
-
             self.active_control = self.controls[-1]
 
     def stop(self) -> None:
@@ -166,6 +140,10 @@ class WaitGroup(HasTraits):
             control = self.add_control(**kw)
         return control
 
+    # ------------------------------------------------------------------
+    # The blocking wait — pure threading, no Qt dependency
+    # ------------------------------------------------------------------
+
     def start_wait(
         self,
         control: WaitControl,
@@ -174,79 +152,59 @@ class WaitGroup(HasTraits):
         message: str | None = None,
         paused: bool = False,
         block: bool = True,
-    ) -> None:
-        done = Event()
-        timeout_occurred = False
+    ) -> str | None:
+        """Begin a wait on `control`.
 
-        def on_finished() -> None:
-            control.debug(
-                "wait_group on_finished page={} status={} current_time={} thread={}".format(
-                    control.page_name,
-                    control.status,
-                    control.current_time,
-                    current_thread().name,
-                )
-            )
-            done.set()
+        Returns the final outcome (`"completed"`, `"continued"`, or
+        `"canceled"`) when block=True; returns None when block=False.
+
+        The blocking wait runs on the calling thread via WaitState.wait(),
+        which uses a threading.Event with timeout. The Qt event loop is
+        not required for progress: a starved main thread will only delay
+        the on-screen countdown, never the experiment.
+        """
+        state = control.state
+        eff_duration = float(duration) if duration is not None else float(control.duration)
 
         control.debug(
-            "wait_group start_wait page={} duration={} message={} paused={} block={} active_control={} controls={} thread={}".format(
+            "wait_group start_wait page={} duration={} message={} paused={} block={} thread={}".format(
                 control.page_name,
-                duration,
+                eff_duration,
                 message,
                 paused,
                 block,
-                getattr(self.active_control, "page_name", None),
-                len(self.controls),
                 current_thread().name,
             )
         )
-        self._invoke_on_main_thread(
-            control.start,
-            block=False,
-            duration=duration,
-            message=message,
-            paused=paused,
-            on_finished=on_finished,
-            wait=True,
+
+        # Start state on this (experiment) thread so timing begins
+        # immediately and is independent of Qt event-loop responsiveness.
+        eff_message = message if message is not None else control.message
+        state.page_name = control.page_name
+        state.start(eff_duration, eff_message)
+        if paused:
+            state.request_pause(True)
+
+        # Reset display traits and start polling on the main thread.
+        # Fire-and-forget: even if the main thread is busy, the wait
+        # below proceeds independently.
+        invoke_in_main_thread(
+            control._begin_view, eff_duration, eff_message, paused
         )
 
-        if block:
-            control.debug(
-                "wait_group waiting page={} thread={}".format(
-                    control.page_name, current_thread().name
-                )
+        if not block:
+            return None
+
+        outcome = state.wait()
+        control.debug(
+            "wait_group wait complete page={} outcome={} thread={}".format(
+                control.page_name, outcome, current_thread().name
             )
-            # Add safety timeout to prevent indefinite hangs if Qt timer never fires
-            # Timeout is duration + 5 seconds (buffer for event loop processing)
-            safety_timeout = (duration or 10) + 5.0
-            if not done.wait(timeout=safety_timeout):
-                timeout_occurred = True
-                control.warning(
-                    "wait_group safety timeout triggered page={} duration={} timeout={} thread={}".format(
-                        control.page_name,
-                        duration,
-                        safety_timeout,
-                        current_thread().name,
-                    )
-                )
-                # Diagnostic: dump all thread tracebacks so we can see what the
-                # main thread was busy with. Done from this (experiment) thread
-                # so it works even when the main thread is fully blocked.
-                _dump_all_thread_tracebacks(control.page_name, control)
-                # Force completion - use wait=False because the main thread may
-                # still be blocked; we must not deadlock the experiment thread here.
-                self._invoke_on_main_thread(control._end, wait=False)
-            
-            control.debug(
-                "wait_group wait complete page={} status={} current_time={} timeout={} thread={}".format(
-                    control.page_name,
-                    control.status,
-                    control.current_time,
-                    timeout_occurred,
-                    current_thread().name,
-                )
-            )
+        )
+        # Make sure the UI converges to the final state even if the polling
+        # timer didn't get a chance to run after resolution.
+        invoke_in_main_thread(control._sync_from_state)
+        return outcome
 
 
 # ============= EOF =============================================

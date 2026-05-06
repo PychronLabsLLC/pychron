@@ -124,14 +124,18 @@ class WaitState:
             )
 
     def request_continue(self) -> None:
+        """Resolve as CONTINUED. No-op if already resolved (COMPLETED,
+        CONTINUED, or CANCELED). Allowed from IDLE so callers can
+        preemptively answer before a wait even starts."""
         with self._lock:
-            if self._outcome == RUNNING:
+            if self._outcome in (IDLE, RUNNING):
                 self._outcome = CONTINUED
         self._interrupt.set()
 
     def request_cancel(self) -> None:
+        """Resolve as CANCELED. Same precedence rules as request_continue."""
         with self._lock:
-            if self._outcome == RUNNING:
+            if self._outcome in (IDLE, RUNNING):
                 self._outcome = CANCELED
         self._interrupt.set()
 
