@@ -197,8 +197,9 @@ class WaitGroup(HasTraits):
                         current_thread().name,
                     )
                 )
-                # Force completion to prevent indefinite hang
-                self._invoke_on_main_thread(control._end, wait=True)
+                # Force completion - use wait=False because the main thread may
+                # still be blocked; we must not deadlock the experiment thread here.
+                self._invoke_on_main_thread(control._end, wait=False)
             
             control.debug(
                 "wait_group wait complete page={} status={} current_time={} timeout={} thread={}".format(
