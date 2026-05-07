@@ -70,10 +70,11 @@ class MKSSRG(CoreDevice):
     def _parse_real(self, resp):
         if resp is None:
             return None
-        # strip prompt chars and whitespace; SRG-3 reals look like " 1.2345E-05"
-        resp = resp.strip().lstrip(">").lstrip("?").strip()
+        # SRG-3 reply pattern: "<value> \r\n>" (prompt char trails reply).
+        # Strip CR/LF/whitespace and any leading/trailing prompt chars (>, ?).
+        cleaned = resp.strip().strip(">?").strip()
         try:
-            return float(resp)
+            return float(cleaned)
         except (TypeError, ValueError) as e:
             self.warning("failed parsing SRG-3 pressure response {!r}: {}".format(resp, e))
             return None
