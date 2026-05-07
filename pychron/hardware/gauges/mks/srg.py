@@ -50,8 +50,8 @@ class MKSSRG(CoreDevice):
     def initialize(self, *args, **kw):
         if self.communicator:
             # SRG-3 input terminated by CR, replies by CRLF (manual sec 2.3)
-            self.communicator.write_terminator = "chr(10)"
-            self.communicator.terminator = "CRLF"
+            self.communicator.write_terminator = '\r'
+            self.communicator.terminator = '\r\n'
         # clear any pending input/prompt
         self.ask("idy")
         return True
