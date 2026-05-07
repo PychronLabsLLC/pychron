@@ -49,7 +49,7 @@ class MKSSRG(CoreDevice):
 
     scheme = "ascii"
 
-    def initialize(self):
+    def initialize(self, *args, **kw):
         # clear any pending input/prompt
         self.ask("idy")
         return True
