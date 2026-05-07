@@ -46,12 +46,15 @@ class MKSSRG(CoreDevice):
     """
 
     scheme = "ascii"
-
+    scan_func = "get_pressure"
     def initialize(self, *args, **kw):
         if self.communicator:
-            # SRG-3 input terminated by CR, replies by CRLF (manual sec 2.3)
-            self.communicator.write_terminator = '\r'
-            self.communicator.terminator = '\r\n'
+            # SRG-3: input terminated by CR; reply ends with CRLF then a
+            # prompt char ('>' = ack, '?' = nak) per manual sec 2.3-2.4.
+            # Terminate read on the prompt char so the trailing byte does
+            # not defeat a CRLF terminator and force a 1s timeout.
+            self.communicator.write_terminator = b"\r"
+            self.communicator.read_terminator = (b">", b"?")
         # clear any pending input/prompt
         self.ask("idy")
         return True
