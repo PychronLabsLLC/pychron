@@ -43,13 +43,15 @@ class MKSSRG(CoreDevice):
         stopbits=1
         timeout=2
         read_delay=50
-        write_terminator=CR
-        terminator=CRLF
     """
 
     scheme = "ascii"
 
     def initialize(self, *args, **kw):
+        if self.communicator:
+            # SRG-3 input terminated by CR, replies by CRLF (manual sec 2.3)
+            self.communicator.write_terminator = "chr(10)"
+            self.communicator.terminator = "CRLF"
         # clear any pending input/prompt
         self.ask("idy")
         return True
