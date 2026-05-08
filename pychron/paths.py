@@ -136,6 +136,7 @@ class Paths(object):
     test_dir = None
     custom_queries_dir = None
     log_dir = None
+    automated_run_log_dir = None
     peak_center_config_dir = None
     # ===========================================================================
     # scripts
@@ -342,6 +343,7 @@ class Paths(object):
         root = os.path.normpath(root)
         self.root_dir = root
         self.log_dir = join(root, "logs")
+        self.automated_run_log_dir = join(self.log_dir, "automated_runs")
 
         # ==============================================================================
         # root

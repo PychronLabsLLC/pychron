@@ -47,6 +47,7 @@ from pychron.experiment.automated_run.persistence import BasePersister
 from pychron.experiment.automated_run.persistence_spec import PersistenceSpec
 from pychron.experiment.automated_run.spec import AutomatedRunSpec
 from pychron.git_archive.repo_manager import GitRepoManager
+from pychron.globals import globalv
 from pychron.paths import paths
 from pychron.pychron_constants import (
     DVC_PROTOCOL,
@@ -289,6 +290,15 @@ class DVCPersister(BasePersister):
 
         :return:
         """
+        if globalv.communication_simulation:
+            self.warning(
+                "simulation mode active (communication_simulation=True): "
+                "skipping post_measurement_save to avoid polluting DVC repo with simulated data"
+            )
+            if complete_event:
+                complete_event.clear()
+            return
+
         self.info("================= post measurement save started =================")
 
         self._timings = {}
@@ -463,6 +473,12 @@ class DVCPersister(BasePersister):
         self._dump_timings()
 
     def save_run_log_file(self, path):
+        if globalv.communication_simulation:
+            self.warning(
+                "simulation mode active (communication_simulation=True): "
+                "skipping save_run_log_file to avoid polluting DVC repo with simulated data"
+            )
+            return
         if self.save_enabled and self.save_log_enabled:
             self.debug("saving run log file")
 
