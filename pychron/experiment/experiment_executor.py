@@ -1601,10 +1601,7 @@ class ExperimentExecutor(Consoleable, PreferenceMixin):
         # add a new log handler
 
         name = run.runid.replace(":", "_")
-        run_log_dir = os.path.join(paths.automated_run_log_dir, name)
-        if not os.path.isdir(run_log_dir):
-            os.makedirs(run_log_dir)
-        p, _ = unique_path2(run_log_dir, name, extension=".log")
+        p, _ = unique_path2(paths.log_dir, name, extension=".log")
         handler = add_root_handler(p)
         run.log_path = p
 
