@@ -26,7 +26,6 @@ from traits.api import Instance, Bool, Int
 
 from pychron.core.helpers.logger_setup import logging_setup
 from pychron.core.yaml import yload
-from pychron.globals import globalv
 from pychron.hardware.core.i_core_device import ICoreDevice
 from pychron.labspy.database_adapter import LabspyDatabaseAdapter
 from pychron.loggable import Loggable
@@ -245,12 +244,6 @@ class LabspyClient(Loggable):
 
     @auto_reset_connect
     def add_run(self, run, exp):
-        if globalv.communication_simulation:
-            self.warning(
-                "simulation mode active (communication_simulation=True): "
-                "skipping Labspy add_run to avoid polluting DB with simulated data"
-            )
-            return
         hid = self._generate_hid_from_exp(exp)
         expid = self.db.get_experiment(hid)
         if not expid:
