@@ -45,13 +45,20 @@ from __future__ import absolute_import
 import json
 import logging
 import os
+import time
 
 from pychron.cloud.api_client import (
     CloudAPIError,
+    CloudDeviceCodeDenied,
+    CloudDeviceCodeExpired,
+    CloudDeviceCodePending,
     CloudFingerprintRejected,
+    poll_device_code,
     register_ssh_key,
     revoke_workstation_token,
+    start_device_code,
 )
+from pychron.cloud.keyring_store import set_token as keyring_set_token
 from pychron.cloud.paths import (
     ensure_pychron_dirs,
     host_slug,
@@ -81,6 +88,36 @@ class WorkstationSetupError(Exception):
     """Raised when onboarding cannot complete."""
 
 
+class DeviceEnrollmentCancelled(WorkstationSetupError):
+    """The polling loop returned because ``should_cancel`` went True.
+
+    Raised so the UI can distinguish a user-cancelled enrollment (offer
+    to start over) from a server-side denial / expiry (offer to ask the
+    admin for a new approval).
+    """
+
+
+class KeyringWriteFailedError(WorkstationSetupError):
+    """OS keyring write failed during enrollment.
+
+    The polling secret is single-use, so by the time this fires the
+    server has already minted credentials and the workstation has the
+    only copy in memory. ``api_token`` and ``lab_name`` are exposed as
+    attributes so the UI can render them for the technician to paste
+    into a password manager. The exception's ``__str__`` deliberately
+    OMITS the token to keep it out of log files — callers must reach
+    into the attributes if they want to display it.
+    """
+
+    def __init__(self, lab_name, api_token):
+        super().__init__(
+            "could not save api_token to OS keyring; UI must surface "
+            "the token for manual capture"
+        )
+        self.lab_name = lab_name
+        self.api_token = api_token
+
+
 class WorkstationSetup(object):
     """Onboard the current workstation against a pychronAPI lab.
 
@@ -94,6 +131,102 @@ class WorkstationSetup(object):
         self.api_token = api_token
         self.lab_name = lab_name
         self.host = host or host_slug()
+
+    # -- device-code enrollment ----------------------------------------
+
+    @classmethod
+    def from_device_code(
+        cls,
+        api_base_url,
+        on_user_code,
+        should_cancel=None,
+        host=None,
+        sleep=time.sleep,
+    ):
+        """Orchestrate an RFC 8628-style device-code enrollment end-to-end.
+
+        Sequence:
+
+        1. ``ensure_pychron_dirs`` + ``ensure_keypair`` (matches
+           :meth:`run` — re-uses any existing local keypair).
+        2. ``POST /api/v1/forgejo/device-codes`` to get a polling secret +
+           the short user_code the technician will read out to the admin.
+        3. Invoke ``on_user_code(user_code, verification_url,
+           verification_url_complete, expires_at)`` exactly once. The UI
+           is expected to display the code and the URL.
+        4. Poll on ``interval_seconds`` until one of:
+
+           * **success** — admin approved; persist registration,
+             SSH-config, known_hosts, and OS-keyring token; return a
+             populated :class:`WorkstationSetup`.
+           * **denied** — :class:`CloudDeviceCodeDenied` re-raised.
+           * **expired** — :class:`CloudDeviceCodeExpired` re-raised.
+           * **cancelled** — ``should_cancel()`` returned True →
+             :class:`DeviceEnrollmentCancelled`.
+
+        The ``sleep`` parameter is dependency-injected so tests can pass
+        a no-op without burning real wall time.
+        """
+        if not api_base_url:
+            raise WorkstationSetupError("api_base_url is empty")
+        host = host or host_slug()
+
+        ensure_pychron_dirs()
+        ensure_keypair(host)
+        public_key = read_public_key(host)
+
+        start = start_device_code(api_base_url, public_key, host)
+        on_user_code(
+            start.user_code,
+            start.verification_url,
+            start.verification_url_complete,
+            start.expires_at,
+        )
+
+        interval = max(1, int(start.interval_seconds or 5))
+        cancel = should_cancel or (lambda: False)
+
+        while True:
+            if cancel():
+                raise DeviceEnrollmentCancelled("enrollment cancelled by user")
+            try:
+                success = poll_device_code(api_base_url, start.device_code)
+            except CloudDeviceCodePending:
+                sleep(interval)
+                continue
+            except CloudDeviceCodeDenied:
+                raise
+            except CloudDeviceCodeExpired:
+                raise
+            except CloudFingerprintRejected:
+                raise
+            break
+
+        if not success.api_token:
+            raise WorkstationSetupError("server did not return an api_token")
+        if not success.lab:
+            raise WorkstationSetupError("server did not return a lab name")
+
+        api_base_url = success.api_base_url or api_base_url
+        setup = cls(
+            api_base_url=api_base_url,
+            api_token=success.api_token,
+            lab_name=success.lab,
+            host=host,
+        )
+        setup._persist_registration(success.ssh_key)
+        setup._apply_ssh_config(success.ssh_key)
+
+        # Stash the token in the OS keyring last. A failure here would
+        # normally be silent (the helper logs + returns False), but in
+        # the device-code flow the polling secret is single-use, so a
+        # silent loss leaves the technician unable to recover. Raise a
+        # typed error carrying the token on attributes (NOT in str())
+        # so the UI can present it for manual capture without leaking
+        # it to log files.
+        if not keyring_set_token(success.lab, success.api_token):
+            raise KeyringWriteFailedError(lab_name=success.lab, api_token=success.api_token)
+        return setup
 
     # -- public entry --------------------------------------------------
 

@@ -1,0 +1,253 @@
+"""Tests for WorkstationSetup.from_device_code end-to-end flow."""
+
+import json
+import os
+import tempfile
+import unittest
+from unittest.mock import MagicMock, patch
+
+from pychron.cloud import api_client, workstation_setup
+
+
+_START_BODY = {
+    "device_code": "dvc_xyz",
+    "user_code": "ABCD-EFGH",
+    "verification_url": "https://api.example/device",
+    "verification_url_complete": "https://api.example/device?user_code=ABCD-EFGH",
+    "expires_at": "2026-05-09T12:00:00Z",
+    "interval_seconds": 1,
+}
+
+
+def _poll_body():
+    return {
+        "api_token": "pcy_NMGRL_xyz",
+        "lab": "NMGRL",
+        "api_base_url": "https://api.example",
+        "default_metadata_repo": None,
+        "ssh_host_alias": {
+            "alias": "pychron-NMGRL",
+            "real_host": "repo.example",
+            "port": 2222,
+            "known_hosts_line": "[repo.example]:2222 ssh-ed25519 AAAA",
+        },
+        "ssh_key": {
+            "bot_username": "bot-NMGRL-deadbeef",
+            "fingerprint": "SHA256:abc",
+            "rotated": False,
+            "default_metadata_repo": None,
+            "ssh_host_alias": {
+                "alias": "pychron-NMGRL",
+                "real_host": "repo.example",
+                "port": 2222,
+                "known_hosts_line": "[repo.example]:2222 ssh-ed25519 AAAA",
+            },
+        },
+    }
+
+
+def _resp(status_code, body):
+    r = MagicMock()
+    r.status_code = status_code
+    r.text = str(body)
+    if body is None:
+        r.json.side_effect = ValueError("not json")
+    else:
+        r.json.return_value = body
+    return r
+
+
+class FromDeviceCodeTestCase(unittest.TestCase):
+    URL = "https://api.example"
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        # Redirect ~ → tmp so ~/.pychron and ~/.ssh land in scratch space.
+        self._patcher = patch(
+            "pychron.cloud.paths.os.path.expanduser",
+            lambda p: p.replace("~", self.tmp),
+        )
+        self._patcher.start()
+        self.addCleanup(self._patcher.stop)
+        self.addCleanup(self._rmtree, self.tmp)
+
+    def _rmtree(self, path):
+        import shutil
+
+        shutil.rmtree(path, ignore_errors=True)
+
+    def test_happy_path_pending_then_success(self):
+        seen_codes = []
+
+        def on_user_code(uc, vu, vu_complete, exp):
+            seen_codes.append((uc, vu, vu_complete, exp))
+
+        with (
+            patch.object(api_client.requests, "post") as post,
+            patch.object(workstation_setup, "keyring_set_token", return_value=True) as kr,
+        ):
+            post.side_effect = [
+                _resp(201, _START_BODY),
+                _resp(425, {}),  # pending
+                _resp(200, _poll_body()),
+            ]
+            sleeps = []
+            setup = workstation_setup.WorkstationSetup.from_device_code(
+                self.URL,
+                on_user_code=on_user_code,
+                sleep=lambda s: sleeps.append(s),
+                host="testhost",
+            )
+
+        # Callback fired exactly once with the user_code + URL.
+        self.assertEqual(len(seen_codes), 1)
+        self.assertEqual(seen_codes[0][0], "ABCD-EFGH")
+        self.assertEqual(seen_codes[0][1], "https://api.example/device")
+
+        # One sleep between pending and success (interval_seconds=1).
+        self.assertEqual(sleeps, [1])
+
+        # Returned setup populated.
+        self.assertEqual(setup.api_token, "pcy_NMGRL_xyz")
+        self.assertEqual(setup.lab_name, "NMGRL")
+        self.assertEqual(setup.api_base_url, "https://api.example")
+
+        # Keypair, registration.json, known_hosts, and ~/.ssh/config all written.
+        priv = os.path.join(self.tmp, ".pychron", "keys", "pychron_testhost")
+        self.assertTrue(os.path.isfile(priv))
+        self.assertTrue(os.path.isfile(priv + ".pub"))
+
+        reg_path = os.path.join(self.tmp, ".pychron", "registration.json")
+        self.assertTrue(os.path.isfile(reg_path))
+        with open(reg_path) as f:
+            self.assertEqual(json.load(f)["bot_username"], "bot-NMGRL-deadbeef")
+
+        kh = os.path.join(self.tmp, ".pychron", "known_hosts")
+        with open(kh) as f:
+            self.assertIn("[repo.example]:2222", f.read())
+
+        ssh_cfg = os.path.join(self.tmp, ".ssh", "config")
+        with open(ssh_cfg) as f:
+            self.assertIn("Host pychron-NMGRL", f.read())
+
+        # Keyring write happened with the right (lab, token).
+        kr.assert_called_once_with("NMGRL", "pcy_NMGRL_xyz")
+
+        # Polling endpoints hit. Start was the first call, polls came after.
+        self.assertEqual(
+            post.call_args_list[0][0][0],
+            "https://api.example/api/v1/forgejo/device-codes",
+        )
+        self.assertEqual(
+            post.call_args_list[1][0][0],
+            "https://api.example/api/v1/forgejo/device-codes/poll",
+        )
+        # No Authorization header on either unauthenticated call.
+        for call in post.call_args_list:
+            self.assertNotIn("Authorization", call.kwargs["headers"])
+
+    def test_denied_propagates_no_artifacts_persisted(self):
+        with patch.object(api_client.requests, "post") as post:
+            post.side_effect = [
+                _resp(201, _START_BODY),
+                _resp(403, {}),  # admin denied
+            ]
+            with self.assertRaises(api_client.CloudDeviceCodeDenied):
+                workstation_setup.WorkstationSetup.from_device_code(
+                    self.URL,
+                    on_user_code=lambda *a: None,
+                    sleep=lambda s: None,
+                    host="testhost",
+                )
+        # Keypair was generated (start_device_code happened) but no
+        # registration / SSH config persisted because we never reached
+        # the success branch.
+        priv = os.path.join(self.tmp, ".pychron", "keys", "pychron_testhost")
+        self.assertTrue(os.path.isfile(priv))
+        reg_path = os.path.join(self.tmp, ".pychron", "registration.json")
+        self.assertFalse(os.path.isfile(reg_path))
+
+    def test_expired_propagates(self):
+        with patch.object(api_client.requests, "post") as post:
+            post.side_effect = [
+                _resp(201, _START_BODY),
+                _resp(425, {}),
+                _resp(410, {}),
+            ]
+            with self.assertRaises(api_client.CloudDeviceCodeExpired):
+                workstation_setup.WorkstationSetup.from_device_code(
+                    self.URL,
+                    on_user_code=lambda *a: None,
+                    sleep=lambda s: None,
+                    host="testhost",
+                )
+
+    def test_should_cancel_raises_DeviceEnrollmentCancelled(self):
+        ticks = {"n": 0}
+
+        def cancel():
+            ticks["n"] += 1
+            return ticks["n"] >= 2  # cancel on second tick
+
+        with patch.object(api_client.requests, "post") as post:
+            post.side_effect = [
+                _resp(201, _START_BODY),
+                _resp(425, {}),  # pending → loop sleeps then re-checks cancel
+            ]
+            with self.assertRaises(workstation_setup.DeviceEnrollmentCancelled):
+                workstation_setup.WorkstationSetup.from_device_code(
+                    self.URL,
+                    on_user_code=lambda *a: None,
+                    should_cancel=cancel,
+                    sleep=lambda s: None,
+                    host="testhost",
+                )
+
+    def test_keyring_failure_raises_typed_error_token_not_in_str(self):
+        """Single-use polling secret was already consumed; if the keyring
+        write fails silently the technician would lose the credential.
+        Surface as ``KeyringWriteFailedError`` whose ``__str__`` does
+        NOT contain the token (so it can be safely logged) but whose
+        ``.api_token`` / ``.lab_name`` attributes carry the plaintext
+        for the UI to display.
+        """
+        with (
+            patch.object(api_client.requests, "post") as post,
+            patch.object(workstation_setup, "keyring_set_token", return_value=False),
+        ):
+            post.side_effect = [
+                _resp(201, _START_BODY),
+                _resp(200, _poll_body()),
+            ]
+            with self.assertRaises(workstation_setup.KeyringWriteFailedError) as cm:
+                workstation_setup.WorkstationSetup.from_device_code(
+                    self.URL,
+                    on_user_code=lambda *a: None,
+                    sleep=lambda s: None,
+                    host="testhost",
+                )
+        # Token NOT leaked through str(exc) — protects log files.
+        self.assertNotIn("pcy_NMGRL_xyz", str(cm.exception))
+        # But available on attributes for the UI.
+        self.assertEqual(cm.exception.api_token, "pcy_NMGRL_xyz")
+        self.assertEqual(cm.exception.lab_name, "NMGRL")
+        # Still a WorkstationSetupError subclass for any callers
+        # catching the broader type.
+        self.assertIsInstance(cm.exception, workstation_setup.WorkstationSetupError)
+
+    def test_empty_api_base_url_aborts_before_any_io(self):
+        with patch.object(api_client.requests, "post") as post:
+            with self.assertRaises(workstation_setup.WorkstationSetupError):
+                workstation_setup.WorkstationSetup.from_device_code(
+                    "",
+                    on_user_code=lambda *a: None,
+                    sleep=lambda s: None,
+                    host="testhost",
+                )
+        post.assert_not_called()
+        priv = os.path.join(self.tmp, ".pychron", "keys", "pychron_testhost")
+        self.assertFalse(os.path.isfile(priv))
+
+
+if __name__ == "__main__":
+    unittest.main()

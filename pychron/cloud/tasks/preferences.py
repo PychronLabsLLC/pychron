@@ -31,12 +31,15 @@ from __future__ import absolute_import
 import logging
 
 from envisage.ui.tasks.preferences_pane import PreferencesPane
+from pyface.api import GUI
 from traits.api import Bool, Button, Password, Str
 from traitsui.api import Color, Group, HGroup, Item, VGroup, View
 
 from pychron.cloud.api_client import (
     CloudAPIError,
     CloudAuthError,
+    CloudDeviceCodeDenied,
+    CloudDeviceCodeExpired,
     CloudNetworkError,
     whoami,
 )
@@ -46,6 +49,8 @@ from pychron.cloud.keyring_store import (
     set_token,
 )
 from pychron.cloud.workstation_setup import (
+    DeviceEnrollmentCancelled,
+    KeyringWriteFailedError,
     WorkstationSetup,
     WorkstationSetupError,
     switch_lab as wipe_for_switch_lab,
@@ -75,6 +80,25 @@ class CloudPreferences(BasePreferencesHelper):
     reonboard_button = Button("Re-onboard workstation")
     revoke_button = Button("Revoke this workstation")
     switch_lab_button = Button("Switch lab (destructive)")
+
+    # Device-code enrollment (RFC 8628-style). The technician clicks
+    # ``enroll_via_device_code_button``; the workstation contacts
+    # pychronAPI, displays ``_pending_user_code`` + ``_pending_verification_url``
+    # for the technician to read out to the admin, and polls in a
+    # background thread until the admin approves.
+    enroll_via_device_code_button = Button("Start device-code enrollment")
+    cancel_enrollment_button = Button("Cancel enrollment")
+    _pending_user_code = Str
+    _pending_verification_url = Str
+    _pending_active = Bool(False)
+    _should_cancel_enrollment = Bool(False)
+
+    # Surfaced on KeyringWriteFailedError so the technician can paste
+    # the (still-in-memory) token into a password manager. Cleared
+    # whenever a fresh enrollment starts.
+    _recovery_token = Str
+    _recovery_lab = Str
+
     _remote_status = Str
     _remote_status_color = Color
 
@@ -87,8 +111,8 @@ class CloudPreferences(BasePreferencesHelper):
 
     def _is_preference_trait(self, trait_name):
         # api_token must never be written to the .cfg — it lives in the OS
-        # keyring. The transient remote-status traits and the lifecycle
-        # buttons also stay out.
+        # keyring. The transient remote-status, enrollment progress, and
+        # lifecycle-button traits also stay out.
         if trait_name in (
             "api_token",
             "_remote_status",
@@ -97,6 +121,14 @@ class CloudPreferences(BasePreferencesHelper):
             "reonboard_button",
             "revoke_button",
             "switch_lab_button",
+            "enroll_via_device_code_button",
+            "cancel_enrollment_button",
+            "_pending_user_code",
+            "_pending_verification_url",
+            "_pending_active",
+            "_should_cancel_enrollment",
+            "_recovery_token",
+            "_recovery_lab",
         ):
             return False
         return super(CloudPreferences, self)._is_preference_trait(trait_name)
@@ -155,6 +187,144 @@ class CloudPreferences(BasePreferencesHelper):
 
         self._remote_status = "OK ({} / {})".format(info.kind or "?", info.lab or "?")
         self._remote_status_color = normalize_color_name("green")
+
+    # -- device-code enrollment ---------------------------------------
+
+    def _enroll_via_device_code_button_fired(self):
+        """Kick off a device-code grant in a background thread.
+
+        The worker thread updates ``_pending_user_code`` and
+        ``_pending_verification_url`` so the technician can read them
+        out to the admin, then polls until completion.
+        """
+        if self._pending_active:
+            return
+        self._remote_status_color = normalize_color_name("red")
+        if not self.api_base_url:
+            self._remote_status = "Set API Base URL first"
+            return
+
+        self._should_cancel_enrollment = False
+        self._pending_user_code = ""
+        self._pending_verification_url = ""
+        self._recovery_token = ""
+        self._recovery_lab = ""
+        self._pending_active = True
+        self._remote_status = "Starting enrollment..."
+        self._remote_status_color = normalize_color_name("orange")
+
+        import threading
+
+        threading.Thread(
+            target=self._enrollment_worker,
+            name="pychron-cloud-device-code",
+            daemon=True,
+        ).start()
+
+    def _on_device_code_user_code(
+        self, user_code, verification_url, verification_url_complete, expires_at
+    ):
+        """Worker-thread callback: surface the user_code + URL in the pane.
+
+        Trait writes from non-UI threads are dispatched to the UI thread
+        by the Pyface event loop, so the operator sees the code as soon
+        as the server returns it.
+        """
+        self._pending_user_code = user_code
+        self._pending_verification_url = verification_url
+        self._remote_status = "Show {} to admin at {}".format(user_code, verification_url)
+        self._remote_status_color = normalize_color_name("orange")
+
+    def _enrollment_worker(self):
+        api_base_url = self.api_base_url
+        try:
+            setup = WorkstationSetup.from_device_code(
+                api_base_url,
+                on_user_code=self._on_device_code_user_code,
+                should_cancel=lambda: self._should_cancel_enrollment,
+            )
+        except DeviceEnrollmentCancelled:
+            GUI.invoke_later(self._apply_enrollment_terminal, "Enrollment cancelled", "red")
+            return
+        except CloudDeviceCodeDenied:
+            GUI.invoke_later(
+                self._apply_enrollment_terminal,
+                "Admin denied — ask for a new request",
+                "red",
+            )
+            return
+        except CloudDeviceCodeExpired:
+            GUI.invoke_later(self._apply_enrollment_terminal, "Code expired — start over", "red")
+            return
+        except CloudAuthError:
+            GUI.invoke_later(self._apply_enrollment_terminal, "Auth rejected", "red")
+            return
+        except CloudNetworkError as exc:
+            logger.warning("device-code enrollment transport failure: %s", exc)
+            GUI.invoke_later(self._apply_enrollment_terminal, "Unreachable", "red")
+            return
+        except KeyringWriteFailedError as exc:
+            # Server already minted; we hold the only copy. Hand the
+            # plaintext to the UI thread for display — and DO NOT log
+            # the exception (its message intentionally omits the token
+            # but defense-in-depth: log only the type name).
+            logger.warning(
+                "device-code enrollment keyring write failed: %s",
+                type(exc).__name__,
+            )
+            GUI.invoke_later(self._apply_keyring_recovery, exc.lab_name, exc.api_token)
+            return
+        except (CloudAPIError, WorkstationSetupError) as exc:
+            logger.warning("device-code enrollment failed: %s", type(exc).__name__)
+            GUI.invoke_later(self._apply_enrollment_terminal, "Enrollment failed", "red")
+            return
+
+        GUI.invoke_later(self._apply_enrollment_success, setup)
+
+    def _apply_enrollment_success(self, setup):
+        """Run on the UI thread. Persistent-trait writes (api_base_url,
+        lab_name) fire BasePreferencesHelper listeners that call into
+        Envisage's preferences node, which expects single-threaded
+        access — so we dispatch them here rather than from the worker.
+        """
+        self.api_base_url = setup.api_base_url
+        self.lab_name = setup.lab_name
+        self._load_token_from_keyring()
+        self._remote_status = "Enrolled as {}".format(setup.lab_name)
+        self._remote_status_color = normalize_color_name("green")
+        self._reset_pending()
+
+    def _apply_enrollment_terminal(self, message, color):
+        self._remote_status = message
+        self._remote_status_color = normalize_color_name(color)
+        self._reset_pending()
+
+    def _apply_keyring_recovery(self, lab_name, api_token):
+        """Display the still-in-memory token so the technician can copy
+        it into a password manager. This is the recovery path for the
+        single-use polling secret being already consumed server-side
+        but not persisted locally.
+        """
+        self._recovery_lab = lab_name
+        self._recovery_token = api_token
+        self._remote_status = (
+            "Keyring write failed — copy the token below and store it "
+            "manually before closing this window"
+        )
+        self._remote_status_color = normalize_color_name("red")
+        self._reset_pending()
+
+    def _reset_pending(self):
+        self._pending_user_code = ""
+        self._pending_verification_url = ""
+        self._pending_active = False
+        self._should_cancel_enrollment = False
+
+    def _cancel_enrollment_button_fired(self):
+        if not self._pending_active:
+            return
+        self._should_cancel_enrollment = True
+        self._remote_status = "Cancelling..."
 
     # -- P6 buttons ---------------------------------------------------
 
@@ -274,6 +444,57 @@ class CloudPreferencesPane(PreferencesPane):
             show_border=True,
             label="Pychron Cloud (pychronAPI)",
         )
+        enroll = VGroup(
+            HGroup(
+                Item(
+                    "enroll_via_device_code_button",
+                    show_label=False,
+                    enabled_when="not _pending_active",
+                    tooltip="Contact pychronAPI for a single-use device code, "
+                    "then read the displayed code to your lab admin. They will "
+                    "approve from any phone or laptop browser; this workstation "
+                    "polls until they do.",
+                ),
+                Item(
+                    "cancel_enrollment_button",
+                    show_label=False,
+                    enabled_when="_pending_active",
+                ),
+            ),
+            HGroup(
+                Item(
+                    "_pending_user_code",
+                    style="readonly",
+                    label="Code",
+                    visible_when="_pending_active",
+                ),
+                Item(
+                    "_pending_verification_url",
+                    style="readonly",
+                    label="Approve at",
+                    visible_when="_pending_active",
+                ),
+            ),
+            HGroup(
+                Item(
+                    "_recovery_token",
+                    style="readonly",
+                    label="RECOVERY TOKEN",
+                    tooltip="Keyring write failed — copy this token into a "
+                    "password manager before closing the window. The polling "
+                    "secret is single-use, so this is the only copy.",
+                    visible_when="_recovery_token != ''",
+                ),
+                Item(
+                    "_recovery_lab",
+                    style="readonly",
+                    label="for lab",
+                    visible_when="_recovery_token != ''",
+                ),
+            ),
+            show_border=True,
+            label="Enroll via Device Code",
+        )
         lifecycle = VGroup(
             HGroup(
                 Item("reonboard_button", show_label=False),
@@ -283,7 +504,7 @@ class CloudPreferencesPane(PreferencesPane):
             show_border=True,
             label="Workstation Lifecycle",
         )
-        return View(Group(creds, lifecycle))
+        return View(Group(creds, enroll, lifecycle))
 
 
 # ============= EOF =============================================
