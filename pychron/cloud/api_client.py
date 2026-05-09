@@ -26,7 +26,6 @@ import requests
 
 from pychron.globals import globalv
 
-
 DEFAULT_TIMEOUT = 10
 
 

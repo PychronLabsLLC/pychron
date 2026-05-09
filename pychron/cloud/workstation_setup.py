@@ -80,7 +80,6 @@ from pychron.cloud.ssh_keygen import (
     read_public_key,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
