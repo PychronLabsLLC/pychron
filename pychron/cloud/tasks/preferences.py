@@ -32,8 +32,8 @@ import logging
 
 from envisage.ui.tasks.preferences_pane import PreferencesPane
 from pyface.api import GUI
-from traits.api import Bool, Button, Password, Str
-from traitsui.api import Color, Group, HGroup, Item, VGroup, View
+from traits.api import Bool, Button, File, Password, Str
+from traitsui.api import Color, Group, HGroup, ImageEditor, Item, VGroup, View
 
 from pychron.cloud.api_client import (
     CloudAPIError,
@@ -48,6 +48,7 @@ from pychron.cloud.keyring_store import (
     get_token,
     set_token,
 )
+from pychron.cloud.qr import make_qr_for_device_code
 from pychron.cloud.workstation_setup import (
     DeviceEnrollmentCancelled,
     KeyringWriteFailedError,
@@ -90,6 +91,11 @@ class CloudPreferences(BasePreferencesHelper):
     cancel_enrollment_button = Button("Cancel enrollment")
     _pending_user_code = Str
     _pending_verification_url = Str
+    # PNG path for the verification-URL QR. Admin scans it from the
+    # workstation screen with their phone instead of typing the URL +
+    # user_code by hand. Empty string until the server returns the
+    # `verification_url_complete` payload.
+    _pending_qr_path = File
     _pending_active = Bool(False)
     _should_cancel_enrollment = Bool(False)
 
@@ -125,6 +131,7 @@ class CloudPreferences(BasePreferencesHelper):
             "cancel_enrollment_button",
             "_pending_user_code",
             "_pending_verification_url",
+            "_pending_qr_path",
             "_pending_active",
             "_should_cancel_enrollment",
             "_recovery_token",
@@ -207,6 +214,7 @@ class CloudPreferences(BasePreferencesHelper):
         self._should_cancel_enrollment = False
         self._pending_user_code = ""
         self._pending_verification_url = ""
+        self._pending_qr_path = ""
         self._recovery_token = ""
         self._recovery_lab = ""
         self._pending_active = True
@@ -224,14 +232,23 @@ class CloudPreferences(BasePreferencesHelper):
     def _on_device_code_user_code(
         self, user_code, verification_url, verification_url_complete, expires_at
     ):
-        """Worker-thread callback: surface the user_code + URL in the pane.
+        """Worker-thread callback: surface the user_code + URL + QR in the pane.
 
         Trait writes from non-UI threads are dispatched to the UI thread
         by the Pyface event loop, so the operator sees the code as soon
-        as the server returns it.
+        as the server returns it. QR generation runs on this thread
+        (small file, ~hundreds of microseconds for a typical URL); a
+        failure is non-fatal — the typed code + URL still work.
         """
         self._pending_user_code = user_code
         self._pending_verification_url = verification_url
+        try:
+            self._pending_qr_path = make_qr_for_device_code(
+                verification_url_complete, host_slug=self.lab_name or "default"
+            )
+        except Exception as exc:
+            logger.warning("device-code QR generation failed: %s", exc)
+            self._pending_qr_path = ""
         self._remote_status = "Show {} to admin at {}".format(user_code, verification_url)
         self._remote_status_color = normalize_color_name("orange")
 
@@ -317,6 +334,7 @@ class CloudPreferences(BasePreferencesHelper):
     def _reset_pending(self):
         self._pending_user_code = ""
         self._pending_verification_url = ""
+        self._pending_qr_path = ""
         self._pending_active = False
         self._should_cancel_enrollment = False
 
@@ -473,6 +491,16 @@ class CloudPreferencesPane(PreferencesPane):
                     style="readonly",
                     label="Approve at",
                     visible_when="_pending_active",
+                ),
+            ),
+            HGroup(
+                Item(
+                    "_pending_qr_path",
+                    show_label=False,
+                    editor=ImageEditor(),
+                    tooltip="Scan with the admin's phone to open the "
+                    "verification page with the user_code pre-filled.",
+                    visible_when="_pending_qr_path != ''",
                 ),
             ),
             HGroup(
