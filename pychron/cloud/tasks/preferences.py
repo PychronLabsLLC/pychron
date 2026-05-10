@@ -28,8 +28,8 @@ Adds a "Pychron Cloud" pane with:
 
 from __future__ import absolute_import
 
+import hashlib
 import logging
-
 import os
 
 from envisage.ui.tasks.preferences_pane import PreferencesPane
@@ -188,6 +188,22 @@ class CloudPreferences(BasePreferencesHelper):
 
     def _load_token_from_keyring(self):
         token = get_token(self.lab_name)
+        cur_fp = (
+            hashlib.sha256(self.api_token.encode("utf-8", "replace")).hexdigest()[:12]
+            if self.api_token
+            else "<empty>"
+        )
+        new_fp = (
+            hashlib.sha256(token.encode("utf-8", "replace")).hexdigest()[:12]
+            if token
+            else "<empty>"
+        )
+        logger.info(
+            "load_token_from_keyring: lab=%r current_fp=%s keyring_fp=%s",
+            self.lab_name,
+            cur_fp,
+            new_fp,
+        )
         if token != self.api_token:
             self.trait_setq(api_token=token)
 
@@ -213,14 +229,31 @@ class CloudPreferences(BasePreferencesHelper):
         self._remote_status_color = normalize_color_name("red")
         if not self.api_base_url:
             self._remote_status = "No URL"
+            logger.info("test_connection: aborted (api_base_url empty)")
             return
         if not self.api_token:
             self._remote_status = "No token"
+            logger.info(
+                "test_connection: aborted (api_token empty for lab=%r)",
+                self.lab_name,
+            )
             return
+        token_fp = hashlib.sha256(self.api_token.encode("utf-8", "replace")).hexdigest()[:12]
+        logger.info(
+            "test_connection: GET whoami api_base_url=%s lab=%s api_token_fp=%s",
+            self.api_base_url,
+            self.lab_name,
+            token_fp,
+        )
         try:
             info = whoami(self.api_base_url, self.api_token)
         except CloudAuthError:
             self._remote_status = "401 Unauthorized"
+            logger.warning(
+                "test_connection: whoami 401 (api_token_fp=%s lab=%s)",
+                token_fp,
+                self.lab_name,
+            )
             return
         except CloudNetworkError as exc:
             logger.warning("cloud whoami transport failure: %s", exc)
@@ -230,6 +263,12 @@ class CloudPreferences(BasePreferencesHelper):
             logger.warning("cloud whoami failure: %s", exc)
             self._remote_status = "Invalid"
             return
+        logger.info(
+            "test_connection: whoami OK kind=%s lab=%s scopes=%s",
+            info.kind,
+            info.lab,
+            info.scopes,
+        )
 
         if self.lab_name and info.lab and info.lab != self.lab_name:
             self._remote_status = "Lab mismatch ({})".format(info.lab)
