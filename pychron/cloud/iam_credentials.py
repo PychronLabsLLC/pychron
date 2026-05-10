@@ -303,10 +303,24 @@ def apply_iam_credentials_to_prefs(
     silently writing a half-configured favorite.
     """
     if not bundle:
+        logger.info("apply_iam_credentials_to_prefs: no bundle, no-op")
         return None
+    logger.info(
+        "apply_iam_credentials_to_prefs: lab=%s organization=%s "
+        "meta_repo_name=%s meta_repo_dir=%s repository_root=%s "
+        "bundle_keys=%s",
+        lab_name,
+        organization,
+        meta_repo_name,
+        meta_repo_dir,
+        repository_root,
+        sorted(bundle.keys()),
+    )
     _validate_iam_bundle(bundle)
+    logger.info("apply_iam_credentials_to_prefs: bundle validated")
     name = _favorite_name_for_lab(lab_name)
     sa_path = write_sa_key_file(lab_name, bundle["service_account_key_json"])
+    logger.info("apply_iam_credentials_to_prefs: SA key written to %s", sa_path)
     new_row = build_iam_dvc_csv(
         bundle,
         name=name,
@@ -319,14 +333,34 @@ def apply_iam_credentials_to_prefs(
 
     raw = preferences.get("pychron.dvc.connection.favorites", "") or ""
     existing = _split_favorites(raw)
-    merged = merge_iam_dvc_favorites(existing, new_row, replace_name=name)
-    preferences.set("pychron.dvc.connection.favorites", _join_favorites(merged))
-    preferences.flush()
     logger.info(
-        "applied DVC IAM favorite name=%s instance=%s db=%s sa=%s",
+        "apply_iam_credentials_to_prefs: %d existing favorite(s), " "replace_name=%s, raw_len=%d",
+        len(existing),
+        name,
+        len(raw) if isinstance(raw, str) else -1,
+    )
+    merged = merge_iam_dvc_favorites(existing, new_row, replace_name=name)
+    serialized = _join_favorites(merged)
+    preferences.set("pychron.dvc.connection.favorites", serialized)
+    preferences.flush()
+    # Read back to confirm the write actually landed (envisage's
+    # preferences node is single-threaded but a buggy backing store
+    # would silently no-op the set).
+    readback = preferences.get("pychron.dvc.connection.favorites", "") or ""
+    if readback != serialized:
+        logger.warning(
+            "apply_iam_credentials_to_prefs: readback mismatch — "
+            "wrote %d chars, read back %d chars",
+            len(serialized),
+            len(readback) if isinstance(readback, str) else -1,
+        )
+    logger.info(
+        "applied DVC IAM favorite name=%s instance=%s db=%s sa=%s " "(favorites count: %d -> %d)",
         name,
         bundle["instance_connection_name"],
         bundle["database_name"],
         bundle["service_account_email"],
+        len(existing),
+        len(merged),
     )
     return name

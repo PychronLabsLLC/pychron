@@ -191,6 +191,12 @@ class WorkstationSetup(object):
         host = host or host_slug()
 
         ensure_pychron_dirs()
+        logger.info(
+            "device-code: starting enrollment (api_base_url=%s host=%s " "prior_registration=%s)",
+            api_base_url,
+            host,
+            "present" if load_registration() is not None else "absent",
+        )
         # Always rotate the local keypair before a device-code start.
         # Forgejo rejects a public key the bot has already seen with
         # "Key content has been used as non-deploy key" — surfaced as a
@@ -199,6 +205,7 @@ class WorkstationSetup(object):
         # mint. A fresh key on every enrollment is the cheap fix.
         generate_keypair(host)
         public_key = read_public_key(host)
+        logger.info("device-code: rotated local keypair for host=%s", host)
 
         start = start_device_code(api_base_url, public_key, host)
         on_user_code(
@@ -268,8 +275,22 @@ class WorkstationSetup(object):
         )
         setup.database_iam = success.database_iam
         setup.default_metadata_repo = success.default_metadata_repo
+        logger.info(
+            "device-code: building setup lab=%s api_base_url=%s host=%s "
+            "database_iam=%s default_metadata_repo=%r",
+            success.lab,
+            api_base_url,
+            host,
+            "present" if success.database_iam else "absent",
+            success.default_metadata_repo,
+        )
         setup._persist_registration(success.ssh_key)
         setup._apply_ssh_config(success.ssh_key)
+        logger.info(
+            "device-code: persisted registration.json + ssh_config (alias=%s, real_host=%s)",
+            getattr(success.ssh_key, "alias", "?"),
+            getattr(success.ssh_key, "real_host", "?"),
+        )
 
         # Stash the token in the OS keyring last. A failure here would
         # normally be silent (the helper logs + returns False), but in
@@ -280,6 +301,7 @@ class WorkstationSetup(object):
         # it to log files.
         if not keyring_set_token(success.lab, success.api_token):
             raise KeyringWriteFailedError(lab_name=success.lab, api_token=success.api_token)
+        logger.info("device-code: keyring token stashed (lab=%s)", success.lab)
         return setup
 
     # -- public entry --------------------------------------------------

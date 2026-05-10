@@ -22,9 +22,30 @@ add the ``ssh-keys`` registration call.
 
 from __future__ import absolute_import
 
+import hashlib
+import logging
+
 import requests
 
 from pychron.globals import globalv
+
+logger = logging.getLogger(__name__)
+
+
+def _fp(value, n=12):
+    """Return a short hex fingerprint of ``value`` for log messages.
+
+    SHA-256, truncated. Logging full secrets is a no-no, but logging
+    "the same fingerprint twice" lets us prove that the same value
+    crossed two boundaries (e.g. the public_key the workstation sent
+    is the same one Forgejo rejected) without exposing the secret.
+    """
+    if not value:
+        return "<empty>"
+    if isinstance(value, str):
+        value = value.encode("utf-8", "replace")
+    return hashlib.sha256(value).hexdigest()[:n]
+
 
 DEFAULT_TIMEOUT = 10
 
@@ -473,6 +494,12 @@ def start_device_code(base_url, public_key, hostname, timeout=DEFAULT_TIMEOUT):
     }
     payload = {"public_key": public_key.strip(), "hostname": hostname}
 
+    logger.info(
+        "device-code start: POST %s hostname=%s pubkey_fp=%s",
+        url,
+        hostname,
+        _fp(public_key.strip()),
+    )
     try:
         resp = requests.post(
             url,
@@ -484,6 +511,7 @@ def start_device_code(base_url, public_key, hostname, timeout=DEFAULT_TIMEOUT):
     except requests.RequestException as exc:
         raise CloudNetworkError("device-code start transport failure: {}".format(exc))
 
+    logger.info("device-code start: <- HTTP %d", resp.status_code)
     if resp.status_code == 400:
         raise CloudFingerprintRejected("server rejected key (HTTP 400): {}".format(resp.text[:200]))
     if resp.status_code != 201:
@@ -500,9 +528,17 @@ def start_device_code(base_url, public_key, hostname, timeout=DEFAULT_TIMEOUT):
     # serialize DeviceCodeStart.raw for debugging would otherwise leak
     # both the device_code (polling secret) and user_code into logs/disk.
     safe_raw = {k: v for k, v in body.items() if k not in ("device_code", "user_code")}
+    user_code = body.get("user_code", "")
+    logger.info(
+        "device-code start: minted device_code_fp=%s user_code=%s expires_at=%s interval=%ss",
+        _fp(body.get("device_code", "")),
+        user_code,
+        body.get("expires_at", ""),
+        body.get("interval_seconds") or 5,
+    )
     return DeviceCodeStart(
         device_code=body.get("device_code", ""),
-        user_code=body.get("user_code", ""),
+        user_code=user_code,
         verification_url=body.get("verification_url", ""),
         verification_url_complete=body.get("verification_url_complete", ""),
         expires_at=body.get("expires_at", ""),
@@ -549,6 +585,11 @@ def poll_device_code(base_url, device_code, timeout=DEFAULT_TIMEOUT):
     except requests.RequestException as exc:
         raise CloudNetworkError("device-code poll transport failure: {}".format(exc))
 
+    logger.debug(
+        "device-code poll: device_code_fp=%s <- HTTP %d",
+        _fp(device_code),
+        resp.status_code,
+    )
     if resp.status_code == 425:
         raise CloudDeviceCodePending("authorization_pending")
     if resp.status_code == 403:
@@ -588,6 +629,19 @@ def poll_device_code(base_url, device_code, timeout=DEFAULT_TIMEOUT):
     # otherwise leak both the bearer secret and the SA key into
     # logs/disk.
     safe_raw = {k: v for k, v in body.items() if k not in ("api_token", "database_iam")}
+
+    iam = body.get("database_iam") or None
+    logger.info(
+        "device-code poll: success body keys=%s lab=%s api_base_url=%s "
+        "api_token_fp=%s ssh_key_fp=%s default_metadata_repo=%r database_iam=%s",
+        sorted(body.keys()),
+        body.get("lab", ""),
+        body.get("api_base_url", "") or base_url,
+        _fp(body.get("api_token", "")),
+        ssh_key_payload.get("fingerprint", "") or _fp(ssh_key_payload.get("public_key", "")),
+        body.get("default_metadata_repo"),
+        "present (keys={})".format(sorted(iam.keys())) if isinstance(iam, dict) else "absent",
+    )
 
     return DeviceCodePollSuccess(
         api_token=body.get("api_token", ""),
