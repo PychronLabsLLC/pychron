@@ -57,7 +57,7 @@ class ExtractionLineTask(BaseHardwareTask):
         """Create and configure the central pane with forced sizing."""
         g = CanvasPane(model=self.manager)
         return g
-    
+
     def activated(self):
         """Task activated - the pane will open with default large layout."""
         self.manager.activate()
@@ -102,7 +102,6 @@ class ExtractionLineTask(BaseHardwareTask):
 
     def _default_layout_default(self):
         return TaskLayout(
-            center=PaneItem("pychron.extraction_line.canvas"),
             top=PaneItem("pychron.extraction_line.gauges"),
             left=PaneItem("pychron.extraction_line.explanation"),
             right=PaneItem("pychron.console"),
