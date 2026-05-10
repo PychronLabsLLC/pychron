@@ -626,7 +626,7 @@ class CloudPreferencesPane(PreferencesPane):
                 show_border=False,
             ),
             show_border=True,
-            label="Pychron Cloud (pychronAPI)",
+            label="Pychron Cloud",
         )
         enroll = VGroup(
             HGroup(
