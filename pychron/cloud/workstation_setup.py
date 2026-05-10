@@ -191,6 +191,14 @@ class WorkstationSetup(object):
 
         ensure_pychron_dirs()
         ensure_keypair(host)
+        if load_registration() is not None:
+            # Re-enrollment: Forgejo will reject the stale public key
+            # with "Key content has been used as non-deploy key" during
+            # the bot-create step (surfaced as a 502 on poll). Rotate
+            # the local keypair so the device-code grant binds a fresh
+            # public key the upstream has not seen.
+            logger.info("device-code: prior registration detected, rotating local keypair")
+            generate_keypair(host)
         public_key = read_public_key(host)
 
         start = start_device_code(api_base_url, public_key, host)
