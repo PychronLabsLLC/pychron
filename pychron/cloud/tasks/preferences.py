@@ -291,7 +291,21 @@ class CloudPreferences(BasePreferencesHelper):
             )
             GUI.invoke_later(self._apply_keyring_recovery, exc.lab_name, exc.api_token)
             return
-        except (CloudAPIError, WorkstationSetupError) as exc:
+        except CloudAPIError as exc:
+            # CloudAPIError carries upstream HTTP status + response body
+            # (e.g. ``device-code poll returned HTTP 502: forgejo upstream
+            # error: ...``). Safe to log in full — no plaintext bearer
+            # tokens cross this surface (those are stripped from
+            # ``DeviceCodePollSuccess.raw`` and live on
+            # ``KeyringWriteFailedError.api_token``, which is caught
+            # earlier).
+            logger.warning("device-code enrollment failed: %s", exc)
+            GUI.invoke_later(self._apply_enrollment_terminal, "Enrollment failed", "red")
+            return
+        except WorkstationSetupError as exc:
+            # ``WorkstationSetupError`` subclasses (esp.
+            # ``KeyringWriteFailedError`` — already caught above) may
+            # carry a token in ``str(exc)``; log only the type name.
             logger.warning("device-code enrollment failed: %s", type(exc).__name__)
             GUI.invoke_later(self._apply_enrollment_terminal, "Enrollment failed", "red")
             return
