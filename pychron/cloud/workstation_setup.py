@@ -140,12 +140,14 @@ class WorkstationSetup(object):
         self.api_token = api_token
         self.lab_name = lab_name
         self.host = host or host_slug()
-        # Populated by :meth:`from_device_code` when the bridge has a
-        # staged Postgres credential for this api_token. ``None`` means
-        # the workstation runs HTTP-only — DVC connection prefs are
-        # left untouched.
+        # Populated by :meth:`from_device_code` when the bridge has
+        # staged a credential for this api_token. ``database_url`` /
+        # ``database_role`` carry a Postgres role + connection URL;
+        # ``database_iam`` carries a Cloud SQL IAM bundle. All ``None``
+        # means HTTP-only — DVC connection prefs are left untouched.
         self.database_url = None
         self.database_role = None
+        self.database_iam = None
         # Default-MetaData repo metadata so the prefs pane can write
         # ``pychron.dvc.connection`` favorites with the right org +
         # meta_repo_name without re-deriving them from
@@ -261,6 +263,7 @@ class WorkstationSetup(object):
         )
         setup.database_url = success.database_url
         setup.database_role = success.database_role
+        setup.database_iam = success.database_iam
         setup.default_metadata_repo = success.default_metadata_repo
         setup._persist_registration(success.ssh_key)
         setup._apply_ssh_config(success.ssh_key)

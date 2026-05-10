@@ -304,15 +304,7 @@ if __name__ == "__main__":
     unittest.main()
 
 
-class FromDeviceCodeDbCredentialsTestCase(unittest.TestCase):
-    """The poll-success body now optionally carries a ``database_url``
-    + ``database_role`` minted by the off-cluster admin tool. The
-    orchestrator must surface those onto the returned
-    ``WorkstationSetup`` so the prefs pane can persist them to the
-    DVC connection favorites — without leaking the URL into
-    ``DeviceCodePollSuccess.raw`` (which is exposed for debug logs).
-    """
-
+class _DeviceCodeCredentialsTestBase(unittest.TestCase):
     URL = "https://api.example"
 
     def setUp(self):
@@ -330,6 +322,16 @@ class FromDeviceCodeDbCredentialsTestCase(unittest.TestCase):
             shutil.rmtree(self.tmp, ignore_errors=True)
 
         self.addCleanup(_rmtree)
+
+
+class FromDeviceCodeDbCredentialsTestCase(_DeviceCodeCredentialsTestBase):
+    """The poll-success body now optionally carries a ``database_url``
+    + ``database_role`` minted by the off-cluster admin tool. The
+    orchestrator must surface those onto the returned
+    ``WorkstationSetup`` so the prefs pane can persist them to the
+    DVC connection favorites — without leaking the URL into
+    ``DeviceCodePollSuccess.raw`` (which is exposed for debug logs).
+    """
 
     def _poll_body_with_db(self):
         body = _poll_body()
@@ -396,3 +398,91 @@ class FromDeviceCodeDbCredentialsTestCase(unittest.TestCase):
         self.assertNotIn("api_token", success.raw)
         # But the typed attribute still carries it for the orchestrator.
         self.assertIn("Pa55", success.database_url)
+
+
+class FromDeviceCodeIamCredentialsTestCase(_DeviceCodeCredentialsTestBase):
+    """The poll-success body now optionally carries a ``database_iam``
+    bundle minted off-cluster by the admin tool. The orchestrator must
+    surface it onto the returned ``WorkstationSetup`` so the prefs
+    pane can persist the SA key + cloudsql_* favorite — without
+    leaking the bundle into ``DeviceCodePollSuccess.raw`` (which is
+    exposed for debug logs)."""
+
+    def _iam_bundle(self):
+        return {
+            "instance_connection_name": "pychron-prod:us-central1:lab-db",
+            "database_name": "nmgrl",
+            "service_account_email": ("wkstn-x@pychron-prod.iam.gserviceaccount.com"),
+            "service_account_key_json": json.dumps(
+                {
+                    "type": "service_account",
+                    "client_email": ("wkstn-x@pychron-prod.iam.gserviceaccount.com"),
+                    "private_key": (
+                        "-----BEGIN PRIVATE KEY-----\nFAKE\n-----END PRIVATE KEY-----\n"
+                    ),
+                }
+            ),
+            "ip_type": "public",
+        }
+
+    def _poll_body_with_iam(self):
+        body = _poll_body()
+        body["database_iam"] = self._iam_bundle()
+        return body
+
+    def test_iam_bundle_propagates_to_setup(self):
+        with (
+            patch.object(api_client.requests, "post") as post,
+            patch.object(workstation_setup, "keyring_set_token", return_value=True),
+        ):
+            post.side_effect = [
+                _resp(201, _START_BODY),
+                _resp(200, self._poll_body_with_iam()),
+            ]
+            setup = workstation_setup.WorkstationSetup.from_device_code(
+                self.URL,
+                on_user_code=lambda *a: None,
+                sleep=lambda s: None,
+                host="testhost",
+            )
+        self.assertIsNotNone(setup.database_iam)
+        self.assertEqual(
+            setup.database_iam["instance_connection_name"],
+            "pychron-prod:us-central1:lab-db",
+        )
+        self.assertEqual(
+            setup.database_iam["service_account_email"],
+            "wkstn-x@pychron-prod.iam.gserviceaccount.com",
+        )
+
+    def test_no_iam_bundle_leaves_setup_attr_none(self):
+        with (
+            patch.object(api_client.requests, "post") as post,
+            patch.object(workstation_setup, "keyring_set_token", return_value=True),
+        ):
+            post.side_effect = [
+                _resp(201, _START_BODY),
+                _resp(200, _poll_body()),  # no database_iam
+            ]
+            setup = workstation_setup.WorkstationSetup.from_device_code(
+                self.URL,
+                on_user_code=lambda *a: None,
+                sleep=lambda s: None,
+                host="testhost",
+            )
+        self.assertIsNone(setup.database_iam)
+
+    def test_database_iam_stripped_from_raw_debug_field(self):
+        """The SA private key embedded in ``database_iam`` must not
+        survive into the ``raw`` dict that callers may log for
+        debugging — same defensive treatment we give ``api_token``."""
+        with patch.object(api_client.requests, "post") as post:
+            post.side_effect = [_resp(200, self._poll_body_with_iam())]
+            success = api_client.poll_device_code(self.URL, "dvc_xyz")
+        self.assertNotIn("database_iam", success.raw)
+        self.assertNotIn("api_token", success.raw)
+        # But the typed attribute carries the bundle for the orchestrator.
+        self.assertEqual(
+            success.database_iam["service_account_email"],
+            "wkstn-x@pychron-prod.iam.gserviceaccount.com",
+        )

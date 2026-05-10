@@ -404,6 +404,15 @@ class DeviceCodePollSuccess(object):
     ``None`` when no credential is pending — the workstation runs in
     HTTP-only mode. Returned exactly once; the staging row is DELETED
     on this read so the password is not recoverable later.
+
+    ``database_iam`` carries a per-workstation Cloud SQL IAM bundle
+    when the off-cluster admin tool has staged one via the bridge's
+    bootstrap-only ``/internal/workstation-iam-credentials`` endpoint.
+    Shape (dict): ``instance_connection_name``, ``database_name``,
+    ``service_account_email``, ``service_account_key_json``,
+    ``ip_type``. ``None`` means no bundle is pending — the workstation
+    runs HTTP-only mode. The staging row is DELETED on this read; the
+    SA key is not recoverable later.
     """
 
     __slots__ = (
@@ -415,6 +424,7 @@ class DeviceCodePollSuccess(object):
         "ssh_key",
         "database_url",
         "database_role",
+        "database_iam",
         "raw",
     )
 
@@ -429,6 +439,7 @@ class DeviceCodePollSuccess(object):
         raw,
         database_url=None,
         database_role=None,
+        database_iam=None,
     ):
         self.api_token = api_token
         self.lab = lab
@@ -438,6 +449,7 @@ class DeviceCodePollSuccess(object):
         self.ssh_key = ssh_key
         self.database_url = database_url or None
         self.database_role = database_role or None
+        self.database_iam = database_iam or None
         self.raw = raw
 
 
@@ -568,11 +580,13 @@ def poll_device_code(base_url, device_code, timeout=DEFAULT_TIMEOUT):
         raw=ssh_key_payload,
     )
 
-    # Strip the plaintext token AND the database_url (which embeds the
-    # Postgres role's password) from `raw` before exposing it. Callers
-    # who serialize `raw` for debugging would otherwise leak both
-    # bearer secrets into logs/disk.
-    safe_raw = {k: v for k, v in body.items() if k not in ("api_token", "database_url")}
+    # Strip the plaintext token, database_url (embeds Postgres role
+    # password) and database_iam bundle (embeds SA private key) from
+    # `raw` before exposing it. Callers who serialize `raw` for
+    # debugging would otherwise leak bearer secrets to logs/disk.
+    safe_raw = {
+        k: v for k, v in body.items() if k not in ("api_token", "database_url", "database_iam")
+    }
 
     return DeviceCodePollSuccess(
         api_token=body.get("api_token", ""),
@@ -584,6 +598,7 @@ def poll_device_code(base_url, device_code, timeout=DEFAULT_TIMEOUT):
         raw=safe_raw,
         database_url=body.get("database_url") or None,
         database_role=body.get("database_role") or None,
+        database_iam=body.get("database_iam") or None,
     )
 
 

@@ -81,6 +81,10 @@ from pychron.cloud.keyring_store import (
     get_token,
     set_token,
 )
+from pychron.cloud.iam_credentials import (
+    IamCredentialsError,
+    apply_iam_credentials_to_prefs,
+)
 from pychron.cloud.qr import make_qr_for_device_code
 from pychron.cloud.workstation_setup import (
     DeviceEnrollmentCancelled,
@@ -144,10 +148,10 @@ class CloudPreferences(BasePreferencesHelper):
     _remote_status = Str
     _remote_status_color = Color
 
-    # Surfaces "Registered" / "Unregistered" on pane open so the
-    # technician can tell at a glance whether the workstation is
-    # already onboarded. Derived from the on-disk
-    # ``~/.pychron/registration.json`` + keyring token.
+    # Surfaces "Registered" / "Partial" / "Unregistered" on pane open
+    # so the technician sees onboarding state at a glance. Derived
+    # from the on-disk ``~/.pychron/registration.json`` + keyring
+    # token.
     _registration_status = Str
     _registration_status_color = Color
 
@@ -163,12 +167,11 @@ class CloudPreferences(BasePreferencesHelper):
         self._refresh_registration_status()
 
     def _refresh_registration_status(self):
-        """Update the Registered/Unregistered indicator based on local state.
-
-        Considered "Registered" iff a registration.json exists AND the
-        keyring carries a token for the configured lab. Either alone is
-        a half-onboarded state (e.g. keyring wipe + stale json) — call
-        that "Partial" so the technician knows to re-onboard.
+        """Update the Registered/Partial/Unregistered indicator based
+        on local state. Considered "Registered" iff a registration.json
+        exists AND the keyring carries a token for the configured lab.
+        Either alone is half-onboarded — call that "Partial" so the
+        technician knows to re-onboard.
         """
         reg = load_registration()
         token = get_token(self.lab_name) if self.lab_name else ""
@@ -425,39 +428,84 @@ class CloudPreferences(BasePreferencesHelper):
         self.api_base_url = setup.api_base_url
         self.lab_name = setup.lab_name
         self._load_token_from_keyring()
-        # Persist Postgres credentials (if the bridge had one staged)
-        # to ``pychron.dvc.connection.favorites`` so DVC startup picks
-        # them up on the next run with no manual paste. ``None`` is a
-        # legitimate state — the workstation runs HTTP-only.
-        db_applied = self._persist_db_credentials_from_setup(setup)
-        if db_applied:
+        # Persist whichever credential the bridge staged into
+        # ``pychron.dvc.connection.favorites`` so DVC startup picks it
+        # up on the next run with no manual paste. Both ``None`` is a
+        # legitimate state — workstation runs HTTP-only. The two
+        # paths are mutually exclusive in practice; if both are set
+        # the Cloud SQL IAM bundle wins.
+        iam_applied = self._persist_iam_credentials_from_setup(setup)
+        db_applied = False
+        if not iam_applied:
+            db_applied = self._persist_db_credentials_from_setup(setup)
+        if iam_applied:
+            self._remote_status = "Enrolled as {} (Cloud SQL IAM configured)".format(setup.lab_name)
+        elif db_applied:
             self._remote_status = "Enrolled as {} (DB credentials applied)".format(setup.lab_name)
         else:
             self._remote_status = "Enrolled as {}".format(setup.lab_name)
         self._remote_status_color = normalize_color_name("green")
         self._refresh_registration_status()
         self._reset_pending()
-        # Run the same whoami probe the manual "Test Connection" button
-        # uses, so the technician sees an immediate, end-to-end pass /
-        # fail without an extra click. Failures here do NOT roll back
-        # the enrollment — the credentials are already minted and
-        # persisted; surface the failure as a status badge instead.
+        # Run the same whoami probe the manual "Test Connection"
+        # button uses, so the technician sees an immediate end-to-end
+        # pass / fail without an extra click. Failures here do NOT
+        # roll back enrollment — credentials are already minted +
+        # persisted.
         self._test_connection_fired()
 
-    def _persist_db_credentials_from_setup(self, setup):
-        """Apply :attr:`WorkstationSetup.database_url` to the DVC
-        connection prefs. Returns True when something was written.
+    def _persist_iam_credentials_from_setup(self, setup):
+        """Apply :attr:`WorkstationSetup.database_iam` to DVC prefs.
 
-        Errors are caught + logged + surfaced via remote_status so a
-        bad URL does not roll back the rest of enrollment (the cloud
-        prefs + ssh + keyring are already on disk by the time we get
-        here).
+        Returns True when something was written. Errors are caught +
+        logged + surfaced via remote_status so a malformed bundle
+        does not roll back the rest of enrollment (cloud prefs + ssh
+        + keyring are already on disk by the time we get here).
+        """
+        if not getattr(setup, "database_iam", None):
+            return False
+        meta = getattr(setup, "default_metadata_repo", None) or {}
+        repo_id = meta.get("repository_identifier", "") if isinstance(meta, dict) else ""
+        organization = ""
+        meta_repo_name = ""
+        if "/" in repo_id:
+            organization, meta_repo_name = repo_id.split("/", 1)
+        elif repo_id:
+            meta_repo_name = repo_id
+        organization = organization or setup.lab_name or ""
+        try:
+            apply_iam_credentials_to_prefs(
+                self.preferences,
+                bundle=setup.database_iam,
+                lab_name=setup.lab_name,
+                organization=organization,
+                meta_repo_name=meta_repo_name,
+            )
+        except IamCredentialsError as exc:
+            logger.warning(
+                "device-code IAM bundle apply failed (skipping DVC prefs): %s",
+                exc,
+            )
+            self._remote_status = "Enrolled — IAM bundle malformed, prefs unchanged"
+            self._remote_status_color = normalize_color_name("orange")
+            return False
+        except Exception as exc:  # defensive
+            logger.warning("device-code IAM bundle persist failed: %s", exc)
+            self._remote_status = "Enrolled — IAM prefs write failed"
+            self._remote_status_color = normalize_color_name("orange")
+            return False
+        return True
+
+    def _persist_db_credentials_from_setup(self, setup):
+        """Apply :attr:`WorkstationSetup.database_url` to DVC prefs.
+
+        Returns True when something was written. Errors are caught +
+        logged + surfaced via remote_status so a bad URL does not roll
+        back the rest of enrollment (cloud prefs + ssh + keyring are
+        already on disk by the time we get here).
         """
         if not getattr(setup, "database_url", None):
             return False
-        # Pull MetaData metadata off the setup if available so the
-        # favorite carries an organization + meta_repo_name. Falls
-        # back to lab_name when the server omitted the block.
         meta = getattr(setup, "default_metadata_repo", None) or {}
         repo_id = meta.get("repository_identifier", "") if isinstance(meta, dict) else ""
         organization = ""
