@@ -29,13 +29,14 @@ Adds a "Pychron Cloud" pane with:
 from __future__ import absolute_import
 
 import logging
-import os
 
 from envisage.ui.tasks.preferences_pane import PreferencesPane
+from PIL import Image as PILImage
 from pyface.api import GUI
-from pyface.image_resource import ImageResource
-from traits.api import Bool, Button, File, Instance, Password, Str
-from traitsui.api import Color, Group, HGroup, ImageEditor, Item, VGroup, View
+from traits.api import Any, Bool, Button, File, Password, Str
+from traitsui.api import Color, Group, HGroup, Item, VGroup, View
+
+from pychron.core.ui.image_editor import ImageEditor
 
 from pychron.cloud.api_client import (
     CloudAPIError,
@@ -103,7 +104,8 @@ class CloudPreferences(BasePreferencesHelper):
     # user_code by hand. Empty string until the server returns the
     # `verification_url_complete` payload.
     _pending_qr_path = File
-    _pending_qr_image = Instance(ImageResource)
+    _pending_qr_image = Any
+    _pending_qr_refresh = Bool(False)
     _pending_active = Bool(False)
     _should_cancel_enrollment = Bool(False)
 
@@ -173,6 +175,7 @@ class CloudPreferences(BasePreferencesHelper):
             "_pending_verification_url",
             "_pending_qr_path",
             "_pending_qr_image",
+            "_pending_qr_refresh",
             "_pending_active",
             "_should_cancel_enrollment",
             "_recovery_token",
@@ -308,14 +311,14 @@ class CloudPreferences(BasePreferencesHelper):
             )
             self._pending_qr_path = path
             if path:
-                dirname, basename = os.path.split(path)
-                self._pending_qr_image = ImageResource(basename, search_path=[dirname])
+                self._pending_qr_image = PILImage.open(path).convert("RGBA")
             else:
                 self._pending_qr_image = None
         except Exception as exc:
             logger.warning("device-code QR generation failed: %s", exc)
             self._pending_qr_path = ""
             self._pending_qr_image = None
+        self._pending_qr_refresh = not self._pending_qr_refresh
         self._remote_status = "Show {} to admin at {}".format(user_code, verification_url)
         self._remote_status_color = normalize_color_name("orange")
 
@@ -474,6 +477,7 @@ class CloudPreferences(BasePreferencesHelper):
         self._pending_verification_url = ""
         self._pending_qr_path = ""
         self._pending_qr_image = None
+        self._pending_qr_refresh = not self._pending_qr_refresh
         self._pending_active = False
         self._should_cancel_enrollment = False
 
@@ -648,7 +652,9 @@ class CloudPreferencesPane(PreferencesPane):
                 Item(
                     "_pending_qr_image",
                     show_label=False,
-                    editor=ImageEditor(),
+                    editor=ImageEditor(refresh="_pending_qr_refresh", scrollable=True, scale=False),
+                    width=300,
+                    height=300,
                     tooltip="Scan with the admin's phone to open the "
                     "verification page with the user_code pre-filled.",
                     visible_when="_pending_qr_image is not None",
