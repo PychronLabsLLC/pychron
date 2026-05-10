@@ -51,6 +51,7 @@ from pychron.cloud.api_client import (
     CloudAPIError,
     CloudDeviceCodeDenied,
     CloudDeviceCodeExpired,
+    CloudDeviceCodeMintFailed,
     CloudDeviceCodePending,
     CloudFingerprintRejected,
     CloudNetworkError,
@@ -190,15 +191,13 @@ class WorkstationSetup(object):
         host = host or host_slug()
 
         ensure_pychron_dirs()
-        ensure_keypair(host)
-        if load_registration() is not None:
-            # Re-enrollment: Forgejo will reject the stale public key
-            # with "Key content has been used as non-deploy key" during
-            # the bot-create step (surfaced as a 502 on poll). Rotate
-            # the local keypair so the device-code grant binds a fresh
-            # public key the upstream has not seen.
-            logger.info("device-code: prior registration detected, rotating local keypair")
-            generate_keypair(host)
+        # Always rotate the local keypair before a device-code start.
+        # Forgejo rejects a public key the bot has already seen with
+        # "Key content has been used as non-deploy key" — surfaced as a
+        # 5xx during poll — and we cannot tell from the workstation
+        # whether the server still has stale state from a prior failed
+        # mint. A fresh key on every enrollment is the cheap fix.
+        generate_keypair(host)
         public_key = read_public_key(host)
 
         start = start_device_code(api_base_url, public_key, host)
@@ -225,6 +224,8 @@ class WorkstationSetup(object):
             except CloudDeviceCodeDenied:
                 raise
             except CloudDeviceCodeExpired:
+                raise
+            except CloudDeviceCodeMintFailed:
                 raise
             except CloudFingerprintRejected:
                 raise

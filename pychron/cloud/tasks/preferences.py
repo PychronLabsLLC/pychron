@@ -46,6 +46,7 @@ from pychron.cloud.api_client import (
     CloudAuthError,
     CloudDeviceCodeDenied,
     CloudDeviceCodeExpired,
+    CloudDeviceCodeMintFailed,
     CloudNetworkError,
     whoami,
 )
@@ -354,6 +355,14 @@ class CloudPreferences(BasePreferencesHelper):
             return
         except CloudDeviceCodeExpired:
             GUI.invoke_later(self._apply_enrollment_terminal, "Code expired — start over", "red")
+            return
+        except CloudDeviceCodeMintFailed as exc:
+            logger.warning("device-code mint failed server-side: %s", exc)
+            GUI.invoke_later(
+                self._apply_enrollment_terminal,
+                "Server error during mint — retry enrollment",
+                "red",
+            )
             return
         except CloudAuthError:
             GUI.invoke_later(self._apply_enrollment_terminal, "Auth rejected", "red")
