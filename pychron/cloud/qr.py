@@ -35,6 +35,23 @@ import segno
 from pychron.cloud.paths import pychron_dir
 
 
+_SLUG_SAFE = "-_"
+
+
+def _sanitize_slug(slug):
+    """Whitelist a caller-supplied slug to ``[A-Za-z0-9_-]``.
+
+    The slug is interpolated into a filename, so any byte that is not
+    explicitly safe is replaced with an underscore. This blocks path
+    traversal (``..`` collapses to ``__``, ``/`` to ``_``) and trims
+    null bytes / control characters that could confuse the OS path
+    layer.
+    """
+    if not slug:
+        return ""
+    return "".join(c if c.isalnum() or c in _SLUG_SAFE else "_" for c in str(slug))
+
+
 def qr_dir():
     """Return ``~/.pychron/qr/``, creating it 0700 if missing."""
     path = os.path.join(pychron_dir(), "qr")
@@ -75,11 +92,26 @@ def make_qr_for_device_code(verification_url_complete, host_slug=""):
     Returns the absolute path to the generated PNG. Overwrites any
     prior file at the same path so a fresh enrollment does not pick
     up a stale QR from an earlier attempt.
+
+    ``host_slug`` is sanitized to ``[A-Za-z0-9_-]`` so an
+    attacker-controlled value (e.g. a malicious server-issued
+    ``lab_name`` or a hand-edited preference) cannot escape the
+    scoped ``~/.pychron/qr/`` directory. After path construction the
+    final ``out_path`` is also asserted to live under
+    :func:`qr_dir` as defense-in-depth.
     """
     if not verification_url_complete:
         raise ValueError("verification_url_complete is empty")
-    name = "device_{}.png".format(host_slug or "default")
-    out_path = os.path.join(qr_dir(), name)
+    safe_slug = _sanitize_slug(host_slug) or "default"
+    name = "device_{}.png".format(safe_slug)
+    base = qr_dir()
+    out_path = os.path.join(base, name)
+    # Defense-in-depth: even if the slug whitelist regresses, the
+    # resolved absolute path must remain under qr_dir().
+    real_base = os.path.realpath(base)
+    real_out = os.path.realpath(out_path)
+    if os.path.commonpath([real_base, real_out]) != real_base:
+        raise ValueError("refusing to write QR outside the scoped qr/ dir: {0!r}".format(out_path))
     return make_qr_png(verification_url_complete, out_path)
 
 

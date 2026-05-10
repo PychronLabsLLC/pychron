@@ -70,6 +70,42 @@ class MakeQrPngTestCase(unittest.TestCase):
         path = qr.make_qr_for_device_code(self.URL)
         self.assertTrue(path.endswith("device_default.png"))
 
+    def test_path_traversal_in_host_slug_sanitized(self):
+        """Path-traversal payloads in ``host_slug`` (e.g. an attacker-
+        controlled lab_name preference) must NOT escape the scoped
+        ``~/.pychron/qr/`` directory. The slug whitelist replaces any
+        non-``[A-Za-z0-9_-]`` byte with an underscore + an absolute-
+        path containment check is asserted defensively at the writer."""
+        evil_slugs = (
+            "../../etc/passwd",
+            "..",
+            "../../tmp/owned",
+            "a/b/c",
+            "lab.name",
+            "foo\x00bar",
+        )
+        qr_root = os.path.realpath(qr.qr_dir())
+        for slug in evil_slugs:
+            path = qr.make_qr_for_device_code(self.URL, host_slug=slug)
+            real = os.path.realpath(path)
+            self.assertTrue(
+                real.startswith(qr_root + os.sep) or real == qr_root,
+                f"{slug!r} escaped: {path}",
+            )
+            # Filename never carries traversal markers post-sanitize.
+            self.assertNotIn("/", os.path.basename(path))
+            self.assertNotIn("..", os.path.basename(path))
+            self.assertNotIn("\x00", os.path.basename(path))
+
+    def test_sanitize_slug_preserves_safe_chars(self):
+        """Real-world slugs (alnum + ``-`` + ``_``) pass through unchanged."""
+        for slug in ("NMGRL", "lab-2024_NM", "abc123", "test-lab_42"):
+            self.assertEqual(qr._sanitize_slug(slug), slug)
+
+    def test_sanitize_slug_handles_none_and_empty(self):
+        self.assertEqual(qr._sanitize_slug(None), "")
+        self.assertEqual(qr._sanitize_slug(""), "")
+
 
 if __name__ == "__main__":
     unittest.main()
