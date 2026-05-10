@@ -252,11 +252,18 @@ class CloudPreferences(BasePreferencesHelper):
         out to the admin, then polls until completion.
         """
         if self._pending_active:
+            logger.info("device-code: enroll button ignored (already pending)")
             return
         self._remote_status_color = normalize_color_name("red")
         if not self.api_base_url:
             self._remote_status = "Set API Base URL first"
+            logger.info("device-code: enroll button rejected (api_base_url empty)")
             return
+        logger.info(
+            "device-code: enroll button fired (api_base_url=%s lab_name=%r)",
+            self.api_base_url,
+            self.lab_name,
+        )
 
         # Re-registration guardrail: a workstation that already has a
         # registration.json + keyring token is functional; an admin
@@ -305,10 +312,17 @@ class CloudPreferences(BasePreferencesHelper):
         (small file, ~hundreds of microseconds for a typical URL); a
         failure is non-fatal — the typed code + URL still work.
         """
+        logger.info(
+            "device-code: user_code received user_code=%s verification_url=%s expires_at=%s",
+            user_code,
+            verification_url,
+            expires_at,
+        )
         try:
             qr_path = make_qr_for_device_code(
                 verification_url_complete, host_slug=self.lab_name or "default"
             )
+            logger.info("device-code: QR PNG written to %s", qr_path)
         except Exception as exc:
             logger.warning("device-code QR generation failed: %s", exc)
             qr_path = ""
@@ -409,6 +423,13 @@ class CloudPreferences(BasePreferencesHelper):
         Envisage's preferences node, which expects single-threaded
         access — so we dispatch them here rather than from the worker.
         """
+        logger.info(
+            "device-code: applying success on UI thread (lab=%s api_base_url=%s "
+            "has_database_iam=%s)",
+            setup.lab_name,
+            setup.api_base_url,
+            bool(getattr(setup, "database_iam", None)),
+        )
         self.api_base_url = setup.api_base_url
         self.lab_name = setup.lab_name
         self._load_token_from_keyring()
