@@ -140,6 +140,15 @@ class WorkstationSetup(object):
         self.api_token = api_token
         self.lab_name = lab_name
         self.host = host or host_slug()
+        # Populated by :meth:`from_device_code` when the bridge has a
+        # staged Cloud SQL IAM bundle for this api_token. ``None``
+        # means HTTP-only — DVC connection prefs are left untouched.
+        self.database_iam = None
+        # Default-MetaData repo metadata so the prefs pane can write
+        # ``pychron.dvc.connection`` favorites with the right org +
+        # meta_repo_name without re-deriving them from
+        # ``registration.json``.
+        self.default_metadata_repo = None
 
     # -- device-code enrollment ----------------------------------------
 
@@ -248,6 +257,8 @@ class WorkstationSetup(object):
             lab_name=success.lab,
             host=host,
         )
+        setup.database_iam = success.database_iam
+        setup.default_metadata_repo = success.default_metadata_repo
         setup._persist_registration(success.ssh_key)
         setup._apply_ssh_config(success.ssh_key)
 

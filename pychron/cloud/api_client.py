@@ -396,6 +396,15 @@ class DeviceCodePollSuccess(object):
     keyring before losing the reference. ``ssh_key`` is the same shape
     that :func:`register_ssh_key` returns so the orchestrator can reuse
     the existing persist/apply path.
+
+    ``database_iam`` carries a per-workstation Cloud SQL IAM bundle
+    when the off-cluster admin tool has staged one via the bridge's
+    bootstrap-only ``/internal/workstation-iam-credentials`` endpoint.
+    Shape (dict): ``instance_connection_name``, ``database_name``,
+    ``service_account_email``, ``service_account_key_json``,
+    ``ip_type``. ``None`` means no bundle is pending — the workstation
+    runs HTTP-only mode. The staging row is DELETED on this read; the
+    SA key is not recoverable later.
     """
 
     __slots__ = (
@@ -405,6 +414,7 @@ class DeviceCodePollSuccess(object):
         "default_metadata_repo",
         "ssh_host_alias",
         "ssh_key",
+        "database_iam",
         "raw",
     )
 
@@ -417,6 +427,7 @@ class DeviceCodePollSuccess(object):
         ssh_host_alias,
         ssh_key,
         raw,
+        database_iam=None,
     ):
         self.api_token = api_token
         self.lab = lab
@@ -424,6 +435,7 @@ class DeviceCodePollSuccess(object):
         self.default_metadata_repo = default_metadata_repo
         self.ssh_host_alias = ssh_host_alias or {}
         self.ssh_key = ssh_key
+        self.database_iam = database_iam or None
         self.raw = raw
 
 
@@ -554,8 +566,12 @@ def poll_device_code(base_url, device_code, timeout=DEFAULT_TIMEOUT):
         raw=ssh_key_payload,
     )
 
-    # Strip the plaintext token from `raw` before exposing it.
-    safe_raw = {k: v for k, v in body.items() if k != "api_token"}
+    # Strip the plaintext token AND the database_iam bundle (which
+    # embeds a service-account private key) from `raw` before
+    # exposing it. Callers who serialize `raw` for debugging would
+    # otherwise leak both the bearer secret and the SA key into
+    # logs/disk.
+    safe_raw = {k: v for k, v in body.items() if k not in ("api_token", "database_iam")}
 
     return DeviceCodePollSuccess(
         api_token=body.get("api_token", ""),
@@ -565,6 +581,7 @@ def poll_device_code(base_url, device_code, timeout=DEFAULT_TIMEOUT):
         ssh_host_alias=body.get("ssh_host_alias") or {},
         ssh_key=ssh_key,
         raw=safe_raw,
+        database_iam=body.get("database_iam") or None,
     )
 
 

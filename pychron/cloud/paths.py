@@ -79,6 +79,17 @@ def public_key_path(host=None):
     return key_path(host) + ".pub"
 
 
+def cloudsql_key_path(lab):
+    """Path to the per-lab Cloud SQL service-account JSON key file.
+
+    Lab name is filesystem-sanitized so a hostile / weird lab string
+    cannot escape the keys directory. Falls back to ``default`` when
+    no lab is supplied.
+    """
+    safe = "".join(c for c in (lab or "default") if c.isalnum() or c in "-_") or "default"
+    return os.path.join(keys_dir(), "cloudsql_{}.json".format(safe))
+
+
 def ensure_pychron_dirs():
     """Create ``~/.pychron`` and ``~/.pychron/keys`` if missing.
 
