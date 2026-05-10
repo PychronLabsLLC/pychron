@@ -235,6 +235,57 @@ class FromDeviceCodeTestCase(unittest.TestCase):
         # catching the broader type.
         self.assertIsInstance(cm.exception, workstation_setup.WorkstationSetupError)
 
+    def test_transient_502_during_poll_is_retried(self):
+        """A 502 (Forgejo upstream blip during mint) leaves the
+        device-code row approved + unconsumed on the server, so the
+        workstation should retry instead of giving up. After a few
+        retries the next poll succeeds and the enrollment completes
+        normally."""
+        with (
+            patch.object(api_client.requests, "post") as post,
+            patch.object(workstation_setup, "keyring_set_token", return_value=True),
+        ):
+            post.side_effect = [
+                _resp(201, _START_BODY),
+                _resp(425, {}),
+                _resp(502, {"detail": "forgejo upstream error: ..."}),
+                _resp(502, {"detail": "forgejo upstream error: ..."}),
+                _resp(200, _poll_body()),
+            ]
+            sleeps = []
+            setup = workstation_setup.WorkstationSetup.from_device_code(
+                self.URL,
+                on_user_code=lambda *a: None,
+                sleep=lambda s: sleeps.append(s),
+                host="testhost",
+            )
+        # Three sleeps: pending, 502, 502 — final 200 commits.
+        self.assertEqual(sleeps, [1, 1, 1])
+        self.assertEqual(setup.api_token, "pcy_NMGRL_xyz")
+
+    def test_persistent_5xx_eventually_propagates(self):
+        """If the upstream stays broken past the retry budget, the
+        ``CloudAPIError`` must propagate so the UI can surface
+        ``Enrollment failed`` rather than spinning forever."""
+        # Build a side_effect long enough to trip the budget: 1 start
+        # + (RETRY_LIMIT + 2) consecutive 502s.
+        budget = workstation_setup._POLL_TRANSIENT_RETRY_LIMIT
+        responses = [_resp(201, _START_BODY)] + [
+            _resp(502, {"detail": "forgejo upstream error"}) for _ in range(budget + 2)
+        ]
+        with (
+            patch.object(api_client.requests, "post") as post,
+            patch.object(workstation_setup, "keyring_set_token", return_value=True),
+        ):
+            post.side_effect = responses
+            with self.assertRaises(api_client.CloudAPIError):
+                workstation_setup.WorkstationSetup.from_device_code(
+                    self.URL,
+                    on_user_code=lambda *a: None,
+                    sleep=lambda s: None,
+                    host="testhost",
+                )
+
     def test_empty_api_base_url_aborts_before_any_io(self):
         with patch.object(api_client.requests, "post") as post:
             with self.assertRaises(workstation_setup.WorkstationSetupError):

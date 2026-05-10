@@ -53,6 +53,7 @@ from pychron.cloud.api_client import (
     CloudDeviceCodeExpired,
     CloudDeviceCodePending,
     CloudFingerprintRejected,
+    CloudNetworkError,
     poll_device_code,
     register_ssh_key,
     revoke_workstation_token,
@@ -81,6 +82,15 @@ from pychron.cloud.ssh_keygen import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Retry budget for transient poll failures. The server-side mint
+# (Forgejo bot create + ssh-key add) is a multi-step network
+# operation that occasionally trips on upstream timeouts. The
+# device-code row stays approved + unconsumed when the mint rolls
+# back, so the workstation can retry without re-bothering the admin.
+# After this many CONSECUTIVE transient failures we give up and
+# surface the error so the operator knows something is broken.
+_POLL_TRANSIENT_RETRY_LIMIT = 6
 
 
 class WorkstationSetupError(Exception):
@@ -184,6 +194,7 @@ class WorkstationSetup(object):
 
         interval = max(1, int(start.interval_seconds or 5))
         cancel = should_cancel or (lambda: False)
+        transient_failures = 0
 
         while True:
             if cancel():
@@ -191,6 +202,7 @@ class WorkstationSetup(object):
             try:
                 success = poll_device_code(api_base_url, start.device_code)
             except CloudDeviceCodePending:
+                transient_failures = 0
                 sleep(interval)
                 continue
             except CloudDeviceCodeDenied:
@@ -199,6 +211,29 @@ class WorkstationSetup(object):
                 raise
             except CloudFingerprintRejected:
                 raise
+            except (CloudNetworkError, CloudAPIError) as exc:
+                # 5xx / network blip during the mint rolls back the
+                # device_code on the server (still approved + unconsumed),
+                # so re-polling is the right move. Retry with the same
+                # cadence; bail after ``_POLL_TRANSIENT_RETRY_LIMIT``
+                # consecutive failures so a persistent outage doesn't
+                # spin forever.
+                transient_failures += 1
+                if transient_failures > _POLL_TRANSIENT_RETRY_LIMIT:
+                    logger.warning(
+                        "device-code poll: %d consecutive transient failures, " "giving up: %s",
+                        transient_failures,
+                        exc,
+                    )
+                    raise
+                logger.info(
+                    "device-code poll transient failure %d/%d: %s",
+                    transient_failures,
+                    _POLL_TRANSIENT_RETRY_LIMIT,
+                    exc,
+                )
+                sleep(interval)
+                continue
             break
 
         if not success.api_token:
