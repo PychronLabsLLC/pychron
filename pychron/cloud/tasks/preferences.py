@@ -30,10 +30,39 @@ from __future__ import absolute_import
 
 import logging
 
+import os
+from urllib.parse import urlparse, urlunparse
+
 from envisage.ui.tasks.preferences_pane import PreferencesPane
 from pyface.api import GUI
+from pyface.image_resource import ImageResource
+from pyface.ui_traits import Image
 from traits.api import Bool, Button, File, Password, Str
 from traitsui.api import Color, Group, HGroup, ImageEditor, Item, VGroup, View
+
+
+_BLANK_QR_IMAGE = ImageResource("blank")
+
+
+def _swap_origin(url, new_origin):
+    """Replace scheme+netloc of ``url`` with that of ``new_origin``.
+
+    Server-supplied ``verification_url`` may point at a misconfigured
+    host (e.g. ``api.example.com``); the workstation operator can
+    override the public-facing host without redeploying the API.
+    Returns ``url`` unchanged if either side fails to parse.
+    """
+    if not (url and new_origin):
+        return url
+    try:
+        p = urlparse(url)
+        np = urlparse(new_origin)
+    except ValueError:
+        return url
+    if not np.netloc:
+        return url
+    return urlunparse((np.scheme or p.scheme, np.netloc, p.path, p.params, p.query, p.fragment))
+
 
 from pychron.cloud.api_client import (
     CloudAPIError,
@@ -42,6 +71,10 @@ from pychron.cloud.api_client import (
     CloudDeviceCodeExpired,
     CloudNetworkError,
     whoami,
+)
+from pychron.cloud.dvc_credentials import (
+    DatabaseUrlParseError,
+    apply_db_credentials_to_prefs,
 )
 from pychron.cloud.keyring_store import (
     delete_token,
@@ -54,6 +87,7 @@ from pychron.cloud.workstation_setup import (
     KeyringWriteFailedError,
     WorkstationSetup,
     WorkstationSetupError,
+    load_registration,
     switch_lab as wipe_for_switch_lab,
 )
 from pychron.core.confirmation import confirmation_dialog
@@ -76,6 +110,7 @@ class CloudPreferences(BasePreferencesHelper):
     api_base_url = Str
     lab_name = Str
     api_token = Password
+    verification_url_override = Str
 
     test_connection = Button
     reonboard_button = Button("Re-onboard workstation")
@@ -96,6 +131,7 @@ class CloudPreferences(BasePreferencesHelper):
     # user_code by hand. Empty string until the server returns the
     # `verification_url_complete` payload.
     _pending_qr_path = File
+    _pending_qr_image = Image(_BLANK_QR_IMAGE)
     _pending_active = Bool(False)
     _should_cancel_enrollment = Bool(False)
 
@@ -108,12 +144,43 @@ class CloudPreferences(BasePreferencesHelper):
     _remote_status = Str
     _remote_status_color = Color
 
+    # Surfaces "Registered" / "Unregistered" on pane open so the
+    # technician can tell at a glance whether the workstation is
+    # already onboarded. Derived from the on-disk
+    # ``~/.pychron/registration.json`` + keyring token.
+    _registration_status = Str
+    _registration_status_color = Color
+
     def _remote_status_color_default(self):
+        return normalize_color_name("red")
+
+    def _registration_status_color_default(self):
         return normalize_color_name("red")
 
     def _initialize(self, *args, **kw):
         super(CloudPreferences, self)._initialize(*args, **kw)
         self._load_token_from_keyring()
+        self._refresh_registration_status()
+
+    def _refresh_registration_status(self):
+        """Update the Registered/Unregistered indicator based on local state.
+
+        Considered "Registered" iff a registration.json exists AND the
+        keyring carries a token for the configured lab. Either alone is
+        a half-onboarded state (e.g. keyring wipe + stale json) — call
+        that "Partial" so the technician knows to re-onboard.
+        """
+        reg = load_registration()
+        token = get_token(self.lab_name) if self.lab_name else ""
+        if reg and token:
+            self._registration_status = "Registered"
+            self._registration_status_color = normalize_color_name("green")
+        elif reg or token:
+            self._registration_status = "Partial — re-onboard recommended"
+            self._registration_status_color = normalize_color_name("orange")
+        else:
+            self._registration_status = "Unregistered"
+            self._registration_status_color = normalize_color_name("red")
 
     def _is_preference_trait(self, trait_name):
         # api_token must never be written to the .cfg — it lives in the OS
@@ -123,6 +190,8 @@ class CloudPreferences(BasePreferencesHelper):
             "api_token",
             "_remote_status",
             "_remote_status_color",
+            "_registration_status",
+            "_registration_status_color",
             "test_connection",
             "reonboard_button",
             "revoke_button",
@@ -132,6 +201,7 @@ class CloudPreferences(BasePreferencesHelper):
             "_pending_user_code",
             "_pending_verification_url",
             "_pending_qr_path",
+            "_pending_qr_image",
             "_pending_active",
             "_should_cancel_enrollment",
             "_recovery_token",
@@ -150,6 +220,7 @@ class CloudPreferences(BasePreferencesHelper):
         # there so the user sees the right token without re-entering it.
         if old != new:
             self._load_token_from_keyring()
+            self._refresh_registration_status()
 
     def _api_token_changed(self, old, new):
         if not self.lab_name:
@@ -211,6 +282,24 @@ class CloudPreferences(BasePreferencesHelper):
             self._remote_status = "Set API Base URL first"
             return
 
+        # Re-registration guardrail: a workstation that already has a
+        # registration.json + keyring token is functional; an admin
+        # tap on the button could otherwise silently rotate the SSH
+        # key and burn a fresh device-code slot. Require explicit
+        # confirmation before continuing.
+        existing_reg = load_registration()
+        existing_token = get_token(self.lab_name) if self.lab_name else ""
+        if existing_reg and existing_token:
+            if not confirmation_dialog(
+                "This workstation is already registered with Pychron Cloud "
+                "as lab '{}'. Re-enrolling will rotate the SSH keypair and "
+                "mint a new API token. Continue?".format(self.lab_name or "?"),
+                title="Re-register workstation",
+            ):
+                self._remote_status = "Already registered — cancelled"
+                self._remote_status_color = normalize_color_name("orange")
+                return
+
         self._should_cancel_enrollment = False
         self._pending_user_code = ""
         self._pending_verification_url = ""
@@ -232,24 +321,39 @@ class CloudPreferences(BasePreferencesHelper):
     def _on_device_code_user_code(
         self, user_code, verification_url, verification_url_complete, expires_at
     ):
-        """Worker-thread callback: surface the user_code + URL + QR in the pane.
-
-        Trait writes from non-UI threads are dispatched to the UI thread
-        by the Pyface event loop, so the operator sees the code as soon
-        as the server returns it. QR generation runs on this thread
-        (small file, ~hundreds of microseconds for a typical URL); a
-        failure is non-fatal — the typed code + URL still work.
-        """
-        self._pending_user_code = user_code
-        self._pending_verification_url = verification_url
+        if self.verification_url_override:
+            verification_url = _swap_origin(verification_url, self.verification_url_override)
+            verification_url_complete = _swap_origin(
+                verification_url_complete, self.verification_url_override
+            )
         try:
-            self._pending_qr_path = make_qr_for_device_code(
+            qr_path = make_qr_for_device_code(
                 verification_url_complete, host_slug=self.lab_name or "default"
             )
         except Exception as exc:
             logger.warning("device-code QR generation failed: %s", exc)
-            self._pending_qr_path = ""
-        self._remote_status = "Show {} to admin at {}".format(user_code, verification_url)
+            qr_path = ""
+        if qr_path:
+            d, n = os.path.split(qr_path)
+            qr_image = ImageResource(name=n, search_path=[d])
+        else:
+            qr_image = _BLANK_QR_IMAGE
+        status = "Show {} to admin at {}".format(user_code, verification_url)
+        GUI.invoke_later(
+            self._apply_pending_user_code,
+            user_code,
+            verification_url,
+            qr_path,
+            qr_image,
+            status,
+        )
+
+    def _apply_pending_user_code(self, user_code, verification_url, qr_path, qr_image, status):
+        self._pending_user_code = user_code
+        self._pending_verification_url = verification_url
+        self._pending_qr_path = qr_path
+        self._pending_qr_image = qr_image
+        self._remote_status = status
         self._remote_status_color = normalize_color_name("orange")
 
     def _enrollment_worker(self):
@@ -321,9 +425,71 @@ class CloudPreferences(BasePreferencesHelper):
         self.api_base_url = setup.api_base_url
         self.lab_name = setup.lab_name
         self._load_token_from_keyring()
-        self._remote_status = "Enrolled as {}".format(setup.lab_name)
+        # Persist Postgres credentials (if the bridge had one staged)
+        # to ``pychron.dvc.connection.favorites`` so DVC startup picks
+        # them up on the next run with no manual paste. ``None`` is a
+        # legitimate state — the workstation runs HTTP-only.
+        db_applied = self._persist_db_credentials_from_setup(setup)
+        if db_applied:
+            self._remote_status = "Enrolled as {} (DB credentials applied)".format(setup.lab_name)
+        else:
+            self._remote_status = "Enrolled as {}".format(setup.lab_name)
         self._remote_status_color = normalize_color_name("green")
+        self._refresh_registration_status()
         self._reset_pending()
+        # Run the same whoami probe the manual "Test Connection" button
+        # uses, so the technician sees an immediate, end-to-end pass /
+        # fail without an extra click. Failures here do NOT roll back
+        # the enrollment — the credentials are already minted and
+        # persisted; surface the failure as a status badge instead.
+        self._test_connection_fired()
+
+    def _persist_db_credentials_from_setup(self, setup):
+        """Apply :attr:`WorkstationSetup.database_url` to the DVC
+        connection prefs. Returns True when something was written.
+
+        Errors are caught + logged + surfaced via remote_status so a
+        bad URL does not roll back the rest of enrollment (the cloud
+        prefs + ssh + keyring are already on disk by the time we get
+        here).
+        """
+        if not getattr(setup, "database_url", None):
+            return False
+        # Pull MetaData metadata off the setup if available so the
+        # favorite carries an organization + meta_repo_name. Falls
+        # back to lab_name when the server omitted the block.
+        meta = getattr(setup, "default_metadata_repo", None) or {}
+        repo_id = meta.get("repository_identifier", "") if isinstance(meta, dict) else ""
+        organization = ""
+        meta_repo_name = ""
+        if "/" in repo_id:
+            organization, meta_repo_name = repo_id.split("/", 1)
+        elif repo_id:
+            meta_repo_name = repo_id
+        organization = organization or setup.lab_name or ""
+        try:
+            apply_db_credentials_to_prefs(
+                self.preferences,
+                database_url=setup.database_url,
+                database_role=setup.database_role,
+                lab_name=setup.lab_name,
+                organization=organization,
+                meta_repo_name=meta_repo_name,
+            )
+        except DatabaseUrlParseError as exc:
+            logger.warning(
+                "device-code DB credential parse failed (skipping DVC prefs): %s",
+                exc,
+            )
+            self._remote_status = "Enrolled — DB URL malformed, prefs unchanged"
+            self._remote_status_color = normalize_color_name("orange")
+            return False
+        except Exception as exc:  # defensive — never abort enrollment
+            logger.warning("device-code DB credential persist failed: %s", exc)
+            self._remote_status = "Enrolled — DB prefs write failed"
+            self._remote_status_color = normalize_color_name("orange")
+            return False
+        return True
 
     def _apply_enrollment_terminal(self, message, color):
         self._remote_status = message
@@ -349,6 +515,7 @@ class CloudPreferences(BasePreferencesHelper):
         self._pending_user_code = ""
         self._pending_verification_url = ""
         self._pending_qr_path = ""
+        self._pending_qr_image = _BLANK_QR_IMAGE
         self._pending_active = False
         self._should_cancel_enrollment = False
 
@@ -383,6 +550,7 @@ class CloudPreferences(BasePreferencesHelper):
             return
         self._remote_status = "Re-onboarded"
         self._remote_status_color = normalize_color_name("green")
+        self._refresh_registration_status()
 
     def _revoke_button_fired(self):
         self._remote_status_color = normalize_color_name("red")
@@ -409,6 +577,7 @@ class CloudPreferences(BasePreferencesHelper):
         if self.lab_name:
             delete_token(self.lab_name)
         self.trait_setq(api_token="")
+        self._refresh_registration_status()
 
     def _switch_lab_button_fired(self):
         self._remote_status_color = normalize_color_name("red")
@@ -429,6 +598,7 @@ class CloudPreferences(BasePreferencesHelper):
         self.trait_setq(api_token="", lab_name="", api_base_url="")
         self._remote_status = "Wiped; configure new lab above"
         self._remote_status_color = normalize_color_name("orange")
+        self._refresh_registration_status()
 
 
 class CloudPreferencesPane(PreferencesPane):
@@ -465,6 +635,16 @@ class CloudPreferencesPane(PreferencesPane):
                 resizable=True,
                 label="API Token",
             ),
+            Item(
+                "verification_url_override",
+                tooltip="Optional. If the server returns a verification_url "
+                "with the wrong public host (e.g. api.example.com), set the "
+                "correct origin here (e.g. https://console.pychronlabs.com). "
+                "The scheme+host is swapped; the path and user_code query are "
+                "preserved.",
+                resizable=True,
+                label="Verification URL Override",
+            ),
             HGroup(
                 test_connection_item(),
                 CustomLabel(
@@ -472,6 +652,15 @@ class CloudPreferencesPane(PreferencesPane):
                     width=240,
                     color_name="_remote_status_color",
                 ),
+            ),
+            HGroup(
+                CustomLabel(
+                    "_registration_status",
+                    width=240,
+                    color_name="_registration_status_color",
+                ),
+                label="Status",
+                show_border=False,
             ),
             show_border=True,
             label="Pychron Cloud (pychronAPI)",
@@ -509,9 +698,11 @@ class CloudPreferencesPane(PreferencesPane):
             ),
             HGroup(
                 Item(
-                    "_pending_qr_path",
+                    "_pending_qr_image",
                     show_label=False,
                     editor=ImageEditor(),
+                    width=300,
+                    height=300,
                     tooltip="Scan with the admin's phone to open the "
                     "verification page with the user_code pre-filled.",
                     visible_when="_pending_qr_path != ''",

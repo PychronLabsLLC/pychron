@@ -302,3 +302,97 @@ class FromDeviceCodeTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FromDeviceCodeDbCredentialsTestCase(unittest.TestCase):
+    """The poll-success body now optionally carries a ``database_url``
+    + ``database_role`` minted by the off-cluster admin tool. The
+    orchestrator must surface those onto the returned
+    ``WorkstationSetup`` so the prefs pane can persist them to the
+    DVC connection favorites — without leaking the URL into
+    ``DeviceCodePollSuccess.raw`` (which is exposed for debug logs).
+    """
+
+    URL = "https://api.example"
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self._patcher = patch(
+            "pychron.cloud.paths.os.path.expanduser",
+            lambda p: p.replace("~", self.tmp),
+        )
+        self._patcher.start()
+        self.addCleanup(self._patcher.stop)
+
+        def _rmtree():
+            import shutil
+
+            shutil.rmtree(self.tmp, ignore_errors=True)
+
+        self.addCleanup(_rmtree)
+
+    def _poll_body_with_db(self):
+        body = _poll_body()
+        body["database_url"] = "postgresql://wkstn_x:Pa55@10.0.1.5:5432/nmgrl?sslmode=require"
+        body["database_role"] = "wkstn_x"
+        return body
+
+    def test_db_credential_fields_propagate_to_setup(self):
+        with (
+            patch.object(api_client.requests, "post") as post,
+            patch.object(workstation_setup, "keyring_set_token", return_value=True),
+        ):
+            post.side_effect = [
+                _resp(201, _START_BODY),
+                _resp(200, self._poll_body_with_db()),
+            ]
+            setup = workstation_setup.WorkstationSetup.from_device_code(
+                self.URL,
+                on_user_code=lambda *a: None,
+                sleep=lambda s: None,
+                host="testhost",
+            )
+
+        self.assertEqual(
+            setup.database_url,
+            "postgresql://wkstn_x:Pa55@10.0.1.5:5432/nmgrl?sslmode=require",
+        )
+        self.assertEqual(setup.database_role, "wkstn_x")
+
+    def test_no_db_credential_leaves_setup_attrs_none(self):
+        """When the bridge does not stage a credential, the setup
+        carries ``None`` for both DB fields — the prefs pane uses
+        this to skip writing DVC favorites and leave the existing
+        connection list untouched."""
+        with (
+            patch.object(api_client.requests, "post") as post,
+            patch.object(workstation_setup, "keyring_set_token", return_value=True),
+        ):
+            post.side_effect = [
+                _resp(201, _START_BODY),
+                _resp(200, _poll_body()),  # no database_url
+            ]
+            setup = workstation_setup.WorkstationSetup.from_device_code(
+                self.URL,
+                on_user_code=lambda *a: None,
+                sleep=lambda s: None,
+                host="testhost",
+            )
+
+        self.assertIsNone(setup.database_url)
+        self.assertIsNone(setup.database_role)
+
+    def test_database_url_stripped_from_raw_debug_field(self):
+        """The plaintext password embedded in ``database_url`` must
+        not survive into the ``raw`` dict that callers may log for
+        debugging — same defensive treatment we give ``api_token``."""
+        with patch.object(api_client.requests, "post") as post:
+            post.side_effect = [
+                _resp(200, self._poll_body_with_db()),
+            ]
+            success = api_client.poll_device_code(self.URL, "dvc_xyz")
+
+        self.assertNotIn("database_url", success.raw)
+        self.assertNotIn("api_token", success.raw)
+        # But the typed attribute still carries it for the orchestrator.
+        self.assertIn("Pa55", success.database_url)

@@ -396,6 +396,14 @@ class DeviceCodePollSuccess(object):
     keyring before losing the reference. ``ssh_key`` is the same shape
     that :func:`register_ssh_key` returns so the orchestrator can reuse
     the existing persist/apply path.
+
+    ``database_url`` carries a per-workstation Postgres connection URL
+    (``postgresql://role:password@host:port/dbname``) when the off-
+    cluster admin tool has staged a credential via the bridge's
+    bootstrap-only ``/internal/workstation-credentials`` endpoint.
+    ``None`` when no credential is pending — the workstation runs in
+    HTTP-only mode. Returned exactly once; the staging row is DELETED
+    on this read so the password is not recoverable later.
     """
 
     __slots__ = (
@@ -405,6 +413,8 @@ class DeviceCodePollSuccess(object):
         "default_metadata_repo",
         "ssh_host_alias",
         "ssh_key",
+        "database_url",
+        "database_role",
         "raw",
     )
 
@@ -417,6 +427,8 @@ class DeviceCodePollSuccess(object):
         ssh_host_alias,
         ssh_key,
         raw,
+        database_url=None,
+        database_role=None,
     ):
         self.api_token = api_token
         self.lab = lab
@@ -424,6 +436,8 @@ class DeviceCodePollSuccess(object):
         self.default_metadata_repo = default_metadata_repo
         self.ssh_host_alias = ssh_host_alias or {}
         self.ssh_key = ssh_key
+        self.database_url = database_url or None
+        self.database_role = database_role or None
         self.raw = raw
 
 
@@ -554,8 +568,11 @@ def poll_device_code(base_url, device_code, timeout=DEFAULT_TIMEOUT):
         raw=ssh_key_payload,
     )
 
-    # Strip the plaintext token from `raw` before exposing it.
-    safe_raw = {k: v for k, v in body.items() if k != "api_token"}
+    # Strip the plaintext token AND the database_url (which embeds the
+    # Postgres role's password) from `raw` before exposing it. Callers
+    # who serialize `raw` for debugging would otherwise leak both
+    # bearer secrets into logs/disk.
+    safe_raw = {k: v for k, v in body.items() if k not in ("api_token", "database_url")}
 
     return DeviceCodePollSuccess(
         api_token=body.get("api_token", ""),
@@ -565,6 +582,8 @@ def poll_device_code(base_url, device_code, timeout=DEFAULT_TIMEOUT):
         ssh_host_alias=body.get("ssh_host_alias") or {},
         ssh_key=ssh_key,
         raw=safe_raw,
+        database_url=body.get("database_url") or None,
+        database_role=body.get("database_role") or None,
     )
 
 
