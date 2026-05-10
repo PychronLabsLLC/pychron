@@ -29,6 +29,7 @@ Adds a "Pychron Cloud" pane with:
 from __future__ import absolute_import
 
 import logging
+import os
 
 from envisage.ui.tasks.preferences_pane import PreferencesPane
 from pyface.api import GUI
@@ -306,7 +307,11 @@ class CloudPreferences(BasePreferencesHelper):
                 verification_url_complete, host_slug=self.lab_name or "default"
             )
             self._pending_qr_path = path
-            self._pending_qr_image = ImageResource(absolute_path=path) if path else None
+            if path:
+                dirname, basename = os.path.split(path)
+                self._pending_qr_image = ImageResource(basename, search_path=[dirname])
+            else:
+                self._pending_qr_image = None
         except Exception as exc:
             logger.warning("device-code QR generation failed: %s", exc)
             self._pending_qr_path = ""
