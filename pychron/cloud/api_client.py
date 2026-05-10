@@ -74,6 +74,16 @@ class CloudDeviceCodeExpired(CloudAPIError):
     """
 
 
+class CloudDeviceCodeMintFailed(CloudAPIError):
+    """Device-code poll: server hit an internal error during mint (HTTP 500/502).
+
+    The mint side-effect (bot creation, key registration) typically
+    consumes the device_code even when it errors out, so re-polling
+    just yields a 410. Treat as terminal so the UI can prompt for a
+    fresh enrollment instead of burning the retry budget.
+    """
+
+
 class CloudNetworkError(CloudAPIError):
     """Transport-level failure (DNS, TCP, TLS, timeout, non-JSON body)."""
 
@@ -547,6 +557,12 @@ def poll_device_code(base_url, device_code, timeout=DEFAULT_TIMEOUT):
         raise CloudDeviceCodeExpired("expired_token")
     if resp.status_code == 400:
         raise CloudFingerprintRejected("server rejected key (HTTP 400): {}".format(resp.text[:200]))
+    if resp.status_code in (500, 502):
+        raise CloudDeviceCodeMintFailed(
+            "device-code poll returned HTTP {} (mint failure): {}".format(
+                resp.status_code, resp.text[:200]
+            )
+        )
     if resp.status_code != 200:
         raise CloudAPIError(
             "device-code poll returned HTTP {}: {}".format(resp.status_code, resp.text[:200])
