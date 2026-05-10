@@ -440,7 +440,15 @@ class CloudPreferences(BasePreferencesHelper):
         + keyring are already on disk by the time we get here).
         """
         if not getattr(setup, "database_iam", None):
+            logger.info(
+                "device-code: server returned no database_iam bundle; "
+                "DVC connection prefs left untouched"
+            )
             return False
+        logger.info(
+            "device-code: applying database_iam bundle to DVC prefs (lab=%s)",
+            setup.lab_name,
+        )
         meta = getattr(setup, "default_metadata_repo", None) or {}
         repo_id = meta.get("repository_identifier", "") if isinstance(meta, dict) else ""
         organization = ""
