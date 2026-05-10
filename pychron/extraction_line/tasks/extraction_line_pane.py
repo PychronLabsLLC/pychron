@@ -197,13 +197,55 @@ class EditorPane(TraitsDockPane):
     id = "pychron.extraction_line.editor"
 
     def traits_view(self):
-        v = View(
+        egrp = VGroup(
+            BorderHGroup(
+                icon_button_editor("increment_down_x", "arrow_left"),
+                icon_button_editor("increment_up_x", "arrow_right"),
+                UItem("x_magnitude"),
+                label="X",
+            ),
+            BorderHGroup(
+                icon_button_editor("increment_up_y", "arrow_up"),
+                icon_button_editor("increment_down_y", "arrow_down"),
+                UItem("y_magnitude"),
+                label="Y",
+            ),
+            BorderHGroup(
+                UItem("width"),
+                icon_button_editor("width_increment_minus_button", "delete"),
+                icon_button_editor("width_increment_plus_button", "add"),
+                label="Width",
+            ),
+            BorderHGroup(
+                UItem("height"),
+                icon_button_editor("height_increment_minus_button", "delete"),
+                icon_button_editor("height_increment_plus_button", "add"),
+                label="Height",
+            ),
+            UItem("color"),
+            UItem("save_button"),
+        )
+
+        agrp = BorderVGroup(
+            UItem("add_item_button"),
+            UItem("new_item_kind"),
+            UItem("new_item", style="custom", editor=InstanceEditor(view="edit_view")),
+            label="New Item",
+        )
+        g = VGroup(
             UItem(
-                "editor_view",
-                editor=InstanceEditor(),
+                "groups",
                 style="custom",
+                editor=ListEditor(
+                    use_notebook=True,
+                    page_name=".name",
+                    selected="selected_group",
+                    editor=InstanceEditor(),
+                ),
             )
         )
+
+        v = View(VGroup(UItem("edit_mode"), VGroup(g, agrp, egrp, enabled_when="edit_mode")))
         return v
 
 
