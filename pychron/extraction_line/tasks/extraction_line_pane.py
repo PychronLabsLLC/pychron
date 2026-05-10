@@ -44,11 +44,11 @@ class CanvasPane(TraitsTaskPane):
     def create_contents(self, parent):
         """Override to set Qt-level size policy."""
         control = super().create_contents(parent)
-        
+
         # Force Qt to expand - use massive minimum size as hard floor
         control.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         control.setMinimumSize(1200, 900)
-        
+
         return control
 
     def traits_view(self):
@@ -153,13 +153,7 @@ class ExplanationPane(TraitsDockPane):
     id = "pychron.extraction_line.explanation"
 
     def traits_view(self):
-        v = View(
-            UItem(
-                "canvas_manager",
-                editor=InstanceEditor(),
-                style="custom",
-            )
-        )
+        v = View(UItem("explanation", style="custom"))
         return v
 
 
@@ -168,14 +162,20 @@ class InspectorPane(TraitsDockPane):
     id = "pychron.extraction_line.inspector"
 
     def traits_view(self):
-        v = View(
-            UItem(
-                "canvas_manager",
-                editor=InstanceEditor(),
-                style="custom",
-            )
-        )
-        return v
+        return View(UItem("canvas_view_model", style="custom", editor=InstanceEditor()))
+
+
+class ReadbackAdapter(TabularAdapter):
+    columns = [
+        ("Name", "name"),
+        ("Cmd", "last_command"),
+        ("Value", "last_response"),
+        ("Timestamp", "timestamp"),
+    ]
+    font = "arial 10"
+    name_width = Int(75)
+    cmd_width = Int(50)
+    value_width = Int(100)
 
 
 class ReadbackPane(TraitsDockPane):
@@ -185,10 +185,8 @@ class ReadbackPane(TraitsDockPane):
     def traits_view(self):
         v = View(
             UItem(
-                "readback_manager",
-                editor=InstanceEditor(),
-                style="custom",
-                defined_when="readback_manager",
+                "devices",
+                editor=TabularEditor(adapter=ReadbackAdapter(), auto_update=True, editable=False),
             )
         )
         return v
