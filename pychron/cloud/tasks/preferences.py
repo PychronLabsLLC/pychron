@@ -47,7 +47,9 @@ from pychron.cloud.api_client import (
     CloudDeviceCodeDenied,
     CloudDeviceCodeExpired,
     CloudDeviceCodeMintFailed,
+    CloudIamBundleNotStaged,
     CloudNetworkError,
+    fetch_iam_credentials,
     whoami,
 )
 from pychron.cloud.keyring_store import (
@@ -93,6 +95,7 @@ class CloudPreferences(BasePreferencesHelper):
     reonboard_button = Button("Re-onboard workstation")
     revoke_button = Button("Revoke this workstation")
     switch_lab_button = Button("Switch lab (destructive)")
+    refresh_iam_button = Button("Refresh Cloud SQL credentials")
 
     # Device-code enrollment (RFC 8628-style). The technician clicks
     # ``enroll_via_device_code_button``; the workstation contacts
@@ -172,6 +175,7 @@ class CloudPreferences(BasePreferencesHelper):
             "reonboard_button",
             "revoke_button",
             "switch_lab_button",
+            "refresh_iam_button",
             "enroll_via_device_code_button",
             "cancel_enrollment_button",
             "_pending_user_code",
@@ -279,6 +283,77 @@ class CloudPreferences(BasePreferencesHelper):
             return
 
         self._remote_status = "OK ({} / {})".format(info.kind or "?", info.lab or "?")
+        self._remote_status_color = normalize_color_name("green")
+
+    def _refresh_iam_button_fired(self):
+        """Pull a staged Cloud SQL IAM bundle out-of-band of enrollment.
+
+        Decouples the admin-side stage step from the workstation
+        enrollment poll: after `pychron-forgejo-admin
+        stage-workstation-iam` lands a row keyed against this
+        workstation's current api_token, the operator clicks here to
+        fetch + persist the bundle into DVC connection prefs without
+        having to re-enroll (which would mint a fresh api_token and
+        leave the staged row orphaned).
+        """
+        self._remote_status_color = normalize_color_name("red")
+        if not self.api_base_url:
+            self._remote_status = "No URL"
+            return
+        if not self.api_token:
+            self._remote_status = "No token — enroll first"
+            return
+        if not self.lab_name:
+            self._remote_status = "No lab — enroll first"
+            return
+        token_fp = hashlib.sha256(self.api_token.encode("utf-8", "replace")).hexdigest()[:12]
+        logger.info(
+            "refresh_iam: GET iam-credentials lab=%s api_token_fp=%s",
+            self.lab_name,
+            token_fp,
+        )
+        try:
+            bundle = fetch_iam_credentials(self.api_base_url, self.api_token)
+        except CloudIamBundleNotStaged:
+            logger.info("refresh_iam: no bundle staged for token_fp=%s", token_fp)
+            self._remote_status = "No IAM bundle staged — ask admin to run stage-workstation-iam"
+            self._remote_status_color = normalize_color_name("orange")
+            return
+        except CloudAuthError:
+            logger.warning("refresh_iam: 401 (token_fp=%s)", token_fp)
+            self._remote_status = "401 Unauthorized"
+            return
+        except CloudNetworkError as exc:
+            logger.warning("refresh_iam transport failure: %s", exc)
+            self._remote_status = "Unreachable"
+            return
+        except CloudAPIError as exc:
+            logger.warning("refresh_iam failed: %s", exc)
+            self._remote_status = "Refresh failed"
+            return
+
+        meta = {
+            "repository_identifier": "{}/{}".format(self.lab_name or "", self.lab_name or ""),
+        }
+        organization = self.lab_name or ""
+        meta_repo_name = self.lab_name or ""
+        try:
+            apply_iam_credentials_to_prefs(
+                self.preferences,
+                bundle=bundle,
+                lab_name=self.lab_name,
+                organization=organization,
+                meta_repo_name=meta_repo_name,
+            )
+        except IamCredentialsError as exc:
+            logger.warning("refresh_iam: bundle malformed: %s", exc)
+            self._remote_status = "IAM bundle malformed — see log"
+            return
+        except Exception as exc:
+            logger.warning("refresh_iam: persist failed: %s", exc)
+            self._remote_status = "IAM prefs write failed"
+            return
+        self._remote_status = "Cloud SQL credentials applied"
         self._remote_status_color = normalize_color_name("green")
 
     # -- device-code enrollment ---------------------------------------
@@ -773,6 +848,16 @@ class CloudPreferencesPane(PreferencesPane):
                 Item("reonboard_button", show_label=False),
                 Item("revoke_button", show_label=False),
                 Item("switch_lab_button", show_label=False),
+            ),
+            HGroup(
+                Item(
+                    "refresh_iam_button",
+                    show_label=False,
+                    tooltip="Pull a Cloud SQL IAM bundle staged by the admin "
+                    "via stage-workstation-iam. Use after enrolling, once "
+                    "the admin confirms a row was staged for this "
+                    "workstation's api_token.",
+                ),
             ),
             show_border=True,
             label="Workstation Lifecycle",
