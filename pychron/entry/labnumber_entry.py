@@ -927,10 +927,14 @@ THIS CHANGE CANNOT BE UNDONE"
         # instead of letting `dbpos.analysis_count` (a property that
         # does ``count()`` lazily) fire one round-trip per position.
         # Across Cloud SQL IAM that turns a 50-position level from
-        # ~30s into ~1s. Sample + material are already
-        # ``lazy="joined"`` on the relationship side, so a touch of
-        # ``dbpos.sample.material`` should not round-trip.
+        # ~30s into ~1s.
         self._analysis_count_cache = self._bulk_analysis_counts(positions)
+        # Prime the session cache for ``dbpos.sample`` /
+        # ``dbpos.sample.material``. Both are backref relationships
+        # (lazy="select" by default); without this each
+        # ``_sync_position`` would issue 2 round-trips. joinedload
+        # collapses them into the existing positions fetch.
+        self._prefetch_sample_material(positions)
         try:
             with no_update(self):
                 for pi in positions:
@@ -942,6 +946,33 @@ THIS CHANGE CANNOT BE UNDONE"
                         self.debug("extra irradiation position for this tray {}".format(hi))
         finally:
             self._analysis_count_cache = None
+
+    def _prefetch_sample_material(self, positions):
+        """Force a single SELECT that joinedload-pulls sample + material
+        for every position in the level. Subsequent
+        ``dbpos.sample.material`` accesses then hit the session cache
+        and never round-trip.
+        """
+        if not positions:
+            return
+        try:
+            from sqlalchemy.orm import joinedload, object_session
+            from pychron.dvc.dvc_orm import (
+                IrradiationPositionTbl,
+                SampleTbl,
+            )
+        except ImportError:
+            return
+        sess = object_session(positions[0])
+        if sess is None:
+            return
+        ids = [p.id for p in positions]
+        (
+            sess.query(IrradiationPositionTbl)
+            .options(joinedload(IrradiationPositionTbl.sample).joinedload(SampleTbl.material))
+            .filter(IrradiationPositionTbl.id.in_(ids))
+            .all()
+        )
 
     def _bulk_analysis_counts(self, positions):
         if not positions:
