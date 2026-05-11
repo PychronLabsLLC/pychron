@@ -642,15 +642,18 @@ host= {}\nurl= {}'.format(
         # python.org macOS builds (no system trust store) the default
         # context is empty and TLS verify fails with "unable to get
         # local issuer certificate". Point OpenSSL at certifi's bundle
-        # if no SSL_CERT_FILE / REQUESTS_CA_BUNDLE has been set
-        # explicitly. No-op when the OS already has a populated trust
-        # store or when the user has set their own bundle.
+        # when SSL_CERT_FILE / REQUESTS_CA_BUNDLE is unset or points to
+        # a path that does not exist on disk (the common stale
+        # "/etc/ssl/cert.pem" case on Mac). Preserves an explicit
+        # operator-supplied bundle that actually exists.
         try:
             import certifi
 
             ca = certifi.where()
-            os.environ.setdefault("SSL_CERT_FILE", ca)
-            os.environ.setdefault("REQUESTS_CA_BUNDLE", ca)
+            for var in ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE"):
+                cur = os.environ.get(var)
+                if not cur or not os.path.isfile(cur):
+                    os.environ[var] = ca
         except ImportError:
             pass
 
