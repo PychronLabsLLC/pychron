@@ -14,11 +14,13 @@
 # limitations under the License.
 # ===============================================================================
 import sys
+import time
 from datetime import timedelta, datetime
 from string import digits, ascii_letters
 
 from sqlalchemy import not_, func, distinct, or_, and_
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload, undefer
+from sqlalchemy.orm.attributes import set_committed_value
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.functions import count
 from sqlalchemy.util import OrderedSet
@@ -1451,7 +1453,31 @@ class DVCDatabase(DatabaseAdapter):
                 q = q.group_by(IrradiationPositionTbl.id)
                 q = q.having(count(AnalysisTbl.id) > 0)
 
-            return self._query_all(q, verbose_query=verbose_query, **kw)
+            q = q.options(
+                joinedload(IrradiationPositionTbl.sample).joinedload(SampleTbl.material),
+                joinedload(IrradiationPositionTbl.sample).joinedload(SampleTbl.project),
+                joinedload(IrradiationPositionTbl.sample)
+                .undefer(SampleTbl.elevation)
+                .undefer(SampleTbl.lithology)
+                .undefer(SampleTbl.location),
+                joinedload(IrradiationPositionTbl.level).joinedload(LevelTbl.irradiation),
+            )
+            positions = self._query_all(q, verbose_query=verbose_query, **kw)
+            if positions:
+                ids = [p.id for p in positions]
+                count_rows = (
+                    sess.query(
+                        AnalysisTbl.irradiation_positionID,
+                        count(AnalysisTbl.id),
+                    )
+                    .filter(AnalysisTbl.irradiation_positionID.in_(ids))
+                    .group_by(AnalysisTbl.irradiation_positionID)
+                    .all()
+                )
+                count_map = {pid: c for pid, c in count_rows}
+                for p in positions:
+                    p._cached_analysis_count = count_map.get(p.id, 0)
+            return positions
 
     def get_associated_repositories(self, idn, verbose_query=False):
         with self.session_ctx() as sess:
@@ -1607,7 +1633,99 @@ class DVCDatabase(DatabaseAdapter):
             if count_only:
                 return tc
 
-            return self._query_all(q, verbose_query=verbose_query), tc
+            q = q.options(
+                selectinload(AnalysisTbl.measured_positions).joinedload(MeasuredPositionTbl.load),
+                joinedload(AnalysisTbl.irradiation_position)
+                .joinedload(IrradiationPositionTbl.sample)
+                .joinedload(SampleTbl.material),
+                joinedload(AnalysisTbl.irradiation_position)
+                .joinedload(IrradiationPositionTbl.sample)
+                .joinedload(SampleTbl.project)
+                .joinedload(ProjectTbl.principal_investigator),
+                joinedload(AnalysisTbl.irradiation_position)
+                .joinedload(IrradiationPositionTbl.level)
+                .joinedload(LevelTbl.irradiation),
+            )
+
+            fetch_st = time.time()
+            analyses = self._query_all(q, verbose_query=verbose_query)
+            self.debug(
+                "get_labnumber_analyses main fetch n={} took={:.3f}s".format(
+                    len(analyses), time.time() - fetch_st
+                )
+            )
+
+            self._prefetch_analysis_relations(sess, analyses)
+
+            return analyses, tc
+
+    def _prefetch_analysis_relations(self, sess, analyses):
+        """Bulk-load relationships needed by AnalysisTbl.bind().
+
+        Defends against SQLAlchemy options() not being honored on this
+        path. Issues a small fixed number of batched queries instead of
+        per-analysis lazy loads. Attaches results via
+        ``set_committed_value`` so subsequent attribute access reads from
+        instance state without emitting SQL.
+        """
+        if not analyses:
+            return
+
+        st = time.time()
+        aids = [a.id for a in analyses]
+
+        mp_rows = (
+            sess.query(MeasuredPositionTbl)
+            .options(joinedload(MeasuredPositionTbl.load))
+            .filter(MeasuredPositionTbl.analysisID.in_(aids))
+            .all()
+        )
+        mp_by_aid = {}
+        for mp in mp_rows:
+            mp_by_aid.setdefault(mp.analysisID, []).append(mp)
+        for a in analyses:
+            set_committed_value(a, "measured_positions", mp_by_aid.get(a.id, []))
+
+        positions = [a.irradiation_position for a in analyses if a.irradiation_position]
+        sample_ids = sorted({p.sampleID for p in positions if p.sampleID})
+        level_ids = sorted({p.levelID for p in positions if p.levelID})
+
+        sample_count = 0
+        if sample_ids:
+            samples = (
+                sess.query(SampleTbl)
+                .options(
+                    joinedload(SampleTbl.material),
+                    joinedload(SampleTbl.project).joinedload(ProjectTbl.principal_investigator),
+                )
+                .filter(SampleTbl.id.in_(sample_ids))
+                .all()
+            )
+            sample_by_id = {s.id: s for s in samples}
+            sample_count = len(samples)
+            for p in positions:
+                if p.sampleID in sample_by_id:
+                    set_committed_value(p, "sample", sample_by_id[p.sampleID])
+
+        level_count = 0
+        if level_ids:
+            levels = (
+                sess.query(LevelTbl)
+                .options(joinedload(LevelTbl.irradiation))
+                .filter(LevelTbl.id.in_(level_ids))
+                .all()
+            )
+            level_by_id = {l.id: l for l in levels}
+            level_count = len(levels)
+            for p in positions:
+                if p.levelID in level_by_id:
+                    set_committed_value(p, "level", level_by_id[p.levelID])
+
+        self.debug(
+            "prefetch_analysis_relations n={} mp_rows={} samples={} levels={} took={:.3f}s".format(
+                len(analyses), len(mp_rows), sample_count, level_count, time.time() - st
+            )
+        )
 
     def get_repository_date_range(self, names):
         with self.session_ctx() as sess:
@@ -1697,7 +1815,15 @@ class DVCDatabase(DatabaseAdapter):
             if limit:
                 q = q.limit(limit)
 
-            return self._query_all(q, verbose_query=verbose)
+            fetch_st = time.time()
+            analyses = self._query_all(q, verbose_query=verbose)
+            self.debug(
+                "get_analyses_by_date_range main fetch n={} took={:.3f}s".format(
+                    len(analyses), time.time() - fetch_st
+                )
+            )
+            self._prefetch_analysis_relations(sess, analyses)
+            return analyses
 
     def get_project_labnumbers(
         self,
@@ -1884,7 +2010,30 @@ class DVCDatabase(DatabaseAdapter):
                     ids = [r[0] for r in res]
                     q = sess.query(IrradiationPositionTbl)
                     q = q.filter(IrradiationPositionTbl.id.in_(ids))
-                    return self._query_all(q, verbose_query=False)
+                    q = q.options(
+                        joinedload(IrradiationPositionTbl.sample).joinedload(SampleTbl.material),
+                        joinedload(IrradiationPositionTbl.sample).joinedload(SampleTbl.project),
+                        joinedload(IrradiationPositionTbl.sample)
+                        .undefer(SampleTbl.elevation)
+                        .undefer(SampleTbl.lithology)
+                        .undefer(SampleTbl.location),
+                        joinedload(IrradiationPositionTbl.level).joinedload(LevelTbl.irradiation),
+                    )
+                    positions = self._query_all(q, verbose_query=False)
+                    if positions:
+                        count_rows = (
+                            sess.query(
+                                AnalysisTbl.irradiation_positionID,
+                                count(AnalysisTbl.id),
+                            )
+                            .filter(AnalysisTbl.irradiation_positionID.in_(ids))
+                            .group_by(AnalysisTbl.irradiation_positionID)
+                            .all()
+                        )
+                        count_map = {pid: c for pid, c in count_rows}
+                        for p in positions:
+                            p._cached_analysis_count = count_map.get(p.id, 0)
+                    return positions
 
     def get_analysis_groups(self, project_ids, **kw):
         ret = []
