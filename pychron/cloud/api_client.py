@@ -689,4 +689,71 @@ def revoke_workstation_token(base_url, token, timeout=DEFAULT_TIMEOUT):
     raise CloudAPIError("revoke returned HTTP {}: {}".format(resp.status_code, resp.text[:200]))
 
 
+class CloudIamBundleNotStaged(CloudAPIError):
+    """No Cloud SQL IAM bundle is currently staged for this token (HTTP 404).
+
+    Distinct from a generic CloudAPIError so the UI can surface a
+    targeted "ask the admin to stage one" message instead of a
+    misleading "server error".
+    """
+
+
+def fetch_iam_credentials(base_url, token, timeout=DEFAULT_TIMEOUT):
+    """GET ``/api/v1/forgejo/workstations/iam-credentials``.
+
+    Out-of-band delivery of a staged Cloud SQL IAM bundle. Same
+    one-time-delivery semantics as the device-code poll-success
+    path: the server DELETES the staging row on read.
+
+    Returns a dict shaped for ``apply_iam_credentials_to_prefs``
+    (``instance_connection_name``, ``database_name``,
+    ``service_account_email``, ``service_account_key_json``,
+    ``ip_type``).
+
+    Raises :class:`CloudIamBundleNotStaged` on 404 (no bundle for
+    this token), :class:`CloudAuthError` on 401, and
+    :class:`CloudAPIError` on anything else.
+    """
+    if not base_url:
+        raise CloudAPIError("api_base_url is empty")
+    if not token:
+        raise CloudAuthError("api_token is empty")
+
+    url = _join(base_url, "/api/v1/forgejo/workstations/iam-credentials")
+    headers = {
+        "Authorization": "Bearer {}".format(token),
+        "Accept": "application/json",
+    }
+    logger.info(
+        "fetch_iam_credentials: GET %s api_token_fp=%s",
+        url,
+        _fp(token),
+    )
+    try:
+        resp = requests.get(url, headers=headers, timeout=timeout, verify=globalv.cert_file)
+    except requests.RequestException as exc:
+        raise CloudNetworkError("fetch_iam_credentials transport failure: {}".format(exc))
+
+    logger.info("fetch_iam_credentials: <- HTTP %d", resp.status_code)
+    if resp.status_code == 401:
+        raise CloudAuthError("token rejected (401)")
+    if resp.status_code == 403:
+        raise CloudPermissionError("token lacks scope to fetch IAM credentials (403)")
+    if resp.status_code == 404:
+        raise CloudIamBundleNotStaged("no IAM bundle staged for this token")
+    if resp.status_code != 200:
+        raise CloudAPIError(
+            "fetch_iam_credentials returned HTTP {}: {}".format(resp.status_code, resp.text[:200])
+        )
+    try:
+        body = resp.json()
+    except ValueError as exc:
+        raise CloudNetworkError("fetch_iam_credentials returned non-JSON body: {}".format(exc))
+    if not isinstance(body, dict):
+        raise CloudNetworkError(
+            "fetch_iam_credentials payload is not a dict: {!r}".format(type(body))
+        )
+    return body
+
+
 # ============= EOF =============================================
