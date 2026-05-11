@@ -343,24 +343,59 @@ class CloudPreferences(BasePreferencesHelper):
             logger.warning("refresh_iam: no IPreferences node available; cannot persist")
             self._remote_status = "No preferences node — restart pychron and retry"
             return
-        try:
-            apply_iam_credentials_to_prefs(
-                prefs,
-                bundle=bundle,
-                lab_name=self.lab_name,
-                organization=organization,
-                meta_repo_name=meta_repo_name,
+        # Writing the favorite triggers DVC's `_data_source_changed`
+        # listener, which calls `self.db.connect()` synchronously and
+        # blocks on the Cloud SQL Connector dial. If the staged
+        # bundle uses ip_type=private and the workstation has no
+        # route to the private IP, that dial hangs for tens of
+        # seconds with the UI thread frozen. Run the write +
+        # implicit reconnect on a background thread so the UI stays
+        # responsive; surface the outcome via GUI.invoke_later.
+        self._remote_status = "Applying Cloud SQL credentials..."
+        self._remote_status_color = normalize_color_name("orange")
+
+        import threading
+
+        def worker():
+            try:
+                apply_iam_credentials_to_prefs(
+                    prefs,
+                    bundle=bundle,
+                    lab_name=self.lab_name,
+                    organization=organization,
+                    meta_repo_name=meta_repo_name,
+                )
+            except IamCredentialsError as exc:
+                logger.warning("refresh_iam: bundle malformed: %s", exc)
+                GUI.invoke_later(
+                    self._apply_refresh_iam_status,
+                    "IAM bundle malformed — see log",
+                    "red",
+                )
+                return
+            except Exception as exc:
+                logger.warning("refresh_iam: persist failed: %s", exc)
+                GUI.invoke_later(
+                    self._apply_refresh_iam_status,
+                    "IAM prefs write failed",
+                    "red",
+                )
+                return
+            GUI.invoke_later(
+                self._apply_refresh_iam_status,
+                "Cloud SQL credentials applied",
+                "green",
             )
-        except IamCredentialsError as exc:
-            logger.warning("refresh_iam: bundle malformed: %s", exc)
-            self._remote_status = "IAM bundle malformed — see log"
-            return
-        except Exception as exc:
-            logger.warning("refresh_iam: persist failed: %s", exc)
-            self._remote_status = "IAM prefs write failed"
-            return
-        self._remote_status = "Cloud SQL credentials applied"
-        self._remote_status_color = normalize_color_name("green")
+
+        threading.Thread(
+            target=worker,
+            name="pychron-cloud-refresh-iam",
+            daemon=True,
+        ).start()
+
+    def _apply_refresh_iam_status(self, message, color):
+        self._remote_status = message
+        self._remote_status_color = normalize_color_name(color)
 
     # -- device-code enrollment ---------------------------------------
 
