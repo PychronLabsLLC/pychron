@@ -961,10 +961,12 @@ THIS CHANGE CANNOT BE UNDONE"
             self._flux_positions_cache = None
 
     def _prefetch_sample_material(self, positions):
-        """Force a single SELECT that joinedload-pulls sample + material
-        for every position in the level. Subsequent
-        ``dbpos.sample.material`` accesses then hit the session cache
-        and never round-trip.
+        """Force a single SELECT that joinedload-pulls sample +
+        material + project for every position in the level.
+        Subsequent ``dbpos.sample.material`` /
+        ``dbpos.sample.project`` accesses (the latter is hit by
+        ``markup_canvas_position``) then come from the session cache
+        instead of round-tripping per position.
         """
         if not positions:
             return
@@ -980,9 +982,13 @@ THIS CHANGE CANNOT BE UNDONE"
         if sess is None:
             return
         ids = [p.id for p in positions]
+        sample_opt = joinedload(IrradiationPositionTbl.sample)
         (
             sess.query(IrradiationPositionTbl)
-            .options(joinedload(IrradiationPositionTbl.sample).joinedload(SampleTbl.material))
+            .options(
+                sample_opt.joinedload(SampleTbl.material),
+                sample_opt.joinedload(SampleTbl.project),
+            )
             .filter(IrradiationPositionTbl.id.in_(ids))
             .all()
         )
@@ -1010,7 +1016,12 @@ THIS CHANGE CANNOT BE UNDONE"
 
     def _sync_position(self, dbpos, ir, level):
         if dbpos:
-            markup_canvas_position(self.canvas, dbpos, self.monitor_name)
+            cache = getattr(self, "_analysis_count_cache", None)
+            if cache is not None:
+                cnt = cache.get(dbpos.id, 0)
+            else:
+                cnt = dbpos.analysis_count
+            markup_canvas_position(self.canvas, dbpos, self.monitor_name, analyzed=bool(cnt))
 
             v = ""
             if dbpos.identifier:
@@ -1042,11 +1053,6 @@ THIS CHANGE CANNOT BE UNDONE"
 
             ir.note = note
             ir.weight = dbpos.weight or 0
-            cache = getattr(self, "_analysis_count_cache", None)
-            if cache is not None:
-                cnt = cache.get(dbpos.id, 0)
-            else:
-                cnt = dbpos.analysis_count
             ir.nanalyses = cnt
             ir.analyzed = bool(cnt)
             ir.packet = dbpos.packet or ""
