@@ -935,6 +935,18 @@ THIS CHANGE CANNOT BE UNDONE"
         # ``_sync_position`` would issue 2 round-trips. joinedload
         # collapses them into the existing positions fetch.
         self._prefetch_sample_material(positions)
+        # Cache flux positions for the level so `meta_repo.get_flux`
+        # in `_sync_position` doesn't reopen + reparse the level's
+        # flux yaml on every position. ~50ms saved per position on
+        # the disk-bound side.
+        self._flux_positions_cache = None
+        try:
+            level_name = level.name if hasattr(level, "name") else level
+            self._flux_positions_cache = self.dvc.meta_repo.get_flux_positions(
+                self.irradiation, level_name
+            )
+        except Exception as exc:
+            self.debug("flux positions prefetch failed: {}".format(exc))
         try:
             with no_update(self):
                 for pi in positions:
@@ -946,6 +958,7 @@ THIS CHANGE CANNOT BE UNDONE"
                         self.debug("extra irradiation position for this tray {}".format(hi))
         finally:
             self._analysis_count_cache = None
+            self._flux_positions_cache = None
 
     def _prefetch_sample_material(self, positions):
         """Force a single SELECT that joinedload-pulls sample + material
@@ -1009,7 +1022,11 @@ THIS CHANGE CANNOT BE UNDONE"
                 level = level.name
 
             self.debug("sync position {}, {}, {}".format(self.irradiation, level, ir.hole))
-            fd = self.dvc.meta_repo.get_flux(self.irradiation, level, ir.hole)
+            cached_positions = getattr(self, "_flux_positions_cache", None)
+            if cached_positions is not None:
+                fd = self.dvc.meta_repo.get_flux_from_positions(ir.hole, cached_positions)
+            else:
+                fd = self.dvc.meta_repo.get_flux(self.irradiation, level, ir.hole)
             j = fd["j"]
             self.debug("j= {}".format(j))
             if j:
