@@ -637,6 +637,23 @@ host= {}\nurl= {}'.format(
         except ImportError:
             raise ImportError("cloud-sql-python-connector is required for CloudSQL IAM")
 
+        # The Cloud SQL Connector talks to sqladmin.googleapis.com via
+        # aiohttp, which uses Python's default SSL context. On
+        # python.org macOS builds (no system trust store) the default
+        # context is empty and TLS verify fails with "unable to get
+        # local issuer certificate". Point OpenSSL at certifi's bundle
+        # if no SSL_CERT_FILE / REQUESTS_CA_BUNDLE has been set
+        # explicitly. No-op when the OS already has a populated trust
+        # store or when the user has set their own bundle.
+        try:
+            import certifi
+
+            ca = certifi.where()
+            os.environ.setdefault("SSL_CERT_FILE", ca)
+            os.environ.setdefault("REQUESTS_CA_BUNDLE", ca)
+        except ImportError:
+            pass
+
         credentials = self._get_cloudsql_credentials()
         kw = {"refresh_strategy": "lazy"}
         if credentials is not None:
