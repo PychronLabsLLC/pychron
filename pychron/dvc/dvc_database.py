@@ -2511,7 +2511,12 @@ class DVCDatabase(DatabaseAdapter):
         return self._retrieve_items(MaterialTbl)
 
     def get_repositories(self):
-        return self._retrieve_items(RepositoryTbl)
+        # Pull PrincipalInvestigator alongside so the per-row
+        # `record_view` access in RepositoryTbl doesn't fire one
+        # SELECT per repository.
+        with self.session_ctx() as sess:
+            q = sess.query(RepositoryTbl).options(joinedload(RepositoryTbl.principal_investigator))
+            return q.all()
 
     def get_extract_devices(self):
         return self._retrieve_items(ExtractDeviceTbl)
