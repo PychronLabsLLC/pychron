@@ -636,22 +636,28 @@ class DVC(Loggable):
 
     def repository_transfer(self, ans, dest):
         destrepo = self._get_repository(dest, as_current=False)
-        for src, ais in groupby_repo(ans):
-            repo = self._get_repository(src, as_current=False)
-            for ai in ais:
-                ops, nps = self._transfer_analysis_to(dest, src, ai.runid)
-                repo.add_paths(ops)
-                destrepo.add_paths(nps)
+        # Outer session_ctx so the per-analysis get_analysis_uuid() calls
+        # below all reuse one DB connection checkout. Without this, each
+        # call returns its connection to the pool — a per-call hit on
+        # Cloud SQL IAM where every cold pool checkout pays the connector
+        # setup cost.
+        with self.db.session_ctx():
+            for src, ais in groupby_repo(ans):
+                repo = self._get_repository(src, as_current=False)
+                for ai in ais:
+                    ops, nps = self._transfer_analysis_to(dest, src, ai.runid)
+                    repo.add_paths(ops)
+                    destrepo.add_paths(nps)
 
-                # update database
-                dbai = self.db.get_analysis_uuid(ai.uuid)
-                for ri in dbai.repository_associations:
-                    if ri.repository == src:
-                        ri.repository = dest
+                    # update database
+                    dbai = self.db.get_analysis_uuid(ai.uuid)
+                    for ri in dbai.repository_associations:
+                        if ri.repository == src:
+                            ri.repository = dest
 
-            # commit src changes
-            repo.commit("Transferred analyses to {}".format(dest))
-            dest.commit("Transferred analyses from {}".format(src))
+                # commit src changes
+                repo.commit("Transferred analyses to {}".format(dest))
+                dest.commit("Transferred analyses from {}".format(src))
 
     def get_flux(self, irrad, level, pos):
         fd = self.meta_repo.get_flux(irrad, level, pos)
@@ -1188,10 +1194,16 @@ class DVC(Loggable):
                 )
                 self.debug_exception()
 
-        if use_progress:
-            ret = progress_loader(records, func, threshold=1, step=25)
-        else:
-            ret = [func(r, None, 0, 0) for r in records]
+        # Hold a single DB connection across the per-record fan-out.
+        # _make_record() calls self.db.get_analysis_uuid() per record;
+        # without this outer session_ctx each call returns its connection
+        # to the pool and the next record re-checks one out — on Cloud
+        # SQL IAM cold-pool checkout pays the connector setup cost.
+        with self.db.session_ctx():
+            if use_progress:
+                ret = progress_loader(records, func, threshold=1, step=25)
+            else:
+                ret = [func(r, None, 0, 0) for r in records]
 
         make_et = time.perf_counter()
         et = make_et - st

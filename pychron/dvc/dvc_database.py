@@ -1007,10 +1007,24 @@ class DVCDatabase(DatabaseAdapter):
             return [a.analysis for a in r.repository_associations]
 
     def get_identifier_info(self, li):
-        with self.session_ctx():
+        with self.session_ctx() as sess:
             info = {}
 
-            dbpos = self.get_identifier(li)
+            # Eager-load level→irradiation and sample→{material, project→PI}
+            # in one round trip. Avoids 3+ lazy fetches downstream — costly
+            # on Cloud SQL IAM where each cold conn is 200-500ms.
+            q = sess.query(IrradiationPositionTbl).options(
+                joinedload(IrradiationPositionTbl.level).joinedload(LevelTbl.irradiation),
+                joinedload(IrradiationPositionTbl.sample).joinedload(SampleTbl.material),
+                joinedload(IrradiationPositionTbl.sample)
+                .joinedload(SampleTbl.project)
+                .joinedload(ProjectTbl.principal_investigator),
+            )
+            q = q.filter(IrradiationPositionTbl.identifier == li)
+            try:
+                dbpos = q.one()
+            except NoResultFound:
+                dbpos = None
             if not dbpos:
                 self.warning("{} is not an identifier in the database".format(li))
                 return None
