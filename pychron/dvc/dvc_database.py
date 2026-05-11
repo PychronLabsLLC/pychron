@@ -2803,11 +2803,24 @@ class DVCDatabase(DatabaseAdapter):
 
     # private
     def _get_date_range(self, q, asc=None, desc=None, hours=0):
-        if asc is None:
-            asc = AnalysisTbl.timestamp.asc()
-        if desc is None:
-            desc = AnalysisTbl.timestamp.desc()
-        return super(DVCDatabase, self)._get_date_range(q, asc, desc, hours=hours)
+        """Single MIN/MAX query instead of two ORDER BY LIMIT 1 round-trips.
+
+        Halves Cloud SQL latency on every project/date-range probe.
+        """
+        st = time.time()
+        minmax = q.with_entities(
+            func.min(AnalysisTbl.timestamp), func.max(AnalysisTbl.timestamp)
+        ).one()
+        lan, han = minmax
+        lan = datetime.now() if lan is None else lan
+        han = datetime.now() if han is None else han
+        td = timedelta(hours=hours)
+        self.debug(
+            "_get_date_range single MIN/MAX took={:.3f}s lan={} han={}".format(
+                time.time() - st, lan, han
+            )
+        )
+        return lan - td, han + td
 
     def _get_similar(self, name, attr, q):
         f = or_(attr == name, attr.like("{}%{}".format(name[0], name[-1])))
