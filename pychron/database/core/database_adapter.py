@@ -596,11 +596,19 @@ host= {}\nurl= {}'.format(
                 ip_type=ip_type,
             )
 
+        # Cloud SQL Connector pays a fixed cost per fresh connection
+        # (OAuth token mint + sqladmin metadata fetch + tunnel setup),
+        # so keep a small warm pool around to amortize. pool_pre_ping
+        # would add an extra round-trip per checkout — skip it; the
+        # pool_recycle window is short enough to evict stale conns.
         return create_engine(
             url,
             echo=self.echo,
             pool_recycle=pool_recycle,
             creator=get_connection,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=False,
         )
 
     def _get_cloudsql_url(self, kind: str) -> str:
