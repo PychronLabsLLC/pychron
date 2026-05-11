@@ -332,14 +332,20 @@ class CloudPreferences(BasePreferencesHelper):
             self._remote_status = "Refresh failed"
             return
 
-        meta = {
-            "repository_identifier": "{}/{}".format(self.lab_name or "", self.lab_name or ""),
-        }
         organization = self.lab_name or ""
         meta_repo_name = self.lab_name or ""
+        prefs = self.preferences
+        if prefs is None:
+            from apptools.preferences.package_globals import get_default_preferences
+
+            prefs = get_default_preferences()
+        if prefs is None:
+            logger.warning("refresh_iam: no IPreferences node available; cannot persist")
+            self._remote_status = "No preferences node — restart pychron and retry"
+            return
         try:
             apply_iam_credentials_to_prefs(
-                self.preferences,
+                prefs,
                 bundle=bundle,
                 lab_name=self.lab_name,
                 organization=organization,
