@@ -184,9 +184,7 @@ class LabnumberEntry(DVCIrradiationable):
 
         xlssource = XLSIrradiationSource(p)
         name = os.path.basename(p)
-        do_import_irradiation(
-            dvc=self.dvc, sources={xlssource: name}, default_source=name
-        )
+        do_import_irradiation(dvc=self.dvc, sources={xlssource: name}, default_source=name)
         self.updated = True
 
     def sync_metadata(self):
@@ -277,9 +275,7 @@ class LabnumberEntry(DVCIrradiationable):
             items = self.irradiated_positions
 
         self.info(
-            "Transferring Js for Irradiation={}, Level={}".format(
-                self.irradiation, self.level
-            )
+            "Transferring Js for Irradiation={}, Level={}".format(self.irradiation, self.level)
         )
         from pychron.entry.j_transfer import JTransferer
 
@@ -491,10 +487,7 @@ class LabnumberEntry(DVCIrradiationable):
             incorrect_monitors = []
             for dbpos in l.positions:
                 if test_monitor_sample(dbpos):
-                    if (
-                        not dbpos.sample.project
-                        or dbpos.sample.project.name != projectname
-                    ):
+                    if not dbpos.sample.project or dbpos.sample.project.name != projectname:
                         incorrect_monitors.append(str(dbpos.position))
 
             return ",".join(incorrect_monitors)
@@ -559,9 +552,7 @@ class LabnumberEntry(DVCIrradiationable):
         irradiation = self.irradiation
         level = self.level
         if irradiation and level:
-            p = os.path.join(
-                paths.hidden_dir, "backup.{}.{}.yaml".format(irradiation, level)
-            )
+            p = os.path.join(paths.hidden_dir, "backup.{}.{}.yaml".format(irradiation, level))
             yd = yload(p)
             self.irradiated_positions = [IrradiatedPosition(**pos) for pos in yd]
         else:
@@ -600,9 +591,7 @@ class LabnumberEntry(DVCIrradiationable):
         def func(pp):
             return {a: getattr(pp, a) for a in attrs}
 
-        p = os.path.join(
-            paths.hidden_dir, "backup.{}.{}.yaml".format(self.irradiation, self.level)
-        )
+        p = os.path.join(paths.hidden_dir, "backup.{}.{}.yaml".format(self.irradiation, self.level))
         with open(p, "w") as wfile:
             obj = [func(pos) for pos in self.irradiated_positions]
 
@@ -637,8 +626,7 @@ class LabnumberEntry(DVCIrradiationable):
             with dirty_ctx(self):
                 with no_update(self):
                     self.irradiated_positions = [
-                        IrradiatedPosition(hole=int(c), pos=(x, y))
-                        for x, y, r, c in holes
+                        IrradiatedPosition(hole=int(c), pos=(x, y)) for x, y, r, c in holes
                     ]
 
     def _validate_save(self):
@@ -658,9 +646,7 @@ class LabnumberEntry(DVCIrradiationable):
 
                 if n:
                     no.append(
-                        "Position={} L#={}\n    {}".format(
-                            irs.hole, irs.identifier, ", ".join(n)
-                        )
+                        "Position={} L#={}\n    {}".format(irs.hole, irs.identifier, ", ".join(n))
                     )
             else:
                 if self.use_packet_for_default_identifier and (
@@ -773,9 +759,7 @@ class LabnumberEntry(DVCIrradiationable):
                     dbpos.sample = sam
 
                 prog.change_message(
-                    "Saving {}{}{} identifier={}".format(
-                        irradiation, level, ir.hole, ln
-                    )
+                    "Saving {}{}{} identifier={}".format(irradiation, level, ir.hole, ln)
                 )
             db.commit()
 
@@ -939,14 +923,46 @@ THIS CHANGE CANNOT BE UNDONE"
             self.warning_dialog('Failed loading Irradiation level="{}"'.format(name))
 
     def _make_positions(self, n, positions, level):
-        with no_update(self):
-            for pi in positions:
-                hi = pi.position - 1
-                if hi < n:
-                    ir = self.irradiated_positions[hi]
-                    self._sync_position(pi, ir, level)
-                else:
-                    self.debug("extra irradiation position for this tray {}".format(hi))
+        # Bulk-fetch the per-position analysis counts in ONE query
+        # instead of letting `dbpos.analysis_count` (a property that
+        # does ``count()`` lazily) fire one round-trip per position.
+        # Across Cloud SQL IAM that turns a 50-position level from
+        # ~30s into ~1s. Sample + material are already
+        # ``lazy="joined"`` on the relationship side, so a touch of
+        # ``dbpos.sample.material`` should not round-trip.
+        self._analysis_count_cache = self._bulk_analysis_counts(positions)
+        try:
+            with no_update(self):
+                for pi in positions:
+                    hi = pi.position - 1
+                    if hi < n:
+                        ir = self.irradiated_positions[hi]
+                        self._sync_position(pi, ir, level)
+                    else:
+                        self.debug("extra irradiation position for this tray {}".format(hi))
+        finally:
+            self._analysis_count_cache = None
+
+    def _bulk_analysis_counts(self, positions):
+        if not positions:
+            return {}
+        try:
+            from sqlalchemy import func
+            from sqlalchemy.orm import object_session
+            from pychron.dvc.dvc_orm import AnalysisTbl
+        except ImportError:
+            return {}
+        sess = object_session(positions[0])
+        if sess is None:
+            return {}
+        ids = [p.id for p in positions]
+        rows = (
+            sess.query(AnalysisTbl.irradiation_positionID, func.count(AnalysisTbl.id))
+            .filter(AnalysisTbl.irradiation_positionID.in_(ids))
+            .group_by(AnalysisTbl.irradiation_positionID)
+            .all()
+        )
+        return {pid: cnt for pid, cnt in rows}
 
     def _sync_position(self, dbpos, ir, level):
         if dbpos:
@@ -961,9 +977,7 @@ THIS CHANGE CANNOT BE UNDONE"
             if not isinstance(level, str):
                 level = level.name
 
-            self.debug(
-                "sync position {}, {}, {}".format(self.irradiation, level, ir.hole)
-            )
+            self.debug("sync position {}, {}, {}".format(self.irradiation, level, ir.hole))
             fd = self.dvc.meta_repo.get_flux(self.irradiation, level, ir.hole)
             j = fd["j"]
             self.debug("j= {}".format(j))
@@ -980,8 +994,13 @@ THIS CHANGE CANNOT BE UNDONE"
 
             ir.note = note
             ir.weight = dbpos.weight or 0
-            ir.nanalyses = dbpos.analysis_count
-            ir.analyzed = dbpos.analyzed
+            cache = getattr(self, "_analysis_count_cache", None)
+            if cache is not None:
+                cnt = cache.get(dbpos.id, 0)
+            else:
+                cnt = dbpos.analysis_count
+            ir.nanalyses = cnt
+            ir.analyzed = bool(cnt)
             ir.packet = dbpos.packet or ""
 
             dbsam = dbpos.sample
@@ -1003,9 +1022,7 @@ THIS CHANGE CANNOT BE UNDONE"
                     ir.project = dbsam.project.name
                     # set_color(item, v)
                     if dbsam.project.principal_investigator:
-                        ir.principal_investigator = (
-                            dbsam.project.principal_investigator.name
-                        )
+                        ir.principal_investigator = dbsam.project.principal_investigator.name
 
                 ir.igsn = dbsam.igsn or ""
 
@@ -1049,11 +1066,7 @@ THIS CHANGE CANNOT BE UNDONE"
         if new:
             self.selected = [
                 next(
-                    (
-                        ir
-                        for ir in self.irradiated_positions
-                        if ir.hole == int(new.name)
-                    ),
+                    (ir for ir in self.irradiated_positions if ir.hole == int(new.name)),
                     None,
                 )
             ]
@@ -1112,9 +1125,7 @@ THIS CHANGE CANNOT BE UNDONE"
 
                 if self.confirmation_dialog(
                     "Add default project ({}) and "
-                    "flux monitor sample ({}) for this irradiation?".format(
-                        pname, sname
-                    )
+                    "flux monitor sample ({}) for this irradiation?".format(pname, sname)
                 ):
                     add_default()
                 else:
@@ -1178,9 +1189,7 @@ THIS CHANGE CANNOT BE UNDONE"
 
     def _level_changed(self, old, new):
         if self.dirty:
-            if self.confirmation_dialog(
-                "You have unsaved changes. Do you want to save now?"
-            ):
+            if self.confirmation_dialog("You have unsaved changes. Do you want to save now?"):
                 self.save(
                     level=old,
                     update=False,
