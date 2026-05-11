@@ -124,7 +124,7 @@ def _validate_iam_bundle(bundle):
         raise IamCredentialsError(
             "database_iam service_account_key_json is not a service_account key"
         )
-    if key_payload.get("client_email") != bundle["service_account_email"]:
+    if (key_payload.get("client_email") or "").lower() != bundle["service_account_email"].lower():
         raise IamCredentialsError(
             "database_iam SA key client_email does not match service_account_email"
         )
