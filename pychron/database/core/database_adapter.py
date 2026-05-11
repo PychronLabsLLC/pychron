@@ -598,15 +598,17 @@ host= {}\nurl= {}'.format(
 
         # Cloud SQL Connector pays a fixed cost per fresh connection
         # (OAuth token mint + sqladmin metadata fetch + tunnel setup),
-        # so keep a small warm pool around to amortize. pool_pre_ping
-        # would add an extra round-trip per checkout — skip it; the
-        # pool_recycle window is short enough to evict stale conns.
+        # so keep a larger warm pool around to amortize across bursty
+        # UI flows. Override caller's pool_recycle floor — short recycle
+        # windows evict warm conns faster than IAM token TTL requires
+        # and force repeated cold-path connects.
+        iam_recycle = max(pool_recycle, 1800)
         return create_engine(
             url,
             echo=self.echo,
-            pool_recycle=pool_recycle,
+            pool_recycle=iam_recycle,
             creator=get_connection,
-            pool_size=5,
+            pool_size=10,
             max_overflow=10,
             pool_pre_ping=False,
         )
@@ -670,7 +672,13 @@ host= {}\nurl= {}'.format(
         if credentials is not None:
             kw["credentials"] = credentials
 
-        self._close_cloudsql_connector()
+        # Reuse existing Connector — it owns the OAuth token cache and a
+        # background refresh task. Closing/recreating per connect() drops
+        # both and forces a fresh sqladmin fetch on the next connection.
+        # reset_connection() still closes it when params actually change.
+        if self._cloudsql_connector is not None:
+            return self._cloudsql_connector
+
         self._cloudsql_connector = Connector(**kw)
         return self._cloudsql_connector
 
