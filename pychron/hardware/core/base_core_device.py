@@ -26,6 +26,8 @@ import inspect
 # =============standard library imports ========================
 import random
 import time
+from collections import deque
+from typing import Deque, Optional
 
 from traits.api import provides
 
@@ -57,6 +59,91 @@ class BaseCoreDevice(HasCommunicator, ConsumerMixin):
     _auto_started = False
     _no_response_counter = 0
     _scheduler_name = None
+
+    setpoint_tolerance: float = 1.0
+    setpoint_history_size: int = 10
+    _setpoint_error_history: Optional[Deque[float]] = None
+    _setpoint_last_target: Optional[float] = None
+
+    def setpoint_achieved(
+        self,
+        setpoint: Optional[float] = None,
+        tolerance: Optional[float] = None,
+        history_size: Optional[int] = None,
+    ) -> bool:
+        """Return True when the rolling mean |error| is below tolerance.
+
+        Stateful: each call samples the current process value, records
+        ``abs(setpoint - value)``, and returns True only once the history
+        buffer is full and its mean is below ``tolerance``. The history
+        is reset automatically when ``setpoint`` changes.
+        """
+        if tolerance is None:
+            tolerance = self.setpoint_tolerance
+        if history_size is None:
+            history_size = self.setpoint_history_size
+
+        target = setpoint if setpoint is not None else self._read_setpoint()
+        if target is None:
+            return False
+
+        value = self._read_process_value()
+        if value is None:
+            return False
+
+        if (
+            self._setpoint_error_history is None
+            or self._setpoint_error_history.maxlen != history_size
+            or self._setpoint_last_target != target
+        ):
+            self._setpoint_error_history = deque(maxlen=history_size)
+            self._setpoint_last_target = target
+
+        self._setpoint_error_history.append(abs(float(target) - float(value)))
+
+        if len(self._setpoint_error_history) < history_size:
+            return False
+
+        avg_error = sum(self._setpoint_error_history) / len(self._setpoint_error_history)
+        return avg_error < tolerance
+
+    def reset_setpoint_achieved(self) -> None:
+        """Clear the rolling error history."""
+        self._setpoint_error_history = None
+        self._setpoint_last_target = None
+
+    def _read_process_value(self) -> Optional[float]:
+        for name in ("get_process_value", "read_process_value"):
+            fn = getattr(self, name, None)
+            if callable(fn):
+                v = fn()
+                if v is not None:
+                    return float(v)
+        v = self.get()
+        if v is None:
+            return None
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+
+    def _read_setpoint(self) -> Optional[float]:
+        for name in ("get_setpoint", "read_setpoint"):
+            fn = getattr(self, name, None)
+            if callable(fn):
+                v = fn()
+                if v is not None:
+                    try:
+                        return float(v)
+                    except (TypeError, ValueError):
+                        return None
+        v = getattr(self, "setpoint", None)
+        if v is None:
+            return None
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
 
     def load_from_device(self):
         pass
