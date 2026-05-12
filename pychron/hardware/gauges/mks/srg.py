@@ -97,12 +97,13 @@ class MKSSRG(CoreDevice):
         self.ask("idy")
         return True
 
-    @get_float(default=0)
+    @get_float()
     def get_pressure(self, **kw):
         return self.read_pressure(**kw)
 
     def read_pressure(self, verbose=False):
         resp = self.ask("val", verbose=verbose)
+        self.debug("SRG-3 val raw response={!r}".format(resp))
         return self._parse_real(resp)
 
     def get_unit_label(self, verbose=False):
