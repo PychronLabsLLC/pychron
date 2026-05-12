@@ -20,6 +20,7 @@ import datetime
 import os
 import time
 from operator import itemgetter
+from typing import Any, Iterable, Optional
 
 from uncertainties import ufloat, std_dev, nominal_value
 
@@ -41,9 +42,11 @@ from pychron.dvc import (
     dvc_dump,
     dvc_load,
     analysis_path,
+    REDUCTION_TAGS,
     make_ref_list,
     get_spec_sha,
     get_masses,
+    reduction_path,
     repository_path,
     AnalysisNotAnvailableError,
 )
@@ -90,7 +93,15 @@ class DVCAnalysis(Analysis):
     chronology_obj = None
     use_repository_suffix = False
 
-    def __init__(self, uuid, record_id, repository_identifier, *args, **kw):
+    def __init__(
+        self,
+        uuid: str,
+        record_id: str,
+        repository_identifier: str,
+        load_modifiers: Optional[Iterable[str]] = None,
+        *args: Any,
+        **kw: Any
+    ) -> None:
         super(DVCAnalysis, self).__init__(*args, **kw)
         self.record_id = record_id
         path = analysis_path((uuid, record_id), repository_identifier)
@@ -128,7 +139,7 @@ class DVCAnalysis(Analysis):
                 'Invalid analysis. RunID="{}". No meta file {}'.format(record_id, path)
             )
 
-        self.load_paths()
+        self.load_paths(modifiers=load_modifiers)
 
     @property
     def irradiation_position_position(self):
@@ -841,7 +852,7 @@ class DVCAnalysis(Analysis):
 
     @property
     def tag_path(self):
-        return self._analysis_path(modifier="tags")
+        return reduction_path((self.uuid, self.record_id), self.repository_identifier, modifier=REDUCTION_TAGS)
 
 
 # ============= EOF ============================================

@@ -713,7 +713,12 @@ class BaseSpectrometer(SpectrometerDevice):
 
         signals = array(signals)
 
-        self._check_intensity_no_change(signals)
+        # Only check intensity change if we have valid data
+        if len(signals) > 0:
+            self._check_intensity_no_change(signals)
+        else:
+            # Empty signals - likely a read error, log and continue
+            self.debug("Empty signals returned from read_intensities. keys={}".format(keys))
 
         gsignals = []
         for k, v in zip(keys, signals):
@@ -735,15 +740,25 @@ class BaseSpectrometer(SpectrometerDevice):
             self._prev_signals = None
             raise NoIntensityChange()
 
-        if signals is None:
+        if signals is None or len(signals) == 0:
             self._no_intensity_change_cnt += 1
             self._handle_no_intensity_change()
 
         elif self._prev_signals is not None:
-            try:
-                test = (signals == self._prev_signals).all()
-            except (AttributeError, TypeError):
-                test = True
+            # Check that arrays have compatible shapes before comparison
+            if len(self._prev_signals) != len(signals):
+                self.debug(
+                    "Signal array size mismatch. current={}, previous={}. "
+                    "Resetting baseline.".format(len(signals), len(self._prev_signals))
+                )
+                self._no_intensity_change_cnt = 0
+                self._prev_signals = None
+            else:
+                try:
+                    test = (signals == self._prev_signals).all()
+                except (AttributeError, TypeError, ValueError) as e:
+                    self.debug("Exception comparing intensity arrays: {}".format(e))
+                    test = True
 
             if test:
                 self.debug(
