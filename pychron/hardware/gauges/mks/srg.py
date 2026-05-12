@@ -50,7 +50,7 @@ class MKSSRG(CoreDevice):
     """
 
     scheme = "ascii"
-    scan_func = "get_pressure"
+    scan_func = "update_pressures"
 
     gauges = List
     display_name = Str
@@ -109,22 +109,11 @@ class MKSSRG(CoreDevice):
     def get_unit_label(self, verbose=False):
         return self.ask("ulb", verbose=verbose)
 
-    def _scan_hook(self, v):
-        if isinstance(v, tuple):
-            v = v[0] if v else None
-
-        self.debug(
-            "_scan_hook v={!r} gauges={} (count={})".format(
-                v, [id(g) for g in self.gauges], len(self.gauges)
-            )
-        )
-        if v is not None and self.gauges:
-            self.gauges[0].pressure = v
-            self.debug(
-                "set gauges[0].pressure={} (read back={})".format(
-                    v, self.gauges[0].pressure
-                )
-            )
+    def update_pressures(self, verbose=False):
+        p = self.get_pressure(verbose=verbose)
+        if p is not None and self.gauges:
+            self.gauges[0].pressure = p
+        return p
 
     def gauge_view(self):
         return View(
