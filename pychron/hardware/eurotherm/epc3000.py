@@ -89,6 +89,7 @@ class EPC3000(CoreDevice, ModbusMixin):
     output_address = Int(3)
     working_setpoint_address = Int(5)
     decimal_places = Int(1)
+    output_decimal_places = Int(1)
 
     process_value = Float
     setpoint = Float(enter_set=True, auto_set=False)
@@ -115,6 +116,14 @@ class EPC3000(CoreDevice, ModbusMixin):
             cast="int",
             optional=True,
         )
+        self.set_attribute(
+            config,
+            "output_decimal_places",
+            "Scaling",
+            "output_decimal_places",
+            cast="int",
+            optional=True,
+        )
         return True
 
     _comms_report_attrs = (
@@ -123,6 +132,7 @@ class EPC3000(CoreDevice, ModbusMixin):
         "output_address",
         "working_setpoint_address",
         "decimal_places",
+        "output_decimal_places",
     )
 
     def initialize(self, *args, **kw):
@@ -169,7 +179,11 @@ class EPC3000(CoreDevice, ModbusMixin):
 
     @get_float(default=0)
     def get_output(self, **kw):
-        return self._read_scaled(self.output_address, **kw)
+        return self._read_scaled(
+            self.output_address,
+            decimal_places=self.output_decimal_places,
+            **kw,
+        )
 
     def set_setpoint(self, v):
         if self.setpoint_address is None:
@@ -235,7 +249,7 @@ class EPC3000(CoreDevice, ModbusMixin):
             )
         )
 
-    def _read_scaled(self, address, **kw):
+    def _read_scaled(self, address, decimal_places=None, **kw):
         result = self._read_holding_registers(address=int(address), count=1, **kw)
         if result is None:
             return None
@@ -249,7 +263,9 @@ class EPC3000(CoreDevice, ModbusMixin):
         if raw & 0x8000:
             raw -= 0x10000
 
-        scale = 10 ** self.decimal_places if self.decimal_places else 1
+        if decimal_places is None:
+            decimal_places = self.decimal_places
+        scale = 10 ** decimal_places if decimal_places else 1
         return raw / scale
 
 
