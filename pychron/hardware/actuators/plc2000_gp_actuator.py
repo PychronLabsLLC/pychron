@@ -46,11 +46,31 @@ class PLC2000GPActuator(GPActuator, ModbusMixin, ClientMixin):
         except (ValueError, AttributeError):
             address = int(obj)
 
-        resp = self._read_coils(int(address) - 1, 1)
+        resp = self._read_coils(int(address) - 1, count=1)
+        if resp is None:
+            self.warning("read_coils returned no response for address={}".format(address))
+            return False
+
+        if hasattr(resp, "isError") and resp.isError():
+            self.warning(
+                "read_coils returned error response for address={}: {}".format(
+                    address, resp
+                )
+            )
+            return False
+
         try:
-            return bool(resp.bits[0])
+            bits = resp.bits
+            if not bits:
+                self.warning("read_coils returned empty bits for address={}".format(address))
+                return False
+            return bool(bits[0])
         except ModbusIOException:
             self.debug_exception()
+            return False
+        except (AttributeError, IndexError, TypeError):
+            self.debug_exception()
+            return False
 
 
 # ============= EOF =============================================

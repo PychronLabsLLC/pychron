@@ -83,6 +83,7 @@ pychron-telemetry = "pychron.experiment.telemetry.cli:main"
 [project.optional-dependencies]
 hardware = [
     "pyserial>=3.5,<4",
+    "pymodbus>=3.12,<4",
 ]
 
 laser = [

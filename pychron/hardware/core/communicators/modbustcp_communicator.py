@@ -27,6 +27,8 @@ class ModbustcpCommunicator(Communicator):
     byteorder = "big"
     wordorder = "little"
 
+    _comms_report_attrs = ("host", "port", "timeout", "byteorder", "wordorder")
+
     def load(self, config, path):
 
         logger = logging.getLogger("pymodbus.logging")
@@ -52,7 +54,10 @@ class ModbustcpCommunicator(Communicator):
         return True
 
     def initialize(self, *args, **kw):
-        return self.handle.connect()
+        connected = self.handle.connect()
+        if connected:
+            self.simulation = False
+        return connected
 
     def __getattr__(self, item):
         return getattr(self.handle, item)

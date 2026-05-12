@@ -516,6 +516,14 @@ class Paths(object):
 
         self.baseline_model = join(self.scripts_dir, "syn_extraction", "baseline_model.csv")
 
+        self.oauth_file = join(self.appdata_dir, "oauth.json")
+
+        self.packages_file = join(self.appdata_dir, "packages.json")
+
+        self.baseline_model = join(
+            self.scripts_dir, "syn_extraction", "baseline_model.csv"
+        )
+
         build_directories()
 
         migrate_hidden()
