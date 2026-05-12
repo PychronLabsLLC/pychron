@@ -188,6 +188,9 @@ class EPC3000(CoreDevice, ModbusMixin):
         self.set_setpoint(new)
 
     def _scan_hook(self, v):
+        if isinstance(v, tuple):
+            v = v[0] if v else None
+
         if v is not None:
             self.process_value = v
 

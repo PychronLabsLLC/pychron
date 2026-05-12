@@ -109,6 +109,9 @@ class MKSSRG(CoreDevice):
         return self.ask("ulb", verbose=verbose)
 
     def _scan_hook(self, v):
+        if isinstance(v, tuple):
+            v = v[0] if v else None
+
         if v is not None and self.gauges:
             self.gauges[0].pressure = v
 
