@@ -74,7 +74,7 @@ class Bar(QFrame):
         )[
             0
         ][:3]
-        self.value = [x * 255 for x in vs]
+        self.value = [int(x * 255) for x in vs]
         self.update()
 
 

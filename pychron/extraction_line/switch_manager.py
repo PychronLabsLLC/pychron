@@ -522,7 +522,7 @@ class SwitchManager(Manager):
         words = {}
         for k, v in self.switches.items():
             a = (k, v.address, v.state)
-            print(a, v, v.use_state_word)
+
             if v.use_state_word:
                 if v.actuator not in words:
                     words[v.actuator] = [a]

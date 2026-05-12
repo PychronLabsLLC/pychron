@@ -63,6 +63,11 @@ valve = [
     "twisted>=22.8.0,<23",
 ]
 
+hardware = [
+    "pyserial>=3.5,<4",
+    "pymodbus>=3.12,<4"
+]
+
 [dependency-groups]
 dev = [
     "black"
