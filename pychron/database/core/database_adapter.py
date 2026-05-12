@@ -92,14 +92,35 @@ class SessionCTX(object):
                     return self._session
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._session:
-            self._session.close()
-        else:
-            self._parent.close_session()
-
-        if self._psession:
-            self._parent.session = self._psession
-        self._psession = None
+        # Rollback on exception so the connection is returned to the pool
+        # in a clean state. Otherwise the next checkout can inherit a
+        # half-committed transaction and surface as a phantom failure
+        # several call sites away from the original error.
+        sess = self._session or self._parent.session
+        try:
+            if sess is not None and not isinstance(sess, MockSession):
+                if exc_type is not None:
+                    try:
+                        sess.rollback()
+                    except Exception as e:
+                        self._parent.warning("SessionCTX rollback failed: {}".format(e))
+        finally:
+            try:
+                if self._session is not None:
+                    # Owned session — close directly without flushing during
+                    # an exception unwind (flush can re-raise and mask the
+                    # original error).
+                    try:
+                        self._session.close()
+                    except Exception as e:
+                        self._parent.warning("SessionCTX close failed: {}".format(e))
+                else:
+                    self._parent.close_session(skip_flush=exc_type is not None)
+            finally:
+                if self._psession is not None:
+                    self._parent.session = self._psession
+                self._psession = None
+                self._session = None
 
 
 class MockQuery:
@@ -237,15 +258,31 @@ class DatabaseAdapter(Loggable):
             self.critical("using Mock session")
             self.session = MockSession()
 
-    def close_session(self):
+    def close_session(self, skip_flush=False):
         if self.session and not isinstance(self.session, MockSession):
-            self.session.flush()
-
-            self._session_cnt -= 1
-            if not self._session_cnt:
-                self.debug("close session {}".format(id(self)))
-                self.session.close()
-                self.session = None
+            # Decrement first in a try/finally so an exception during
+            # flush/close cannot leave the counter stuck above 0 and
+            # leak the session forever.
+            try:
+                if not skip_flush:
+                    try:
+                        self.session.flush()
+                    except Exception as e:
+                        self.warning("flush failed during close_session: {}".format(e))
+                        try:
+                            self.session.rollback()
+                        except Exception:
+                            pass
+            finally:
+                self._session_cnt -= 1
+                if self._session_cnt <= 0:
+                    self._session_cnt = 0
+                    self.debug("close session {}".format(id(self)))
+                    try:
+                        self.session.close()
+                    except Exception as e:
+                        self.warning("session.close failed: {}".format(e))
+                    self.session = None
 
     @property
     def enabled(self) -> bool:
@@ -567,10 +604,17 @@ host= {}\nurl= {}'.format(
         if self.connection_method == "cloudsql_iam":
             return self._create_cloudsql_engine(url, pool_recycle)
 
+        # pool_pre_ping issues a cheap liveness check before each
+        # checkout and discards stale connections (idle drops from the
+        # server, network blips). Skip it for SQLite — there is no
+        # remote peer to lose contact with and the extra round trip
+        # is pure overhead.
+        pre_ping = self.kind != "sqlite"
         return create_engine(
             url,
             echo=self.echo,
             pool_recycle=pool_recycle,
+            pool_pre_ping=pre_ping,
             connect_args=connect_args,
         )
 
@@ -603,6 +647,13 @@ host= {}\nurl= {}'.format(
         # windows evict warm conns faster than IAM token TTL requires
         # and force repeated cold-path connects.
         iam_recycle = max(pool_recycle, 1800)
+        # pool_pre_ping catches Cloud SQL idle-disconnects (the server
+        # silently drops idle conns well before our recycle window).
+        # Without it the first query after a quiet period fails with
+        # "server has gone away" / "connection reset" and the user
+        # sees a transient error. The pre_ping is a single cheap
+        # round-trip on a connection that already has a warm IAM
+        # tunnel, so cost is negligible compared to a full reconnect.
         return create_engine(
             url,
             echo=self.echo,
@@ -610,7 +661,7 @@ host= {}\nurl= {}'.format(
             creator=get_connection,
             pool_size=10,
             max_overflow=10,
-            pool_pre_ping=False,
+            pool_pre_ping=True,
         )
 
     def _get_cloudsql_url(self, kind: str) -> str:

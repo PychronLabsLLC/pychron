@@ -1502,22 +1502,46 @@ class DVCDatabase(DatabaseAdapter):
 
             return self._query_all(q, verbose_query=verbose_query)
 
+    def _analysis_eager_options(self):
+        # Eager-load the lazy='select' chains walked by AnalysisTbl.bind()
+        # so callers can safely use returned rows after session close.
+        return (
+            selectinload(AnalysisTbl.measured_positions).joinedload(MeasuredPositionTbl.load),
+            joinedload(AnalysisTbl.irradiation_position)
+            .joinedload(IrradiationPositionTbl.sample)
+            .joinedload(SampleTbl.material),
+            joinedload(AnalysisTbl.irradiation_position)
+            .joinedload(IrradiationPositionTbl.sample)
+            .joinedload(SampleTbl.project)
+            .joinedload(ProjectTbl.principal_investigator),
+            joinedload(AnalysisTbl.irradiation_position)
+            .joinedload(IrradiationPositionTbl.level)
+            .joinedload(LevelTbl.irradiation),
+        )
+
     def get_analysis(self, value):
-        return self._retrieve_item(AnalysisTbl, value, key="id")
+        with self.session_ctx() as sess:
+            q = sess.query(AnalysisTbl).options(*self._analysis_eager_options())
+            q = q.filter(AnalysisTbl.id == value)
+            return self._query_one(q)
 
     def get_analysis_uuid(self, value):
-        return self._retrieve_item(AnalysisTbl, value, key="uuid")
+        with self.session_ctx() as sess:
+            q = sess.query(AnalysisTbl).options(*self._analysis_eager_options())
+            q = q.filter(AnalysisTbl.uuid == value)
+            return self._query_one(q)
 
     def get_analyses_uuid(self, uuids, verbose_query=False):
         with self.session_ctx() as sess:
             q = sess.query(AnalysisTbl)
             q = q.filter(AnalysisTbl.uuid.in_(uuids))
             q = q.order_by(AnalysisTbl.uuid.asc())
+            q = q.options(*self._analysis_eager_options())
             return self._query_all(q, verbose_query=verbose_query)
 
     def get_analysis_runid(self, idn, aliquot, step=None):
         with self.session_ctx() as sess:
-            q = sess.query(AnalysisTbl)
+            q = sess.query(AnalysisTbl).options(*self._analysis_eager_options())
             q = q.join(IrradiationPositionTbl)
             if step:
                 if isinstance(step, (str,)):
@@ -1532,7 +1556,7 @@ class DVCDatabase(DatabaseAdapter):
 
     def get_analysis_by_attr(self, **kw):
         with self.session_ctx() as sess:
-            q = sess.query(AnalysisTbl)
+            q = sess.query(AnalysisTbl).options(*self._analysis_eager_options())
             use_ident = False
             if "identifier" in kw:
                 q = q.join(IrradiationPositionTbl)
