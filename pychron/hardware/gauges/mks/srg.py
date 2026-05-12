@@ -113,8 +113,18 @@ class MKSSRG(CoreDevice):
         if isinstance(v, tuple):
             v = v[0] if v else None
 
+        self.debug(
+            "_scan_hook v={!r} gauges={} (count={})".format(
+                v, [id(g) for g in self.gauges], len(self.gauges)
+            )
+        )
         if v is not None and self.gauges:
             self.gauges[0].pressure = v
+            self.debug(
+                "set gauges[0].pressure={} (read back={})".format(
+                    v, self.gauges[0].pressure
+                )
+            )
 
     def gauge_view(self):
         return View(
