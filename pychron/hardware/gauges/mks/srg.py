@@ -103,7 +103,6 @@ class MKSSRG(CoreDevice):
 
     def read_pressure(self, verbose=False):
         resp = self.ask("val", verbose=verbose)
-        self.debug("SRG-3 val raw response={!r}".format(resp))
         return self._parse_real(resp)
 
     def get_unit_label(self, verbose=False):
