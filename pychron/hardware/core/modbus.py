@@ -93,8 +93,12 @@ class ModbusMixin:
 
             try:
                 return getattr(self.communicator, funcname)(*args, **kw)
-            except ConnectionException:
-                pass
+            except ConnectionException as e:
+                self.warning(f"modbus {funcname} connection lost: {e}")
+                self.communicator.simulation = True
+            except OSError as e:
+                self.warning(f"modbus {funcname} socket error: {e}")
+                self.communicator.simulation = True
 
     def _read_coils(self, *args, **kw):
         return self._func("read_coils", *args, **kw)
