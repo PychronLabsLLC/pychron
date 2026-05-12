@@ -13,8 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+from traits.api import List, Str
+from traitsui.api import View, Group, Item, ListEditor, InstanceEditor
+
 from pychron.hardware import get_float
 from pychron.hardware.core.core_device import CoreDevice
+from pychron.hardware.gauges.base_controller import BaseGauge
 
 
 class MKSSRG(CoreDevice):
@@ -47,6 +51,40 @@ class MKSSRG(CoreDevice):
 
     scheme = "ascii"
     scan_func = "get_pressure"
+
+    gauges = List
+    display_name = Str
+
+    def load_additional_args(self, config, *args, **kw):
+        self.display_name = self.config_get(
+            config, "General", "display_name", default=self.name, optional=True
+        )
+        gname = self.config_get(
+            config, "Gauge", "name", default=self.name, optional=True
+        )
+        gdisplay = self.config_get(
+            config, "Gauge", "display_name", default=self.display_name, optional=True
+        )
+        low = self.config_get(
+            config, "Gauge", "low", cast="float", default=1e-9, optional=True
+        )
+        high = self.config_get(
+            config, "Gauge", "high", cast="float", default=1e-3, optional=True
+        )
+        color_scalar = self.config_get(
+            config, "Gauge", "color_scalar", cast="int", default=1, optional=True
+        )
+
+        g = BaseGauge(
+            name=gname,
+            display_name=gdisplay,
+            low=low,
+            high=high,
+            color_scalar=color_scalar,
+        )
+        self.gauges = [g]
+        return True
+
     def initialize(self, *args, **kw):
         if self.communicator:
             # SRG-3: input terminated by CR; reply ends with CRLF then a
@@ -69,6 +107,26 @@ class MKSSRG(CoreDevice):
 
     def get_unit_label(self, verbose=False):
         return self.ask("ulb", verbose=verbose)
+
+    def _scan_hook(self, v):
+        if v is not None and self.gauges:
+            self.gauges[0].pressure = v
+
+    def gauge_view(self):
+        return View(
+            Group(
+                Item(
+                    "gauges",
+                    style="custom",
+                    show_label=False,
+                    editor=ListEditor(
+                        mutable=False, style="custom", editor=InstanceEditor()
+                    ),
+                ),
+                show_border=True,
+                label=self.display_name or self.name,
+            )
+        )
 
     def _parse_real(self, resp):
         if resp is None:
