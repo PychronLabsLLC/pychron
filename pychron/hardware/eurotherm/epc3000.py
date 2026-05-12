@@ -117,44 +117,43 @@ class EPC3000(CoreDevice, ModbusMixin):
         )
         return True
 
+    _comms_report_attrs = (
+        "process_value_address",
+        "setpoint_address",
+        "output_address",
+        "working_setpoint_address",
+        "decimal_places",
+    )
+
     def initialize(self, *args, **kw):
         ok = super(EPC3000, self).initialize(*args, **kw)
-        self._comms_report()
+        if self.communicator is not None:
+            self.communicator.report()
+        self.report()
         return ok
 
-    def _comms_report(self):
-        self.info("============ EPC3000 Communications Report ==============")
+    def report(self):
+        self.debug("============ EPC3000 Communications Report ============")
+        self._generate_comms_report()
+        self.debug("=======================================================")
 
-        comm = self.communicator
-        if comm is None:
-            self.info("communicator: None")
-        else:
-            self.info("communicator: {}".format(comm.__class__.__name__))
-            for attr in ("host", "port", "timeout", "byteorder", "wordorder",
-                         "slave_address", "baudrate", "bytesize", "parity",
-                         "stopbits"):
-                if hasattr(comm, attr):
-                    self.info("  {}: {}".format(attr, getattr(comm, attr)))
+    def _generate_comms_report(self):
+        self.debug("{:<28s} {}".format("Param:", "Value:"))
+        for key in self._comms_report_attrs:
+            self.debug("{:<28s} {}".format("{}:".format(key), getattr(self, key)))
 
-        self.info("registers:")
-        self.info("  process_value:    {}".format(self.process_value_address))
-        self.info("  setpoint:         {}".format(self.setpoint_address))
-        self.info("  output:           {}".format(self.output_address))
-        self.info("  working_setpoint: {}".format(self.working_setpoint_address))
-        self.info("scaling: decimal_places={}".format(self.decimal_places))
-
-        self.info("initial readings:")
-        for label, fn in (("process_value", self.get_process_value),
-                          ("setpoint", self.get_setpoint),
-                          ("output", self.get_output),
-                          ("working_setpoint", self.get_working_setpoint)):
+        self.debug("{:<28s} {}".format("Param:", "Reading:"))
+        for label, fn in (
+            ("process_value", self.get_process_value),
+            ("setpoint", self.get_setpoint),
+            ("output", self.get_output),
+            ("working_setpoint", self.get_working_setpoint),
+        ):
             try:
                 v = fn()
             except Exception as e:
                 v = "error: {}".format(e)
-            self.info("  {}: {}".format(label, v))
-
-        self.info("=========================================================")
+            self.debug("{:<28s} {}".format("{}:".format(label), v))
 
     @get_float(default=0)
     def get_process_value(self, **kw):
