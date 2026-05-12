@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from traits.api import Int
+from traits.api import Int, Float
+from traitsui.api import View, Item, UItem, HGroup, VGroup
 
+from pychron.core.ui.lcd_editor import LCDEditor
 from pychron.hardware import get_float
 from pychron.hardware.core.core_device import CoreDevice
 from pychron.hardware.core.modbus import ModbusMixin
@@ -88,6 +90,11 @@ class EPC3000(CoreDevice, ModbusMixin):
     working_setpoint_address = Int(5)
     decimal_places = Int(1)
 
+    process_value = Float
+    setpoint = Float(enter_set=True, auto_set=False)
+    setpoint_readback = Float
+    output = Float
+
     scan_func = "get_process_value"
 
     def load_additional_args(self, config):
@@ -125,6 +132,67 @@ class EPC3000(CoreDevice, ModbusMixin):
     @get_float(default=0)
     def get_output(self, **kw):
         return self._read_scaled(self.output_address, **kw)
+
+    def set_setpoint(self, v):
+        if self.setpoint_address is None:
+            self.debug("setpoint_address not set")
+            return
+
+        scale = 10 ** self.decimal_places if self.decimal_places else 1
+        raw = int(round(v * scale))
+        if raw < 0:
+            raw += 0x10000
+        raw &= 0xFFFF
+        self.debug("set setpoint addr={}, value={}, raw={}".format(self.setpoint_address, v, raw))
+        self._write_register(int(self.setpoint_address), raw)
+
+    def _setpoint_changed(self, new):
+        self.set_setpoint(new)
+
+    def _scan_hook(self, v):
+        if v is not None:
+            self.process_value = v
+
+        sp = self.get_setpoint()
+        if sp is not None:
+            self.setpoint_readback = sp
+
+        out = self.get_output()
+        if out is not None:
+            self.output = out
+
+    def heater_view(self):
+        return View(
+            VGroup(
+                HGroup(
+                    UItem("name", style="readonly"),
+                ),
+                HGroup(
+                    Item(
+                        "process_value",
+                        style="readonly",
+                        editor=LCDEditor(width=120, height=30),
+                        label="PV",
+                    ),
+                ),
+                HGroup(
+                    Item("setpoint", label="Setpoint"),
+                    UItem(
+                        "setpoint_readback",
+                        editor=LCDEditor(width=120, height=30),
+                        style="readonly",
+                    ),
+                ),
+                HGroup(
+                    Item(
+                        "output",
+                        style="readonly",
+                        editor=LCDEditor(width=120, height=30),
+                        label="Output",
+                    ),
+                ),
+            )
+        )
 
     def _read_scaled(self, address, **kw):
         result = self._read_holding_registers(address=int(address), count=1, **kw)
