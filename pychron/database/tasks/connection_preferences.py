@@ -66,9 +66,7 @@ from pychron.pychron_constants import NULL_STR
 # IPREGEX = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
 
 
-def show_databases(
-    kind, host, user, password, schema_identifier="AnalysisTbl", exclude=None
-):
+def show_databases(kind, host, user, password, schema_identifier="AnalysisTbl", exclude=None):
     records = []
     if kind == "mysql":
         import pymysql
@@ -86,10 +84,8 @@ def show_databases(
             )
             cur = conn.cursor()
             if schema_identifier:
-                sql = (
-                    '''select TABLE_SCHEMA from TABLES where TABLE_NAME="{}"'''.format(
-                        schema_identifier
-                    )
+                sql = '''select TABLE_SCHEMA from TABLES where TABLE_NAME="{}"'''.format(
+                    schema_identifier
                 )
             else:
                 sql = "SHOW TABLES"
@@ -180,7 +176,7 @@ class ConnectionFavoriteItem(HasTraits):
     name = Str
     dbname = Str
     host = HostStr
-    kind = Enum("mysql", "sqlite", "mssql", "postgres", NULL_STR)
+    kind = Enum("mysql", "sqlite", "mssql", "postgresql", "postgres", NULL_STR)
     username = Str
     names = List
     password = Password
@@ -202,7 +198,7 @@ class ConnectionFavoriteItem(HasTraits):
         "timeout",
     )
 
-    def __init__(self, schema_identifier="", attrs=None, kind=None):
+    def __init__(self, schema_identifier="", attrs=None, kind=None) -> None:
         super(ConnectionFavoriteItem, self).__init__()
         self.schema_identifier = schema_identifier
         if kind is not None:
@@ -281,9 +277,13 @@ class ConnectionFavoriteItem(HasTraits):
                             self.path = path
                             self.timeout = int(timeout)
 
+            self._normalize_kind()
             self.load_names()
 
-    def load_names(self):
+    def load_names(self) -> None:
+        if getattr(self, "connection_method", "direct") == "cloudsql_iam":
+            return
+
         if self.username and self.host and self.password:
             if self.schema_identifier:
                 names = show_databases(
@@ -295,9 +295,17 @@ class ConnectionFavoriteItem(HasTraits):
                 )
                 self.names = names
 
-    def to_string(self):
+    def to_string(self) -> str:
         attrs = [getattr(self, attr) for attr in self.attributes]
         return to_csv_str(attrs)
+
+    def _normalize_kind(self) -> None:
+        if self.kind == "postgres":
+            self.kind = "postgresql"
+
+    def _kind_changed(self, new: str) -> None:
+        if new == "postgres":
+            self.trait_setq(kind="postgresql")
 
     # def to_string(self):
     #     attrs = [getattr(self, attr) for attr in ('name', 'kind', 'username', 'host',
@@ -324,9 +332,7 @@ class ConnectionPreferences(FavoritesPreferencesHelper, ConnectionMixin):
         super(ConnectionPreferences, self).__init__(*args, **kw)
 
     def _add_favorite_shareable_archive_fired(self):
-        dlg = FileDialog(
-            action="open", wildcard="*.pz", default_directory=paths.data_dir
-        )
+        dlg = FileDialog(action="open", wildcard="*.pz", default_directory=paths.data_dir)
         if dlg.open() == OK:
             if dlg.path:
                 yd = yload(dlg.path)
@@ -363,9 +369,7 @@ class ConnectionPreferences(FavoritesPreferencesHelper, ConnectionMixin):
                 self._fav_items.append(item)
                 self._set_favorites()
                 item.default = True
-                information(
-                    None, "Please restart to complete the addition of this archive"
-                )
+                information(None, "Please restart to complete the addition of this archive")
 
     def _add_favorite_path_fired(self):
         dlg = FileDialog(action="open")
@@ -382,10 +386,10 @@ class ConnectionPreferences(FavoritesPreferencesHelper, ConnectionMixin):
 
         return f
 
-    def _get_connection_dict(self):
+    def _get_connection_dict(self) -> dict | None:
         obj = self._selected
         if obj is not None:
-            return dict(
+            kw = dict(
                 username=obj.username,
                 host=obj.host,
                 password=obj.password,
@@ -393,6 +397,17 @@ class ConnectionPreferences(FavoritesPreferencesHelper, ConnectionMixin):
                 kind=obj.kind,
                 timeout=obj.timeout,
             )
+            for attr in (
+                "connection_method",
+                "cloudsql_instance_connection_name",
+                "cloudsql_ip_type",
+                "cloudsql_service_account_email",
+                "cloudsql_service_account_key_path",
+            ):
+                if hasattr(obj, attr):
+                    kw[attr] = getattr(obj, attr)
+
+            return kw
 
     def __selected_changed(self):
         self._reset_connection_label(True)
@@ -438,29 +453,21 @@ class ConnectionPreferencesPane(PreferencesPane):
             ),
             ObjectColumn(name="host"),
             ObjectColumn(name="timeout"),
-            ObjectColumn(
-                name="dbname", label="Database", editor=EnumEditor(name="names")
-            ),
+            ObjectColumn(name="dbname", label="Database", editor=EnumEditor(name="names")),
             ObjectColumn(name="path", style="readonly"),
         ]
         return cols
 
     def get_buttons(self):
         return HGroup(
-            icon_button_editor(
-                "add_favorite", "database_add", tooltip="Add saved connection"
-            ),
-            icon_button_editor(
-                "add_favorite_path", "dbs_sqlite", tooltip="Add sqlite database"
-            ),
+            icon_button_editor("add_favorite", "database_add", tooltip="Add saved connection"),
+            icon_button_editor("add_favorite_path", "dbs_sqlite", tooltip="Add sqlite database"),
             icon_button_editor(
                 "add_favorite_shareable_archive",
                 "add_package",
                 tooltip="Add a shareable archive",
             ),
-            icon_button_editor(
-                "delete_favorite", "delete", tooltip="Delete saved connection"
-            ),
+            icon_button_editor("delete_favorite", "delete", tooltip="Delete saved connection"),
             icon_button_editor(
                 "test_connection_button", "database_connect", tooltip="Test connection"
             ),

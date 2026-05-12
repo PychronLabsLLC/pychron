@@ -30,11 +30,13 @@ from pychron.envisage.tasks.wait_pane import WaitPane
 from pychron.extraction_line.tasks.extraction_line_actions import (
     SampleLoadingAction,
     AutoReloadAction,
+    ToggleAutomatedValveConfirmationAction,
 )
 from pychron.extraction_line.tasks.extraction_line_pane import (
     CanvasPane,
     GaugePane,
     ExplanationPane,
+    InspectorPane,
     CryoPane,
     ReadbackPane,
     EditorPane,
@@ -48,16 +50,17 @@ class ExtractionLineTask(BaseHardwareTask):
     name = "Extraction Line"
     wait_pane = Instance(WaitPane)
 
-    def activated(self):
-        self.manager.activate()
-
     def prepare_destroy(self):
         self.manager.deactivate()
-        #         self.manager.closed(True)
 
     def create_central_pane(self):
+        """Create and configure the central pane with forced sizing."""
         g = CanvasPane(model=self.manager)
         return g
+
+    def activated(self):
+        """Task activated - the pane will open with default large layout."""
+        self.manager.activate()
 
     def create_dock_panes(self):
         self.wait_pane = WaitPane(model=self.manager.wait_group, closable=True)
@@ -66,6 +69,7 @@ class ExtractionLineTask(BaseHardwareTask):
             CryoPane(model=self.manager),
             PumpPane(model=self.manager),
             ExplanationPane(model=self.manager),
+            InspectorPane(model=self.manager),
             ConsolePane(model=self.manager),
             ReadbackPane(model=self.manager),
             HeaterPane(model=self.manager),
@@ -80,13 +84,14 @@ class ExtractionLineTask(BaseHardwareTask):
     def do_sample_loading(self):
         self.manager.do_sample_loading()
 
-    def enable_auto_reload(self):
-        self.manager.enable_auto_reload()
+    def toggle_auto_reload(self):
+        self.manager.toggle_auto_reload()
 
     # defaults
-    def _tool_bars_default(self):
+    def _tool_bars_default(self) -> list[SToolBar]:
         tb = SToolBar(
             SampleLoadingAction(),
+            ToggleAutomatedValveConfirmationAction(),
             # IsolateChamberAction(),
             # EvacuateChamberAction(),
             # FinishChamberChangeAction(),

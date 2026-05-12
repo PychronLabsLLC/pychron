@@ -31,9 +31,11 @@ from traits.api import List, Instance, Any
 
 from pychron.core.helpers.strtools import to_bool
 from pychron.core.yaml import yload
+from pychron.envisage.tasks.first_run_wizard import FirstRunWizard
 from pychron.envisage.view_util import open_view, close_views, report_view_stats
 from pychron.globals import globalv
 from pychron.hardware.core.i_core_device import ICoreDevice
+from pychron.install_validation import build_runtime_validation_report
 from pychron.loggable import Loggable
 from pychron.paths import paths
 from pychron.startup_test.results_view import ResultsView
@@ -46,13 +48,67 @@ class BaseTasksApplication(TasksApplication, Loggable):
     uis = List
     available_task_extensions = ExtensionPoint(id="pychron.available_task_extensions")
 
-    def __init__(self, *args, **kw):
+    def __init__(self, *args: object, **kw: object) -> None:
         super().__init__(*args, **kw)
         self.init_logger()
+        self._task_window_layouts = self._load_task_window_layouts()
+        self._first_run_prompted = False
 
-    def _application_initialized_fired(self):
+    def _application_initialized_fired(self) -> None:
+        self._report_startup_validation()
+        self._maybe_open_first_run_wizard()
         if globalv.use_startup_tests:
             self.do_startup_tests()
+
+    def _report_startup_validation(self):
+        report = build_runtime_validation_report(paths.root_dir)
+        issues = [issue for issue in report.issues if issue.status in ("FAIL", "WARN")]
+        if not issues:
+            return
+
+        for issue in issues:
+            message = "{}: {}".format(issue.name, issue.detail)
+            if issue.hint:
+                message = "{} {}".format(message, issue.hint)
+            if issue.status == "FAIL":
+                self.warning(message)
+            else:
+                self.debug(message)
+
+        if report.blocking_issues:
+            self.warning_dialog("\n".join(report.summary_lines()))
+
+    def _maybe_open_first_run_wizard(self) -> None:
+        if self._first_run_prompted:
+            return
+
+        report = build_runtime_validation_report(paths.root_dir)
+        if not report.should_prompt_first_run:
+            return
+
+        self._first_run_prompted = True
+        wizard = FirstRunWizard(root=paths.root_dir)
+        info = wizard.edit_traits(kind="livemodal")
+        if not info.result:
+            return
+
+        try:
+            root, merged, report = wizard.run_bootstrap()
+        except Exception:
+            logger.exception("First-run bootstrap failed")
+            self.warning_dialog(
+                "Failed to initialize the Pychron runtime layout. Check the log for details."
+            )
+            return
+
+        if report.blocking_issues:
+            self.warning_dialog("\n".join(report.summary_lines()))
+        else:
+            self.information_dialog(
+                "Initialized Pychron at {} with profiles: {}".format(
+                    root, ", ".join(merged.resolved) or "default"
+                )
+            )
 
     def do_startup_tests(self, force_show_results=False, **kw):
         st = StartupTester()
@@ -60,9 +116,7 @@ class BaseTasksApplication(TasksApplication, Loggable):
             st.test_plugin(plugin)
 
         if st.results:
-            if force_show_results or (
-                globalv.show_startup_results or not st.all_passed
-            ):
+            if force_show_results or (globalv.show_startup_results or not st.all_passed):
                 v = ResultsView(model=st, **kw)
                 open_view(v)
 
@@ -101,7 +155,7 @@ class BaseTasksApplication(TasksApplication, Loggable):
                 if win.active_task.id == tid:
                     return win, win.active_task, True
         else:
-            win = self.create_window(TaskWindowLayout(tid))
+            win = self.create_window(self._get_task_window_layout(tid))
             return win, win.active_task, False
 
     def task_is_open(self, tid):
@@ -120,7 +174,7 @@ class BaseTasksApplication(TasksApplication, Loggable):
                         win.activate()
                     break
         else:
-            w = TaskWindowLayout(tid)
+            w = self._get_task_window_layout(tid)
             win = self.create_window(w)
             if activate:
                 win.open()
@@ -155,8 +209,71 @@ class BaseTasksApplication(TasksApplication, Loggable):
         for si in self.get_services(ICoreDevice):
             si.close()
 
+    def _get_task_window_layout(self, tid):
+        return self._task_window_layouts.get(tid, TaskWindowLayout(tid))
+
+    def _task_window_layouts_path(self):
+        return os.path.join(self.state_location, "task_window_layouts")
+
+    def _load_task_window_layouts(self):
+        path = self._task_window_layouts_path()
+        if os.path.isfile(path):
+            try:
+                with open(path, "rb") as rfile:
+                    loaded = pickle.load(rfile)
+
+                # Debug: log what was loaded
+                debug_file = "/tmp/pychron_layout_debug.txt"
+                with open(debug_file, "a") as f:
+                    f.write(f"\n=== LOAD: All keys loaded from file: {list(loaded.keys())}\n")
+
+                # Filter out extraction_line layouts - always use fresh defaults
+                filtered = {k: v for k, v in loaded.items() if "extraction_line" not in k}
+
+                # Debug: log what we're actually using
+                with open(debug_file, "a") as f:
+                    f.write(f"=== LOAD: Filtered keys being used: {list(filtered.keys())}\n")
+
+                return filtered
+            except BaseException:
+                logger.exception("Restoring task window layouts from %s", path)
+        return {}
+
+    def _save_task_window_layouts(self):
+        path = self._task_window_layouts_path()
+        try:
+            # Ensure parent directory exists
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+
+            # Debug: log all keys before filtering
+            debug_file = "/tmp/pychron_layout_debug.txt"
+            with open(debug_file, "a") as f:
+                f.write(
+                    f"\n=== SAVE: All keys in _task_window_layouts: {list(self._task_window_layouts.keys())}\n"
+                )
+
+            # Never persist extraction_line task layout - always use fresh defaults
+            layouts_to_save = {
+                k: v for k, v in self._task_window_layouts.items() if "extraction_line" not in k
+            }
+
+            # Debug: log what we're actually saving
+            with open(debug_file, "a") as f:
+                f.write(f"=== SAVE: Filtered keys to save: {list(layouts_to_save.keys())}\n")
+
+            with open(path, "wb") as wfile:
+                pickle.dump(layouts_to_save, wfile)
+        except BaseException:
+            logger.exception("Saving task window layouts to %s", path)
+
+    def _save_state(self):
+        """Saves the application state, ensuring the directory exists first."""
+        # Ensure state_location directory exists before saving
+        os.makedirs(self.state_location, exist_ok=True)
+        # Call parent implementation
+        super()._save_state()
+
     # def _load_state(self):
-    #     """Loads saved application state, if possible."""
     #     state = TasksApplicationState()
     #     filename = os.path.join(self.state_location, "application_memento")
     #     if os.path.exists(filename):
@@ -203,6 +320,9 @@ class BaseTasksApplication(TasksApplication, Loggable):
             # Store the layout of the window.
             window_layout = window.get_window_layout()
             self._state.push_window_layout(window_layout)
+            if window.active_task:
+                self._task_window_layouts[window.active_task.id] = window_layout
+                self._save_task_window_layouts()
 
             # If we're exiting implicitly and this is the last window, save
             # state, because we won't get another chance.

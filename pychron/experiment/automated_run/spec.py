@@ -42,6 +42,11 @@ from pychron.experiment.automated_run.result import (
     UnknownResult,
     BlankResult,
 )
+from pychron.experiment.automated_run.state_machine import (
+    AutomatedRunStateMachine,
+    normalize_state,
+    TERMINAL_STATES,
+)
 from pychron.experiment.utilities.identifier import (
     get_analysis_type,
     is_special,
@@ -50,6 +55,7 @@ from pychron.experiment.utilities.identifier import (
 from pychron.experiment.utilities.position_regex import XY_REGEX
 from pychron.experiment.utilities.repository_identifier import (
     make_references_repository_identifier,
+    normalize_repository_identifier,
 )
 from pychron.experiment.utilities.runid import make_rid, make_runid
 from pychron.pychron_constants import (
@@ -243,6 +249,10 @@ class AutomatedRunSpec(HasTraits):
 
     _step_heat = False
     _runid = None
+    _state_machine = None
+    state_event = Str
+    state_source = Str
+    state_reason = Str
 
     @property
     def acquisition_software(self):
@@ -374,6 +384,15 @@ class AutomatedRunSpec(HasTraits):
                                 "script duration name:{} seconds:{}".format(name, d)
                             )
                             s += d
+                elif name:
+                    logger.warning(
+                        'script "{}" for {} is configured but could not be loaded'.format(
+                            name, si
+                        )
+                    )
+                    ok = False
+                    script_oks.append(ok)
+                    script_context[name] = None, ok
         if arun:
             arun.spec = None
             # set executable. if all scripts have OK syntax executable is True
@@ -445,6 +464,29 @@ class AutomatedRunSpec(HasTraits):
             "Run total estimated duration= {:0.3f}".format(self._estimated_duration)
         )
         return self._estimated_duration
+
+    def apply_queue_metadata(self, queue, force=False):
+        values = {
+            "mass_spectrometer": getattr(queue, "mass_spectrometer", None),
+            "extract_device": getattr(queue, "extract_device", None),
+            "username": getattr(queue, "username", None),
+            "tray": getattr(queue, "tray", None),
+            "load_name": getattr(queue, "load_name", None),
+            "load_holder": getattr(queue, "load_holder", None),
+            "queue_conditionals_name": getattr(queue, "queue_conditionals_name", None),
+        }
+
+        for attr, value in values.items():
+            if value in (None, ""):
+                continue
+
+            if force or not getattr(self, attr):
+                setattr(self, attr, value)
+
+        repository_identifier = getattr(queue, "repository_identifier", None)
+        if repository_identifier not in (None, "", NULL_STR):
+            if force or not self.repository_identifier:
+                self.repository_identifier = repository_identifier
 
     def make_run(self, new_uuid=True, run=None):
         if run is None:
@@ -591,7 +633,7 @@ class AutomatedRunSpec(HasTraits):
 
         if verbose:
             for t in traits:
-                print("{} ==> {}".format(t, getattr(self, t)))
+                logger.debug("%s ==> %s", t, getattr(self, t))
 
         return self.clone_traits(traits)
 
@@ -600,7 +642,8 @@ class AutomatedRunSpec(HasTraits):
     # ===============================================================================
     @on_trait_change(
         """measurement_script, post_measurement_script,
-post_equilibration_script, extraction_script, syn_extraction_script, script_options, position, duration, cleanup, pre_cleanup, post_cleanup"""
+post_equilibration_script, extraction_script, syn_extraction_script, script_options,
+position, duration, cleanup, pre_cleanup, post_cleanup"""
     )
     def _change_handler(self, name, new):
         if new == "None":
@@ -609,7 +652,67 @@ post_equilibration_script, extraction_script, syn_extraction_script, script_opti
             self._changed = True
 
     def _state_changed(self, old, new):
+        if self._state_machine is not None:
+            self._state_machine.current_state = new
         logger.debug("state changed from {} to {}".format(old, new))
+
+    def _repository_identifier_changed(self, new):
+        normalized = normalize_repository_identifier(new)
+        if normalized != new:
+            self.repository_identifier = normalized
+
+    def normalize_state(self, state):
+        return normalize_state(state)
+
+    def is_terminal_state(self, state=None):
+        if state is None:
+            state = self.state
+        return self.normalize_state(state) in TERMINAL_STATES
+
+    @property
+    def state_machine(self):
+        if self._state_machine is None:
+            self._state_machine = AutomatedRunStateMachine(self.state)
+        return self._state_machine
+
+    def transition(self, event, force=False, source=None, reason=None):
+        transition = self.state_machine.transition(
+            event, force=force, source=source, reason=reason
+        )
+        self.state_event = transition.event
+        self.state_source = source or ""
+        self.state_reason = reason or ""
+        if transition.accepted and transition.new_state != self.state:
+            self.state = transition.new_state
+        elif not transition.accepted:
+            logger.warning(
+                "Rejected invalid state transition for {}: {} --{}--> {}".format(
+                    self.runid,
+                    transition.old_state,
+                    transition.event,
+                    transition.new_state,
+                )
+            )
+        return transition.accepted
+
+    def set_state(self, state, force=False, source=None, reason=None):
+        transition = self.state_machine.set_state(
+            state, force=force, source=source, reason=reason
+        )
+        self.state_event = transition.event
+        self.state_source = source or ""
+        self.state_reason = reason or ""
+        if transition.accepted and transition.new_state != self.state:
+            self.state = transition.new_state
+            return True
+        if transition.accepted:
+            return True
+        logger.warning(
+            "Rejected invalid state transition for {}: {} -> {}".format(
+                self.runid, transition.old_state, state
+            )
+        )
+        return False
 
     # ===============================================================================
     # property get/set
