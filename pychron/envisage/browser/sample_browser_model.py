@@ -17,8 +17,6 @@
 from datetime import datetime, timedelta
 from operator import attrgetter
 
-import sqlalchemy.orm.exc
-
 # ============= enthought library imports =======================
 from apptools.preferences.preference_binding import bind_preference
 from traits.api import Str
@@ -50,22 +48,15 @@ class SampleBrowserModel(AnalysisBrowserModel):
     def reattach(self):
         self.debug("reattach")
 
-        try:
-            ans = sorted(self.table.oanalyses, key=attrgetter("uuid"))
-            uuids = [ai.uuid for ai in ans]
-            nans = self.db.get_analyses_uuid(uuids)
+        ans = sorted(self.table.oanalyses, key=attrgetter("uuid"))
+        uuids = [ai.uuid for ai in ans]
+        nans = self.db.get_analyses_uuid(uuids)
 
-            for ni, ai in zip(nans, ans):
-                ai.dbrecord = ni
+        for ni, ai in zip(nans, ans):
+            ai.dbrecord = ni
 
-            if self.selected_projects:
-                self._load_associated_groups(self.selected_projects)
-        except sqlalchemy.orm.exc.DetachedInstanceError:
-            self.warning_dialog(
-                "There is an issue with pychron's connection to the database. "
-                "Please restart pychron and try again"
-            )
-            self.application.stop()
+        if self.selected_projects:
+            self._load_associated_groups(self.selected_projects)
 
     def dump_browser(self):
         super(SampleBrowserModel, self).dump_browser()
@@ -96,9 +87,7 @@ class SampleBrowserModel(AnalysisBrowserModel):
         #     return self.table.get_analysis_records()
         return self.table.get_analysis_records()
 
-    def get_selection(
-        self, low_post, high_post, unks=None, selection=None, make_records=True
-    ):
+    def get_selection(self, low_post, high_post, unks=None, selection=None, make_records=True):
         ret = None
         if selection is None:
             if self.table.selected:
@@ -131,9 +120,7 @@ class SampleBrowserModel(AnalysisBrowserModel):
         ss = [si.labnumber for si in self.selected_samples]
         bt = self.search_criteria.reference_hours_padding
         if not bt:
-            self.information_dialog(
-                'Set "References Window" in Preferences.\n\nDefaulting to 2hrs'
-            )
+            self.information_dialog('Set "References Window" in Preferences.\n\nDefaulting to 2hrs')
             bt = 2
 
         # ss  = ['bu-FD-O']
@@ -194,11 +181,7 @@ class SampleBrowserModel(AnalysisBrowserModel):
         project, pp = tuple({(a.project, a.principal_investigator) for a in ans})[0]
         try:
             project = next(
-                (
-                    p
-                    for p in projects
-                    if p.name == project and p.principal_investigator == pp
-                )
+                (p for p in projects if p.name == project and p.principal_investigator == pp)
             )
             agv.project = project
         except StopIteration:
@@ -236,9 +219,7 @@ class SampleBrowserModel(AnalysisBrowserModel):
 
             uuids = [ai.uuid for ai in self.table.analyses]
 
-            kw = dict(
-                limit=lim, include_invalid=not at.omit_invalid, exclude_uuids=uuids
-            )
+            kw = dict(limit=lim, include_invalid=not at.omit_invalid, exclude_uuids=uuids)
 
             lp = self.low_post  # if self.use_low_post else None
             hp = self.high_post  # if self.use_high_post else None
@@ -247,9 +228,7 @@ class SampleBrowserModel(AnalysisBrowserModel):
             if self.load_enabled and self.selected_loads:
                 ls = [l.name for l in self.selected_loads]
 
-            ans = self._retrieve_analyses(
-                samples=new, loads=ls, low_post=lp, high_post=hp, **kw
-            )
+            ans = self._retrieve_analyses(samples=new, loads=ls, low_post=lp, high_post=hp, **kw)
 
             self.debug(
                 "selected samples changed. loading analyses. "
@@ -276,9 +255,7 @@ class SampleBrowserModel(AnalysisBrowserModel):
             now = datetime.now()
             lp = now - timedelta(hours=v.nhours)
             ls = self.db.get_labnumbers(
-                mass_spectrometers=(
-                    v.mass_spectrometers if v.use_mass_spectrometers else None
-                ),
+                mass_spectrometers=(v.mass_spectrometers if v.use_mass_spectrometers else None),
                 analysis_types=v.analysis_types,
                 high_post=now,
                 low_post=lp,
@@ -303,9 +280,7 @@ class SampleBrowserModel(AnalysisBrowserModel):
         ans = self.table.analyses
         ms = list({a.mass_spectrometer.lower() for a in ans if a.mass_spectrometer})
         es = list({a.extract_device.lower() for a in ans if a.extract_device})
-        irs = list(
-            {"{},{}".format(a.irradiation, a.irradiation_level.upper()) for a in ans}
-        )
+        irs = list({"{},{}".format(a.irradiation, a.irradiation_level.upper()) for a in ans})
 
         samples = []
         for il in irs:
