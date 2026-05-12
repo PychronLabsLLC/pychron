@@ -54,7 +54,10 @@ class ModbustcpCommunicator(Communicator):
         return True
 
     def initialize(self, *args, **kw):
-        return self.handle.connect()
+        connected = self.handle.connect()
+        if connected:
+            self.simulation = False
+        return connected
 
     def __getattr__(self, item):
         return getattr(self.handle, item)
