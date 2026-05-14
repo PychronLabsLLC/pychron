@@ -1253,17 +1253,20 @@ class GitRepoManager(Loggable):
                 has_conflicts = bool(repo.git.diff("--name-only", "--diff-filter=U").strip())
                 dirty = repo.is_dirty(untracked_files=False)
                 if has_conflicts or dirty:
+                    reason_txt = (
+                        "unmerged paths" if has_conflicts else "dirty working tree"
+                    )
                     self.critical(
-                        "Stale MERGE_HEAD with %s; refusing to auto-abort. "
-                        "Resolve manually in %s",
-                        "unmerged paths" if has_conflicts else "dirty working tree",
-                        repo.working_tree_dir,
+                        "Stale MERGE_HEAD with {}; refusing to auto-abort. "
+                        "Resolve manually in {}".format(
+                            reason_txt, repo.working_tree_dir
+                        )
                     )
                 else:
                     self.warning(
-                        "Stale MERGE_HEAD detected in %s (working tree clean); "
-                        "aborting residual merge state and retrying",
-                        repo.working_tree_dir,
+                        "Stale MERGE_HEAD detected in {} (working tree "
+                        "clean); aborting residual merge state and "
+                        "retrying".format(repo.working_tree_dir)
                     )
                     try:
                         repo.git.merge("--abort")
