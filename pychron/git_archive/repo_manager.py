@@ -1239,6 +1239,49 @@ class GitRepoManager(Loggable):
         args.append(target)
 
         self.debug("protected merge target=%s strategy=%s", target, strategy_option)
+
+        # Self-heal stale MERGE_HEAD left behind by a previous crash mid-pull.
+        # If the working tree is clean we abort the stale merge transparently;
+        # otherwise we bail loudly so the user can resolve real conflicts.
+        try:
+            import os
+            merge_head = os.path.join(repo.git_dir, "MERGE_HEAD")
+            if os.path.exists(merge_head):
+                # repo.is_dirty(untracked_files=False) ignores stray local files
+                # but flags real conflicts (unmerged paths) and staged/unstaged
+                # modifications.
+                has_conflicts = bool(repo.git.diff("--name-only", "--diff-filter=U").strip())
+                dirty = repo.is_dirty(untracked_files=False)
+                if has_conflicts or dirty:
+                    self.critical(
+                        "Stale MERGE_HEAD with %s; refusing to auto-abort. "
+                        "Resolve manually in %s",
+                        "unmerged paths" if has_conflicts else "dirty working tree",
+                        repo.working_tree_dir,
+                    )
+                else:
+                    self.warning(
+                        "Stale MERGE_HEAD detected in %s (working tree clean); "
+                        "aborting residual merge state and retrying",
+                        repo.working_tree_dir,
+                    )
+                    try:
+                        repo.git.merge("--abort")
+                    except GitCommandError:
+                        # `git merge --abort` returns non-zero when there is
+                        # nothing to abort even though MERGE_HEAD exists. Fall
+                        # back to removing the marker files directly.
+                        for name in ("MERGE_HEAD", "MERGE_MSG", "MERGE_MODE"):
+                            p = os.path.join(repo.git_dir, name)
+                            try:
+                                if os.path.exists(p):
+                                    os.remove(p)
+                            except OSError:
+                                self.debug_exception()
+        except Exception:
+            # Diagnostics only; never block the merge attempt on the heal path
+            self.debug_exception()
+
         repo.git.merge(*args)
 
         try:
