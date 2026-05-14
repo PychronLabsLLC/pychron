@@ -189,6 +189,16 @@ def enable_event_loop_monitoring(enabled=True):
     logger.info(f"Event loop monitoring {status}")
 
 
-convert_color = toolkit_factory("gui", "convert_color")
-wake_screen = toolkit_factory("gui", "wake_screen")
+# Import convert_color and wake_screen eagerly at module level
+# These are needed for proper menu initialization on macOS
+try:
+    from pychron.core.ui.qt.gui import convert_color, wake_screen
+except ImportError:
+    # Fallback if Qt gui module is not available
+    def convert_color(color_spec):
+        return color_spec
+    
+    def wake_screen():
+        pass
+
 # ============= EOF =============================================

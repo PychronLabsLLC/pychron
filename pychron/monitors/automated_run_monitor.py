@@ -26,6 +26,7 @@ from pychron.monitors.monitor import Monitor
 from pychron.hardware.core.communicators.ethernet_communicator import (
     EthernetCommunicator,
 )
+from pychron.core.ui.gui import invoke_in_main_thread
 import time
 
 
@@ -152,7 +153,7 @@ class AutomatedRunMonitor(Monitor):
         elm = self.extraction_line_manager
         dev = elm.get_device(q)
         if dev:
-            return dev.get()
+            return invoke_in_main_thread(dev.get)
 
 
 class RemoteAutomatedRunMonitor(AutomatedRunMonitor):

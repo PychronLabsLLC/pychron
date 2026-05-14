@@ -69,6 +69,9 @@ class Archiver(HasTraits):
     def info(self, msg, *args, **kw):
         logger.info(msg)
 
+    def warning(self, msg, *args, **kw):
+        logger.warning(msg)
+
     def clean(self, exclude=None, **kw):
         self._clean(exclude, **kw)
 
@@ -95,7 +98,8 @@ class Archiver(HasTraits):
 
         for p in f(root):
             rp = os.path.join(root, p)
-            if p in exclude or rp in exclude:
+            # Skip the archive directory itself and any explicitly excluded paths
+            if p == "archive" or p in exclude or rp in exclude:
                 continue
 
             result = os.stat(rp)

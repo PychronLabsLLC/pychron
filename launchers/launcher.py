@@ -14,6 +14,21 @@
 # limitations under the License.
 # ===============================================================================
 import os
+import sys
+
+# --- Phase 1 M3 diagnostics: install as early as possible, before any Qt
+# object construction, so qInstallMessageHandler and the QTimer thread
+# guard are in place when the rest of the stack imports.
+try:
+    # Ensure pychron is importable even when launched outside Pychron.sh
+    _here = os.path.dirname(os.path.abspath(__file__))
+    _root = os.path.dirname(_here)
+    if _root not in sys.path:
+        sys.path.insert(0, _root)
+    from pychron.core.helpers.m3_diagnostics import install_early as _m3_install_early
+    _m3_install_early()
+except Exception as _e:  # pragma: no cover
+    sys.stderr.write("m3_diagnostics early install failed: %r\n" % (_e,))
 
 from helpers import entry_point
 
