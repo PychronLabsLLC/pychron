@@ -490,6 +490,10 @@ def install_event_tracer() -> None:
                         tid,
                     )
             except Exception:
+                # Tracing must never interfere with event delivery; a
+                # dangling receiver may itself fault on type() lookup
+                # here and that's expected (the unfinished trace line
+                # already tells us a bad receiver is in flight).
                 pass
             return False  # never consume
 
