@@ -189,11 +189,18 @@ class NGXSpectrometer(BaseSpectrometer, IsotopxMixin):
         self.ask(f"SetSourceOutput {name},{value}")
 
     def read_intensities(self, timeout=60, trigger=False, target="ACQ.B", verbose=True):
-        # self.microcontroller.lock.acquire()
-        # verbose=True
-        self._read_enabled = True
+        # Serialize the trigger+readline cycle. Multiple threads can call this
+        # concurrently (ScanManager timer + AutomatedRun MultiCollector). Without
+        # the lock, two threads race trigger_acq (duplicate StartAcq -> E43) and
+        # interleave bytes when reading the shared TCP socket (garbled records).
+        lock = self.microcontroller.lock
+        if lock is None:
+            return self._read_intensities(trigger=trigger, verbose=verbose)
+        with lock:
+            return self._read_intensities(trigger=trigger, verbose=verbose)
 
-        # verbose = True
+    def _read_intensities(self, trigger=False, verbose=True):
+        self._read_enabled = True
 
         if verbose:
             self.debug(
@@ -202,40 +209,21 @@ class NGXSpectrometer(BaseSpectrometer, IsotopxMixin):
                 )
             )
 
-        # self.microcontroller.lock.acquire()
         resp = True
-        # trigger_release = self.triggered_lock_release_required
-        # self.debug(f'trigger={trigger} triggered={self.microcontroller.triggered} '
-        #            f'triggered_locrelease_required={self.triggered_lock_release_required}')
-        # print('treigger', trigger, self.microcontroller.triggered)
         if trigger or not self.microcontroller.triggered:
             resp = self.trigger_acq()
-            # trigger_release = self.microcontroller.triggered
-            # self.debug(f'trigger_relase={trigger_release}')
-
-            # self.microcontroller.lock.release()
             if resp is not None:
-                # if verbose:
-                #     self.debug(f'waiting {self.integration_time * 0.95} before trying to get data')
-                # time.sleep(self.integration_time * 0.95)
                 time.sleep(0.95)
-                # if verbose:
-                #     self.debug('trigger wait finished')
-        # else:
-        # self.microcontroller.lock.acquire()
-        # self.triggered_lock_release_required = True
 
         keys = []
         signals = []
         collection_time = None
         inc = False
-        # self.debug(f'acquired mcir lock {self.microcontroller.lock}')
         targetb = "#EVENT:ACQ.B,{}".format(self.rcs_id)
         targeta = "#EVENT:ACQ,{}".format(self.rcs_id)
         if resp is not None:
             keys = self.detector_names[::-1]
             while self._read_enabled:
-                # with self.microcontroller.lock:
                 line = self.readline(verbose=verbose)
 
                 if verbose:
@@ -259,7 +247,6 @@ class NGXSpectrometer(BaseSpectrometer, IsotopxMixin):
                                 self.acq_count == self.total_acq_count
                                 and self.has_atonas
                             ):
-                                # forget this ACQ and immediately get the ACQ.B record.
                                 continue
                             else:
                                 nsignals, keys = [], []
@@ -285,7 +272,6 @@ class NGXSpectrometer(BaseSpectrometer, IsotopxMixin):
                     except BaseException as e:
                         self.debug("read intensities errror={}".format(e))
 
-        # self.microcontroller.lock.release()
         if len(signals) != len(keys):
             self.debug("keys={}".format(keys))
             self.debug("signals".format(signals))
@@ -300,40 +286,6 @@ class NGXSpectrometer(BaseSpectrometer, IsotopxMixin):
             self.debug("collection time: {}".format(collection_time))
             self.debug("keys: {}".format(keys))
             self.debug("signals: {}".format(signals))
-
-        # try:
-        #     # the integration cycle is complete. release the lock
-        #     if inc:
-        #         self.microcontroller.lock.release()
-        #         self.debug(f'Released lock. {self.microcontroller.lock}')
-        # except RuntimeError as e:
-        #     self.debug(f'Cannot release lock. "RuntimeError" {e}')
-
-        # if self.triggered_lock_release_required:
-        #     self.triggered_lock_release_required = False
-        #     if trigger_release:
-        # if self.microcontroller.lock.active_count() > 0:
-        #     self.debug(f"trigger release. lock count={self.microcontroller.lock.count}")
-        #     self.microcontroller.lock.release()
-        # self.debug(f'trigger release. {trigger_release}')
-        # if trigger_release:
-        # self.triggered_lock_release_required = False
-
-        # if self.microcontroller.lock.count>0:
-        #     try:
-        #         self.microcontroller.lock.release()
-        #     except RuntimeError as e:
-        #         if verbose:
-        #             self.debug(f'Trigger Release. Cannot release lock. "RuntimeError" {e}')
-        #     self.microcontroller.lock.release()
-        # except RuntimeError as e:
-        #     self.debug(f'Cannot release lock. "RuntimeError" {e}')
-        #
-        # if trigger_release:
-        #     try:
-        #         self.microcontroller.lock.release()
-        #     except RuntimeError as e:
-        #         self.debug(f'Trigger Release. Cannot release lock. "RuntimeError" {e}')
 
         return keys, signals, collection_time, inc
 
