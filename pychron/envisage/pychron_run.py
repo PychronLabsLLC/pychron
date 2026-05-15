@@ -312,20 +312,20 @@ def launch(klass):
     except ImportError:
         pass
 
+    # --- Phase 1 M3 diagnostics: start the main-thread watchdog now that the
+    # QApplication exists.  The watchdog arms a QTimer-driven heartbeat on the
+    # main thread and a daemon poller that dumps every Python frame when the
+    # heartbeat stalls (i.e. spinning beachball / wedged Qt event loop).
     try:
-        # try:
-        #     import qdarktheme
-        #
-        #     qdarktheme.setup_theme("light")
-        # except ImportError:
-        #     pass
+        from pychron.core.helpers.m3_diagnostics import install_late as _m3_install_late
 
-        # root = os.path.dirname(__file__)
-        # r = QtGui.QApplication.instance()
-        # p = os.path.join(root, 'stylesheets', 'qdark.css')
-        # with open(p) as rfile:
-        #     r.setStyleSheet(rfile.read())
+        _m3_install_late()
+    except Exception as _e:  # pragma: no cover
+        logger.warning("m3_diagnostics late install failed: %r", _e)
 
+    try:
+        # On macOS, window auto-opening is prevented at the application level
+        # to fix menu bar rendering issues (see BaseTasksApplication.__init__)
         app.run()
 
     except Exception:
@@ -336,9 +336,6 @@ def launch(klass):
         tb = traceback.format_exc()
         gTraceDisplay.add_text(tb)
         gTraceDisplay.edit_traits(kind="livemodal")
-
-        # finally:
-        #     sys.exit(0)
 
 
 # ============= EOF ====================================
