@@ -65,7 +65,7 @@ class StreamGraphManager(Manager):
     timer = None
     update_period = 2
     _signal_failed_cnt = 0
-    _streaming_active = True
+    _streaming_active = False
 
     def stop(self):
         self.prepare_destroy()

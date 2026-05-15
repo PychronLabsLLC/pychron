@@ -554,10 +554,17 @@ class ScanManager(StreamGraphManager):
             #     t.start()
 
     def _integration_time_changed(self):
+        # Skip when the scan window has never been activated. integration_time
+        # is a DelegatesTo proxy on the spectrometer, so AutomatedRun setting
+        # the spectrometer integration time also fires this notification on the
+        # singleton ScanManager. Without this gate, the unactivated ScanManager
+        # would (a) re-issue StopAcq/SetAcqPeriod and (b) auto-create a scan
+        # timer that races the measurement thread on the shared TCP socket.
+        if not self._streaming_active:
+            return
         if self.integration_time:
             self.debug("scan manager.setting integration time={}".format(self.integration_time))
             if not self.timer or self.spectrometer.reset_scan_timer_on_integration:
-                #if self._is_active:
                 self.spectrometer.set_integration_time(
                     self.integration_time, force=True
                 )
