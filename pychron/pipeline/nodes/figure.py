@@ -15,6 +15,9 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
+from __future__ import annotations
+
+from typing import Any, Dict as TypingDict
 
 from apptools.preferences.preference_binding import bind_preference
 from traits.api import Any, Bool, Instance, Dict
@@ -72,22 +75,21 @@ class FigureNode(SortableNode):
     # editors = List
     auto_set_items = True
     use_plotting = True
-    editors = Dict
+    editors = Dict()
 
-    def bind_preferences(self):
+    def bind_preferences(self) -> None:
         bind_preference(self, "skip_meaning", "pychron.pipeline.skip_meaning")
 
-    def reset(self):
+    def reset(self) -> None:
         super(FigureNode, self).reset()
-        self.editors = {}
+        self.editors: TypingDict[str, Any] = {}
         self.editor = None
 
-    def refresh(self):
+    def refresh(self) -> None:
         for e in self.editors.values():
-            print("figure not refresh needed")
-            e.refresh_needed = True
+            e.request_rebuild()
 
-    def run(self, state):
+    def run(self, state) -> None:
         self.plotter_options = self.plotter_options_manager.selected_options
         po = self.plotter_options
         if not po:
@@ -123,7 +125,7 @@ class FigureNode(SortableNode):
                         unks = [u for u in unks if u.tag.lower() != "skip"]
 
                     editor.set_items(list(unks))
-                    editor.refresh_needed = True
+                    editor.request_refresh()
 
         for name, es in groupby_key(state.editors, "name"):
             for i, ei in enumerate(es):

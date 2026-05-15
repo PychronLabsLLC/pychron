@@ -20,6 +20,7 @@ from traits.api import Instance, Button, Bool, Property, DelegatesTo, List, Str
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 from pychron.core.pychron_traits import PositiveInteger
+from pychron.core.ui.gui import invoke_in_main_thread
 from pychron.dvc.dvc_irradiationable import DVCAble
 from pychron.experiment.automated_run.cryo.factory import CryoAutomatedRunFactory
 from pychron.experiment.automated_run.factory import AutomatedRunFactory
@@ -207,7 +208,7 @@ class ExperimentFactory(DVCAble):
             with rf.update_selected_ctx():
                 q.select_run_idx(idx)
 
-            q.changed = True
+            self._mark_queue_changed(q)
 
     def _update_end_after(self, new):
         if new:
@@ -220,10 +221,17 @@ class ExperimentFactory(DVCAble):
         self.debug("update queue {}={}".format(name, new))
         if self.queue:
             self.queue.trait_set(**{name: new})
-            self.queue.changed = True
-            if name == "repository_identifier":
-                for a in self.queue.automated_runs:
-                    a.repository_identifier = new
+            if name in (
+                "username",
+                "mass_spectrometer",
+                "extract_device",
+                "load_name",
+                "tray",
+                "queue_conditionals_name",
+                "repository_identifier",
+            ):
+                self.queue.sync_queue_meta(attrs=(name,), force=True)
+            self._mark_queue_changed(self.queue, auto_save=False)
 
         if name == "mass_spectrometer":
             self.mass_spectrometer = new
@@ -240,6 +248,22 @@ class ExperimentFactory(DVCAble):
 
     def _auto_save(self):
         self.queue.auto_save()
+
+    def _mark_queue_changed(self, queue, auto_save=True):
+        queue.changed = True
+        if hasattr(queue, "request_table_refresh"):
+            queue.request_table_refresh()
+        else:
+            # Safely set trait from worker thread
+            invoke_in_main_thread(setattr, queue, "refresh_table_needed", True)
+
+        if hasattr(queue, "request_info_refresh"):
+            queue.request_info_refresh()
+        else:
+            # Safely set trait from worker thread
+            invoke_in_main_thread(setattr, queue, "refresh_info_needed", True)
+        if auto_save:
+            self._auto_save()
 
     def _set_extract_device(self, ed):
         self.debug(
@@ -289,7 +313,7 @@ class ExperimentFactory(DVCAble):
                 if positions:
                     runs = [self.run_factory.new_run_simple(*p) for p in positions]
                     self.queue.extend_runs(runs)
-                    self.queue.changed = True
+                    self._mark_queue_changed(self.queue)
 
             else:
                 self.warning_dialog("Please set a load")

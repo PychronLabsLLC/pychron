@@ -155,9 +155,7 @@ class BaseBrowserModel(PersistenceLoggable, ColumnSorterMixin):
 
     auto_select_analysis = Bool(False)
 
-    sample_filter_values = Property(
-        List, depends_on="osamples, sample_filter_parameter"
-    )
+    sample_filter_values = Property(List, depends_on="osamples, sample_filter_parameter")
     sample_filter_parameter = Str("name")
     sample_filter_comparator = Enum(
         "fuzzy",
@@ -165,9 +163,7 @@ class BaseBrowserModel(PersistenceLoggable, ColumnSorterMixin):
         "=",
         "not =",
     )
-    sample_filter_parameters = Property(
-        List, depends_on="labnumber_tabular_adapter.columns"
-    )
+    sample_filter_parameters = Property(List, depends_on="labnumber_tabular_adapter.columns")
     clear_sample_table = Button
     clear_selection_button = Button
 
@@ -357,9 +353,7 @@ class BaseBrowserModel(PersistenceLoggable, ColumnSorterMixin):
         ps = db.get_principal_investigators(order="asc")
         self.debug("n pis={}".format(len(ps)))
         if ps:
-            self.principal_investigators = [
-                PrincipalInvestigatorRecordView(p) for p in ps
-            ]
+            self.principal_investigators = [PrincipalInvestigatorRecordView(p) for p in ps]
             self.principal_investigator_names = [p.name for p in ps]
 
     def get_analysis_groups(self, projects):
@@ -462,9 +456,7 @@ class BaseBrowserModel(PersistenceLoggable, ColumnSorterMixin):
     def _make_labnumbers(self):
         # dont query if analysis_types enabled but not analysis type specified
         if self.use_analysis_type_filtering and not self.analysis_include_types:
-            self.warning_dialog(
-                "Specify Analysis Types or disable Analysis Type Filtering"
-            )
+            self.warning_dialog("Specify Analysis Types or disable Analysis Type Filtering")
             return []
 
         sams = []
@@ -536,23 +528,22 @@ class BaseBrowserModel(PersistenceLoggable, ColumnSorterMixin):
     # def _retrieve_sample_analyses(self, samples, **kw):
     #    return self._retrieve_analyses(samples=samples, **kw)
 
-    def _make_project_records(
-        self, ps, ms=None, include_recent=True, include_recent_first=True
-    ):
+    def _make_project_records(self, ps, ms=None, include_recent=True, include_recent_first=True):
         if not ps:
             return []
         pss = sorted([ProjectRecordView(p) for p in ps], key=lambda x: x.name)
         return pss
 
     def _make_records(self, ans):
-        n = len(ans)
-        self.debug("make records {}".format(n))
         import time
 
+        n = len(ans)
         st = time.time()
-
+        self.debug("make records start n={}".format(n))
         ret = progress_bind_records(ans)
-        self.debug("make records {}".format(time.time() - st))
+        dt = time.time() - st
+        per = (dt / n) if n else 0
+        self.debug("make records done n={} total={:.3f}s avg={:.3f}s/an".format(n, dt, per))
         return ret
 
     def _get_sample_filter_parameter(self):
@@ -641,9 +632,7 @@ class BaseBrowserModel(PersistenceLoggable, ColumnSorterMixin):
             self.debug("load projects for principal investigator= {}".format(pis))
 
         db = self.db
-        ps = db.get_projects(
-            principal_investigators=pis, mass_spectrometers=ms, verbose_query=True
-        )
+        ps = db.get_projects(principal_investigators=pis, mass_spectrometers=ms, verbose_query=True)
 
         ps = self._make_project_records(
             ps, include_recent_first=True, include_recent=True and self.include_recent

@@ -76,7 +76,7 @@ from pychron.experiment.utilities.conditionals import (
 )
 from pychron.experiment.utilities.environmentals import set_environmentals
 from pychron.experiment.utilities.identifier import convert_identifier
-from pychron.experiment.utilities.script import assemble_script_blob
+from pychron.experiment.utilities.script import assemble_script_blob, resolve_script_name
 from pychron.globals import globalv
 from pychron.loggable import Loggable
 from pychron.paths import paths
@@ -97,6 +97,7 @@ from pychron.pychron_constants import (
     TRUNCATED,
     SUCCESS,
     CANCELED,
+    ABORTED,
     SYN_EXTRACTION,
 )
 from pychron.spectrometer.base_spectrometer import NoIntensityChange
@@ -454,7 +455,7 @@ class AutomatedRun(Loggable):
         else:
             fits = dict([f.split(":") for f in fits])
 
-        g = self.plot_panel.isotope_graph
+        g = self.plot_panel.isotope_graph if self.plot_panel else None
         for k, iso in isotopes.items():
             try:
                 fi = fits[k]
@@ -476,9 +477,10 @@ class AutomatedRun(Loggable):
             iso.set_fit_blocks(fi)
             self.debug('set "{}" to "{}"'.format(k, fi))
 
-            idx = self._get_plot_id_by_ytitle(g, k, iso)
-            if idx is not None:
-                g.set_regressor(iso.regressor, idx)
+            if g is not None:
+                idx = self._get_plot_id_by_ytitle(g, k, iso)
+                if idx is not None:
+                    g.set_regressor(iso.regressor, idx)
 
     def py_set_baseline_fits(self, fits):
         if not fits:
@@ -1063,7 +1065,7 @@ class AutomatedRun(Loggable):
         self.finish()
 
         if self.spec.state != "not run":
-            self.spec.state = "aborted"
+            self.spec.transition("abort", force=True, source="abort_run")
             self.experiment_queue.refresh_table_needed = True
 
     def cancel_run(self, state="canceled", do_post_equilibration=True):
@@ -1102,7 +1104,7 @@ class AutomatedRun(Loggable):
 
         if state:
             if self.spec.state != "not run":
-                self.spec.state = state
+                self.spec.set_state(state, force=True, source="cancel_run")
                 self.experiment_queue.refresh_table_needed = True
 
     def truncate_run(self, style="normal"):
@@ -1124,7 +1126,7 @@ class AutomatedRun(Loggable):
 
             self.collector.set_truncated()
             self.truncated = True
-            self.spec.state = "truncated"
+            self.spec.transition("truncate", source="truncate_run")
             self.experiment_queue.refresh_table_needed = True
 
     # ===============================================================================
@@ -1170,7 +1172,7 @@ class AutomatedRun(Loggable):
                 TRUNCATED,
                 "aborted",
             ):
-                self.spec.state = FAILED
+                self.spec.transition("fail", force=True, source="finish")
                 self.experiment_queue.refresh_table_needed = True
 
         self.spectrometer_manager.spectrometer.active_detectors = []
@@ -1611,7 +1613,7 @@ class AutomatedRun(Loggable):
         script = self.extraction_script
         msg = "Extraction Started {}".format(script.name)
         self.heading("{}".format(msg))
-        self.spec.state = "extraction"
+        self.spec.transition("start_extraction", source="do_extraction")
         self.experiment_queue.refresh_table_needed = True
 
         self.debug("DO EXTRACTION {}".format(self.runner))
@@ -1626,7 +1628,9 @@ class AutomatedRun(Loggable):
             if self.use_syn_extraction and self.spec.syn_extraction_script:
 
                 pp = self._make_script_name(
-                    self.spec.syn_extraction_script, extension=".yaml"
+                    self.spec.syn_extraction_script,
+                    root=os.path.join(paths.scripts_dir, "syn_extraction"),
+                    extension=".yaml",
                 )
                 p = os.path.join(paths.scripts_dir, "syn_extraction", pp)
                 self.debug(f"using syn_extracion file: {p}")
@@ -1737,7 +1741,7 @@ class AutomatedRun(Loggable):
         self.info_color = MEASUREMENT_COLOR
         msg = "Measurement Started {}".format(script.name)
         self.heading("{}".format(msg))
-        self.spec.state = MEASUREMENT
+        self.spec.transition("start_measurement", source="do_measurement")
         self.experiment_queue.refresh_table_needed = True
 
         # get current spectrometer values
@@ -2321,26 +2325,12 @@ anaylsis_type={}
 
         """
         self.debug("activate detectors")
-        p = self.plot_panel
 
-        create = not self._syn_extraction_active or p is None
-        # if self.plot_panel is None:
-        #     create = True
-        # else:
-        #     cd = set([d.name for d in self.plot_panel.detectors])
-        #     ad = set(dets)
-        #     create = cd - ad or ad - cd
-        if create:
-            p = self._new_plot_panel(stack_order="top_to_bottom")
+        create = not self._syn_extraction_active or self.plot_panel is None
 
         self._active_detectors = self._set_active_detectors(dets)
 
         self.spectrometer_manager.spectrometer.active_detectors = self._active_detectors
-
-        if create:
-            p.create(self._active_detectors)
-        else:
-            p.isotope_graph.clear_plots()
 
         self.debug("clear isotope group")
 
@@ -2362,9 +2352,175 @@ anaylsis_type={}
 
         self._load_previous()
 
-        # self.debug('load analysis view')
-        p.analysis_view.load(self)
-        self.plot_panel = p
+        # Defer PlotPanel creation to main thread to avoid blocking worker thread with Qt operations
+        # This prevents the spinning wheel freeze when creating graphs on the worker thread
+        # Use an Event to signal when setup is complete so data collection can proceed
+        self._plot_panel_ready_event = TEvent()
+        self._plot_panel_ready_event.clear()
+        
+        import threading
+        import time as time_module
+        current_thread = threading.current_thread()
+        self.debug(
+            "_setup_measurement_collection entry: "
+            "thread={}, create={}, active_detectors={}".format(
+                current_thread.name, create, len(self._active_detectors)
+            )
+        )
+        
+        setup_start = time_module.time()
+        invoke_in_main_thread(
+            self._setup_plot_panel_on_main_thread, create, self._active_detectors
+        )
+        
+        # Wait for plot panel to be ready on main thread before returning
+        # Timeout after 5 seconds to avoid indefinite hang
+        self.debug(
+            "waiting for plot panel setup on main thread... "
+            "thread={}, event_is_set={}".format(
+                current_thread.name, self._plot_panel_ready_event.is_set()
+            )
+        )
+        wait_start = time_module.time()
+        if not self._plot_panel_ready_event.wait(timeout=5.0):
+            self.warning(
+                "plot panel setup timed out after 5 seconds. "
+                "event_is_set={}, wait_duration={:.3f}s, total_duration={:.3f}s, "
+                "thread={}".format(
+                    self._plot_panel_ready_event.is_set(),
+                    time_module.time() - wait_start,
+                    time_module.time() - setup_start,
+                    current_thread.name
+                )
+            )
+        else:
+            self.debug(
+                "plot panel ready, continuing with data collection. "
+                "event_is_set={}, wait_duration={:.3f}s, total_duration={:.3f}s, "
+                "thread={}".format(
+                    self._plot_panel_ready_event.is_set(),
+                    time_module.time() - wait_start,
+                    time_module.time() - setup_start,
+                    current_thread.name
+                )
+            )
+
+    def _setup_plot_panel_on_main_thread(self, create, active_detectors):
+        """
+        Setup plot panel on main thread.
+        
+        Called from worker thread via invoke_in_main_thread to avoid Qt object
+        creation on worker thread which causes main thread freeze.
+        
+        :param create: bool - whether to create new PlotPanel
+        :param active_detectors: list of detectors to activate
+        """
+        import threading
+        import time as time_module
+        current_thread = threading.current_thread()
+        overall_start = time_module.time()
+        
+        self.debug(
+            "_setup_plot_panel_on_main_thread: entry create={}, "
+            "thread={}, event_is_set={}".format(
+                create, current_thread.name, self._plot_panel_ready_event.is_set()
+            )
+        )
+        
+        try:
+            step_start = time_module.time()
+            self.debug("plot panel setup: create={}".format(create))
+            
+            if create:
+                self.debug("plot panel setup: creating new plot panel...")
+                p = self._new_plot_panel(stack_order="top_to_bottom")
+                step_duration = time_module.time() - step_start
+                self.debug(
+                    "plot panel setup: new panel created in {:.3f}s, "
+                    "thread={}".format(step_duration, current_thread.name)
+                )
+                
+                try:
+                    step_start = time_module.time()
+                    p.create(active_detectors)
+                    step_duration = time_module.time() - step_start
+                    self.debug(
+                        "plot panel setup: panel.create() completed in {:.3f}s, "
+                        "thread={}".format(step_duration, current_thread.name)
+                    )
+                except Exception as e:
+                    step_duration = time_module.time() - step_start
+                    self.debug(
+                        "ERROR creating plot panel (after {:.3f}s): {}".format(
+                            step_duration, e
+                        )
+                    )
+                    import traceback
+                    self.debug(traceback.format_exc())
+            else:
+                self.debug("plot panel setup: reusing existing panel")
+                p = self.plot_panel
+                if p:
+                    step_start = time_module.time()
+                    p.isotope_graph.clear_plots()
+                    step_duration = time_module.time() - step_start
+                    self.debug(
+                        "plot panel setup: cleared plots in {:.3f}s, "
+                        "thread={}".format(step_duration, current_thread.name)
+                    )
+            
+            # Load analysis view and assign plot panel
+            if p:
+                self.debug(
+                    "plot panel setup: loading analysis view, thread={}".format(
+                        current_thread.name
+                    )
+                )
+                step_start = time_module.time()
+                p.analysis_view.load(self)
+                step_duration = time_module.time() - step_start
+                self.debug(
+                    "plot panel setup: analysis view loaded in {:.3f}s, "
+                    "thread={}".format(step_duration, current_thread.name)
+                )
+                self.plot_panel = p
+                
+            overall_duration = time_module.time() - overall_start
+            self.debug(
+                "plot panel setup complete in {:.3f}s, "
+                "thread={}, event_is_set={}".format(
+                    overall_duration, current_thread.name,
+                    self._plot_panel_ready_event.is_set()
+                )
+            )
+        except Exception as e:
+            overall_duration = time_module.time() - overall_start
+            self.warning(
+                "Unexpected exception in _setup_plot_panel_on_main_thread "
+                "(after {:.3f}s): {}".format(overall_duration, e)
+            )
+            import traceback
+            self.debug(traceback.format_exc())
+        finally:
+            # Signal that setup is complete (even if there was an error)
+            try:
+                self.debug(
+                    "_setup_plot_panel_on_main_thread: setting event, "
+                    "thread={}, event_is_set_before={}".format(
+                        current_thread.name, self._plot_panel_ready_event.is_set()
+                    )
+                )
+                self._plot_panel_ready_event.set()
+                self.debug(
+                    "_setup_plot_panel_on_main_thread: event set, "
+                    "thread={}, event_is_set_after={}".format(
+                        current_thread.name, self._plot_panel_ready_event.is_set()
+                    )
+                )
+            except Exception as e:
+                self.warning(
+                    "Exception setting plot panel ready event: {}".format(e)
+                )
 
     def _load_previous(self):
         # this is necessary for measuring the baseline before doing a peakhop or multicollect
@@ -2727,14 +2883,17 @@ anaylsis_type={}
                 self.warning(
                     "Canceling Run. Intensity from mass spectrometer not changing"
                 )
-
-                try:
-                    self.info("Saving run. Analysis did not complete successfully")
-                    self.save()
-                except BaseException:
-                    self.warning("Failed to save run")
-
-                self.cancel_run(state=FAILED)
+                self._cancel_measurement_on_intensity_failure(
+                    "Intensity from mass spectrometer not changing"
+                )
+                yield None
+            except Exception as e:
+                msg = "Exception getting intensity from mass spectrometer: {}".format(
+                    e
+                )
+                self.warning("Canceling Run. {}".format(msg))
+                self.debug_exception()
+                self._cancel_measurement_on_intensity_failure(msg)
                 yield None
 
             if not k:
@@ -2745,19 +2904,12 @@ anaylsis_type={}
                     )
                 )
                 if cnt >= fcnt:
-                    try:
-                        self.info("Saving run. Analysis did not complete successfully")
-                        self.save()
-                    except BaseException:
-                        self.warning("Failed to save run")
-
                     self.warning(
                         "Canceling Run. Failed getting intensity from mass spectrometer"
                     )
-
-                    # do we need to cancel the experiment or will the subsequent pre run
-                    # checks sufficient to catch spectrometer communication errors.
-                    self.cancel_run(state=FAILED)
+                    self._cancel_measurement_on_intensity_failure(
+                        "Failed getting intensity from mass spectrometer"
+                    )
                     yield None
                 else:
                     yield None, None, None, False
@@ -2769,8 +2921,19 @@ anaylsis_type={}
 
                 self._intensities["tags"] = k
                 self._intensities["signals"] = s
-
                 yield k, s, t, inc
+
+    def _cancel_measurement_on_intensity_failure(self, reason: str) -> None:
+        self.collector.err_message = reason
+
+        try:
+            self.info("Saving run. Analysis did not complete successfully")
+            self.save()
+        except BaseException:
+            self.warning("Failed to save run")
+
+        # A measurement-time spectrometer failure should end the run as FAILED.
+        self.cancel_run(state=FAILED, do_post_equilibration=False)
 
         # return gen()
 
@@ -2885,7 +3048,7 @@ anaylsis_type={}
         check_conditionals,
         color,
         script=None,
-    ):
+    ) -> bool:
         if script is None:
             script = self.measurement_script
 
@@ -2949,14 +3112,15 @@ anaylsis_type={}
             self.cancel_run(state="terminated")
         if m.canceled:
             self.debug("measurement collection canceled")
-            self.cancel_run()
+            if self.spec.state != FAILED:
+                self.cancel_run()
             self.executor_event = {
                 "kind": "cancel",
                 "confirm": False,
                 "err": m.err_message,
             }
 
-        return not m.canceled
+        return not m.canceled and self.spec.state != FAILED
 
     def _get_plot_id_by_ytitle(self, graph, pair, iso=None):
         """
@@ -3131,7 +3295,6 @@ anaylsis_type={}
         script = None
         sname = getattr(self.script_info, "{}_script_name".format(name))
         if sname and sname != NULL_STR:
-            sname = self._make_script_name(sname)
             script = self._bootstrap_script(sname, name)
 
         return script
@@ -3231,7 +3394,7 @@ anaylsis_type={}
 
             klass = ExtractionPyScript
 
-        file_name = self._make_script_name(file_name)
+        file_name = self._make_script_name(file_name, root=root)
         if os.path.isfile(os.path.join(root, file_name)):
             obj = klass(
                 root=root, automated_run=self, name=file_name, runner=self.runner
@@ -3239,9 +3402,15 @@ anaylsis_type={}
 
             return obj
 
-    def _make_script_name(self, name, extension=".py"):
-        name = "{}_{}".format(self.spec.mass_spectrometer.lower(), name)
-        return add_extension(name, extension)
+    def _make_script_name(self, name, root=None, extension=".py"):
+        if root is None:
+            root = paths.scripts_dir
+        return resolve_script_name(
+            root,
+            name,
+            mass_spectrometer=self.spec.mass_spectrometer,
+            extension=extension,
+        )
 
     def _setup_context(self, script):
         """

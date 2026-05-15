@@ -15,6 +15,8 @@
 # ===============================================================================
 # ============= enthought library imports =======================
 import logging
+import signal
+import sys
 from operator import attrgetter
 
 from envisage.core_plugin import CorePlugin
@@ -45,6 +47,8 @@ PACKAGE_DICT = dict(
     DVCPlugin="pychron.dvc.tasks.dvc_plugin",
     GitLabPlugin="pychron.git.tasks.gitlab_plugin",
     GitHubPlugin="pychron.git.tasks.github_plugin",
+    BridgePlugin="pychron.git.tasks.bridge_plugin",
+    CloudPlugin="pychron.cloud.tasks.cloud_plugin",
     LocalGitPlugin="pychron.git.tasks.local_plugin",
     PipelinePlugin="pychron.pipeline.tasks.plugin",
     SparrowPlugin="pychron.sparrow.tasks.plugin",
@@ -106,6 +110,8 @@ PACKAGE_DICT = dict(
     EmailPlugin="pychron.social.email.tasks.plugin",
     GoogleCalendarPlugin="pychron.social.google_calendar.tasks.plugin",
     TwitterPlugin="pychron.social.twitter.plugin",
+    # observability
+    PrometheusPlugin="pychron.observability.tasks.plugin",
     # WorkspacePlugin='pychron.workspace.tasks.workspace_plugin',
     # LabBookPlugin='pychron.labbook.tasks.labbook_plugin',
     # SystemMonitorPlugin='pychron.system_monitor.tasks.system_monitor_plugin',
@@ -145,7 +151,7 @@ def get_hardware_plugins():
 def get_klass(package, name):
     m = __import__(package, globals(), locals(), [name])
     klass = getattr(m, name)
-    
+
     try:
         m = __import__(package, globals(), locals(), [name])
         klass = getattr(m, name)
@@ -191,9 +197,7 @@ def get_plugin(pname):
 
         else:
             logger.warning(
-                "***** Invalid {} needs to be a subclass of Plugin ******".format(
-                    klass
-                ),
+                "***** Invalid {} needs to be a subclass of Plugin ******".format(klass),
                 extra={"threadName_": "Launcher"},
             )
 
@@ -229,9 +233,7 @@ def get_user_plugins():
     dvcplugin = next((p for p in plugins if p.name == "DVCPlugin"), None)
     if dvcplugin is not None:
         # ensure a githost plugin is available
-        githost = next(
-            (p for p in plugins if p.name in ("GitHubPlugin", "LocalGitPlugin")), None
-        )
+        githost = next((p for p in plugins if p.name in ("GitHubPlugin", "LocalGitPlugin")), None)
         if githost is None:
             plugins.append(get_plugin("LocalGitPlugin"))
 
@@ -275,6 +277,15 @@ def app_factory(klass):
     return app
 
 
+def _handle_bus_error(signum: int, frame) -> None:
+    """Handle bus error (SIGBUS) by gracefully shutting down."""
+    logger.critical(
+        "Bus error signal received. Attempting graceful shutdown.",
+        extra={"threadName_": "SignalHandler"},
+    )
+    sys.exit(1)
+
+
 def launch(klass):
     """ """
     # login protection
@@ -288,6 +299,10 @@ def launch(klass):
     #     if not check_login(fp.read()):
     #         logger.critical('Login failed')
     #         return
+
+    # Register signal handler for SIGBUS (bus error, signal 10) to gracefully quit
+    # instead of crashing
+    signal.signal(signal.SIGBUS, _handle_bus_error)
 
     app = app_factory(klass)
     try:

@@ -88,6 +88,7 @@ HW_PACKAGE_MAP = {
     "SI9700Controller": hardware_pkg("si9700"),
     "KinesisMotionController": hardware_pkg("kinesis.kinesis_controller"),
     "Eurotherm818": hardware_pkg("eurotherm.eurotherm818"),
+    "EPC3000": hardware_pkg("eurotherm.epc3000"),
 }
 
 

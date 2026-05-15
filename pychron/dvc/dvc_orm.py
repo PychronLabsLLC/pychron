@@ -63,15 +63,11 @@ class NameMixin(IDMixin):
 
 class RepositoryTbl(Base, BaseMixin):
     name = Column(String(80), primary_key=True)
-    principal_investigatorID = Column(
-        Integer, ForeignKey("PrincipalInvestigatorTbl.id")
-    )
+    principal_investigatorID = Column(Integer, ForeignKey("PrincipalInvestigatorTbl.id"))
     # timestamp = Column(TIMESTAMP, default=func.now())
     # creator = stringcolumn(80)
 
-    repository_associations = relationship(
-        "RepositoryAssociationTbl", backref="repository_item"
-    )
+    repository_associations = relationship("RepositoryAssociationTbl", backref="repository_item")
 
     @property
     def record_view(self):
@@ -131,14 +127,10 @@ class AnalysisTbl(Base, IDMixin):
     )
     group_sets = relationship("AnalysisGroupSetTbl", backref="analysis")
 
-    change = relationship(
-        "AnalysisChangeTbl", uselist=False, backref="analysis", lazy="joined"
-    )
-    measured_positions = relationship("MeasuredPositionTbl", backref="analysis")
+    change = relationship("AnalysisChangeTbl", uselist=False, backref="analysis", lazy="joined")
+    measured_positions = relationship("MeasuredPositionTbl", backref="analysis", lazy="selectin")
     media = relationship("MediaTbl", backref="analysis")
-    irradiation_position = relationship(
-        "IrradiationPositionTbl", backref="analysis", lazy="joined"
-    )
+    irradiation_position = relationship("IrradiationPositionTbl", backref="analysis", lazy="joined")
 
     _record_view = None
     group_id = 0
@@ -259,9 +251,7 @@ class AnalysisTbl(Base, IDMixin):
 
     @property
     def record_id(self):
-        return make_runid(
-            self.irradiation_position.identifier, self.aliquot, self.increment
-        )
+        return make_runid(self.irradiation_position.identifier, self.aliquot, self.increment)
 
     @property
     def repository_identifier(self):
@@ -327,9 +317,7 @@ class AnalysisTbl(Base, IDMixin):
 
 
 class ProjectTbl(Base, NameMixin):
-    principal_investigatorID = Column(
-        Integer, ForeignKey("PrincipalInvestigatorTbl.id")
-    )
+    principal_investigatorID = Column(Integer, ForeignKey("PrincipalInvestigatorTbl.id"))
 
     samples = relationship("SampleTbl", backref="project")
     analysis_groups = relationship("AnalysisGroupTbl", backref="project")
@@ -357,9 +345,7 @@ class MaterialTbl(Base, NameMixin):
 
     @property
     def gname(self):
-        return (
-            "{} ({})".format(self.name, self.grainsize) if self.grainsize else self.name
-        )
+        return "{} ({})".format(self.name, self.grainsize) if self.grainsize else self.name
 
     def __repr__(self):
         return "{}<{}>".format(self.__class__.__name__, self.gname)
@@ -594,9 +580,7 @@ class RestrictedNameTbl(Base, IDMixin):
 # ======================== Lab Management ========================
 class IRTbl(Base, BaseMixin):
     ir = primary_key(klass=String(32))
-    principal_investigatorID = Column(
-        Integer, ForeignKey("PrincipalInvestigatorTbl.id")
-    )
+    principal_investigatorID = Column(Integer, ForeignKey("PrincipalInvestigatorTbl.id"))
     institution = Column(String(140))
     checkin_date = Column(DATE)
     lab_contact = Column(String(140), ForeignKey("UserTbl.name"))

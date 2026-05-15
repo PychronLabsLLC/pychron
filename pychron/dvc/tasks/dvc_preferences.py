@@ -16,8 +16,8 @@
 
 # ============= enthought library imports =======================
 from envisage.ui.tasks.preferences_pane import PreferencesPane
-from traits.api import Str, Bool, Int, Directory
-from traitsui.api import View, Item, HGroup, VGroup
+from traits.api import Str, Bool, Int, Directory, Enum, File
+from traitsui.api import View, Item, HGroup, VGroup, ObjectColumn
 
 from pychron.core.helpers.strtools import to_bool
 from pychron.core.pychron_traits import BorderVGroup
@@ -34,6 +34,11 @@ class DVCConnectionItem(ConnectionFavoriteItem):
     meta_repo_name = Str
     meta_repo_dir = Directory
     repository_root = Directory
+    connection_method = Enum("direct", "cloudsql_iam")
+    cloudsql_instance_connection_name = Str
+    cloudsql_ip_type = Enum("public", "private", "psc")
+    cloudsql_service_account_email = Str
+    cloudsql_service_account_key_path = File
     attributes = (
         "name",
         "kind",
@@ -49,82 +54,28 @@ class DVCConnectionItem(ConnectionFavoriteItem):
         "meta_repo_dir",
         "timeout",
         "repository_root",
+        "connection_method",
+        "cloudsql_instance_connection_name",
+        "cloudsql_ip_type",
+        "cloudsql_service_account_email",
+        "cloudsql_service_account_key_path",
     )
 
-    def __init__(self, schema_identifier="", attrs=None, load_names=False):
+    def __init__(self, schema_identifier="", attrs=None, load_names=False) -> None:
         super(ConnectionFavoriteItem, self).__init__()
         self.schema_identifier = schema_identifier
 
         if attrs:
-            attrs = attrs.split(",")
-            try:
-                (
-                    self.name,
-                    self.kind,
-                    self.username,
-                    self.host,
-                    self.dbname,
-                    self.password,
-                    enabled,
-                    default,
-                    path,
-                ) = attrs
+            for attr, value in zip(self.attributes, attrs.split(",")):
+                if attr in ("enabled", "default"):
+                    value = to_bool(value)
+                elif attr == "timeout":
+                    value = int(value) if value else self.timeout
+                elif attr == "kind" and value == "postgres":
+                    value = "postgresql"
 
-            except ValueError:
-                try:
-                    (
-                        self.name,
-                        self.kind,
-                        self.username,
-                        self.host,
-                        self.dbname,
-                        self.password,
-                        enabled,
-                        default,
-                        self.path,
-                        self.organization,
-                        self.meta_repo_name,
-                        self.meta_repo_dir,
-                    ) = attrs
-                except ValueError:
-                    try:
-                        (
-                            self.name,
-                            self.kind,
-                            self.username,
-                            self.host,
-                            self.dbname,
-                            self.password,
-                            enabled,
-                            default,
-                            self.path,
-                            self.organization,
-                            self.meta_repo_name,
-                            self.meta_repo_dir,
-                            timeout,
-                        ) = attrs
-                        self.timeout = int(timeout)
-                    except ValueError:
-                        (
-                            self.name,
-                            self.kind,
-                            self.username,
-                            self.host,
-                            self.dbname,
-                            self.password,
-                            enabled,
-                            default,
-                            self.path,
-                            self.organization,
-                            self.meta_repo_name,
-                            self.meta_repo_dir,
-                            timeout,
-                            self.repository_root,
-                        ) = attrs
-                        self.timeout = int(timeout)
+                setattr(self, attr, value)
 
-            self.enabled = to_bool(enabled)
-            self.default = to_bool(default)
             if load_names:
                 self.load_names()
 
@@ -140,12 +91,44 @@ class DVCConnectionPreferencesPane(ConnectionPreferencesPane):
     model_factory = DVCConnectionPreferences
     category = "DVC"
 
-    def traits_view(self):
+    def get_columns(self) -> list:
+        cols = super(DVCConnectionPreferencesPane, self).get_columns()
+        cols.insert(3, ObjectColumn(name="connection_method", label="Method"))
+        return cols
+
+    def traits_view(self) -> View:
         ev = View(
-            Item("organization"),
-            Item("meta_repo_name", label="MetaData Name"),
-            Item("meta_repo_dir", label="MetaData Directory"),
-            Item("repository_root", label="Repository Directory"),
+            VGroup(
+                Item("organization"),
+                Item("meta_repo_name", label="MetaData Name"),
+                Item("meta_repo_dir", label="MetaData Directory"),
+                Item("repository_root", label="Repository Directory"),
+                VGroup(
+                    Item("connection_method", label="Connection Method"),
+                    Item(
+                        "cloudsql_instance_connection_name",
+                        label="Instance Connection Name",
+                        enabled_when='connection_method=="cloudsql_iam"',
+                    ),
+                    Item(
+                        "cloudsql_ip_type",
+                        label="IP Type",
+                        enabled_when='connection_method=="cloudsql_iam"',
+                    ),
+                    Item(
+                        "cloudsql_service_account_email",
+                        label="Service Account Email",
+                        enabled_when='connection_method=="cloudsql_iam"',
+                    ),
+                    Item(
+                        "cloudsql_service_account_key_path",
+                        label="Service Account Key",
+                        enabled_when='connection_method=="cloudsql_iam"',
+                    ),
+                    show_border=True,
+                    label="CloudSQL IAM",
+                ),
+            ),
         )
         fav_grp = self.get_fav_group(edit_view=ev)
 
@@ -196,9 +179,7 @@ class DVCPreferencesPane(PreferencesPane):
                     ),
                 ),
                 BorderVGroup(
-                    Item(
-                        "use_default_commit_author", label="Use Default Commit Author"
-                    ),
+                    Item("use_default_commit_author", label="Use Default Commit Author"),
                     label="Commit",
                 ),
                 BorderVGroup(

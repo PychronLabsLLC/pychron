@@ -17,8 +17,17 @@
 # ============= enthought library imports =======================
 from pyface.tasks.traits_dock_pane import TraitsDockPane
 from pyface.tasks.traits_task_pane import TraitsTaskPane
+from pyface.qt.QtCore import QSize
+from pyface.qt.QtWidgets import QSizePolicy
 from traits.api import Any, Int
-from traitsui.api import View, UItem, InstanceEditor, ListEditor, TabularEditor, VGroup
+from traitsui.api import (
+    View,
+    UItem,
+    InstanceEditor,
+    ListEditor,
+    TabularEditor,
+    VGroup,
+)
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
@@ -31,6 +40,16 @@ from pychron.envisage.icon_button_editor import icon_button_editor
 class CanvasPane(TraitsTaskPane):
     id = "pychron.extraction_line.canvas"
     name = "Extraction Line"
+
+    def create_contents(self, parent):
+        """Override to set Qt-level size policy."""
+        control = super().create_contents(parent)
+
+        # Force Qt to expand - use massive minimum size as hard floor
+        control.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        control.setMinimumSize(1200, 900)
+
+        return control
 
     def traits_view(self):
         v = View(
@@ -50,6 +69,7 @@ class CanvasPane(TraitsTaskPane):
                 ),
                 style="custom",
             ),
+            resizable=True,
         )
         return v
 
@@ -59,15 +79,8 @@ class CanvasDockPane(TraitsDockPane):
     name = "Extraction Line Canvas"
     canvas = Any
 
-    def traits_view(self):
-        v = View(
-            UItem(
-                "canvas",
-                editor=InstanceEditor(),
-                style="custom",
-            ),
-        )
-        return v
+    def traits_view(self) -> View:
+        return View(UItem("canvas", editor=InstanceEditor(), style="custom"), resizable=True)
 
 
 class HeaterPane(TraitsDockPane):
@@ -120,8 +133,8 @@ class GaugePane(TraitsDockPane):
 
 
 class PumpPane(TraitsDockPane):
-    name = "Pumps"
-    id = "pychron.extraction_line.pumps"
+    name = "Pump"
+    id = "pychron.extraction_line.pump"
 
     def traits_view(self):
         v = View(
@@ -129,7 +142,6 @@ class PumpPane(TraitsDockPane):
                 "pump_manager",
                 editor=InstanceEditor(),
                 style="custom",
-                height=125,
                 defined_when="pump_manager",
             )
         )
@@ -143,6 +155,14 @@ class ExplanationPane(TraitsDockPane):
     def traits_view(self):
         v = View(UItem("explanation", style="custom"))
         return v
+
+
+class InspectorPane(TraitsDockPane):
+    name = "Inspector"
+    id = "pychron.extraction_line.inspector"
+
+    def traits_view(self):
+        return View(UItem("canvas_view_model", style="custom", editor=InstanceEditor()))
 
 
 class ReadbackAdapter(TabularAdapter):
@@ -166,9 +186,7 @@ class ReadbackPane(TraitsDockPane):
         v = View(
             UItem(
                 "devices",
-                editor=TabularEditor(
-                    adapter=ReadbackAdapter(), auto_update=True, editable=False
-                ),
+                editor=TabularEditor(adapter=ReadbackAdapter(), auto_update=True, editable=False),
             )
         )
         return v
@@ -227,9 +245,7 @@ class EditorPane(TraitsDockPane):
             )
         )
 
-        v = View(
-            VGroup(UItem("edit_mode"), VGroup(g, agrp, egrp, enabled_when="edit_mode"))
-        )
+        v = View(VGroup(UItem("edit_mode"), VGroup(g, agrp, egrp, enabled_when="edit_mode")))
         return v
 
 
