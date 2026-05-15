@@ -1241,27 +1241,35 @@ class GitRepoManager(Loggable):
         self.debug("protected merge target=%s strategy=%s", target, strategy_option)
 
         # Self-heal stale MERGE_HEAD left behind by a previous crash mid-pull.
-        # If the working tree is clean we abort the stale merge transparently;
-        # otherwise we bail loudly so the user can resolve real conflicts.
+        # Three cases:
+        #   1. Real unmerged paths -> bail loudly; user must resolve.
+        #   2. Index has staged merge content (auto-merge succeeded but the
+        #      crash interrupted the final `commit --no-edit`) -> finalize the
+        #      merge by committing so we don't lose the work.
+        #   3. No conflicts, no staged content -> abort the residual state.
         try:
             import os
             merge_head = os.path.join(repo.git_dir, "MERGE_HEAD")
             if os.path.exists(merge_head):
-                # repo.is_dirty(untracked_files=False) ignores stray local files
-                # but flags real conflicts (unmerged paths) and staged/unstaged
-                # modifications.
                 has_conflicts = bool(repo.git.diff("--name-only", "--diff-filter=U").strip())
-                dirty = repo.is_dirty(untracked_files=False)
-                if has_conflicts or dirty:
-                    reason_txt = (
-                        "unmerged paths" if has_conflicts else "dirty working tree"
-                    )
+                staged = bool(repo.git.diff("--cached", "--name-only").strip())
+                if has_conflicts:
                     self.critical(
-                        "Stale MERGE_HEAD with {}; refusing to auto-abort. "
-                        "Resolve manually in {}".format(
-                            reason_txt, repo.working_tree_dir
+                        "Stale MERGE_HEAD with unmerged paths; refusing to "
+                        "auto-resolve. Resolve manually in {}".format(
+                            repo.working_tree_dir
                         )
                     )
+                elif staged:
+                    self.warning(
+                        "Stale MERGE_HEAD detected in {} with staged "
+                        "merge content (no conflicts); finalizing the "
+                        "interrupted merge commit".format(repo.working_tree_dir)
+                    )
+                    try:
+                        repo.git.commit("--no-edit")
+                    except GitCommandError:
+                        self.debug_exception()
                 else:
                     self.warning(
                         "Stale MERGE_HEAD detected in {} (working tree "
