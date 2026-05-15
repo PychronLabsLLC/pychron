@@ -430,6 +430,98 @@ def install_thread_safe_marshalling() -> None:
     _log.info("thread-safe marshalling installed: %s", ", ".join(patched))
 
 
+_EVENT_TRACER_INSTALLED = False
+_event_tracer = None  # keep a strong ref so Qt doesn't GC the filter
+
+
+def install_event_tracer() -> None:
+    """Install a QApplication-level event filter that logs every Qt Timer
+    event delivery to a dedicated rotating file (m3_eventtrace.log).
+
+    Each line: timestamp + receiver class name + receiver Python id +
+    timer_id (where exposed by the binding).  When the process segfaults
+    inside QCoreApplication::notifyInternal2, the last few lines of this
+    file identify which receiver class was about to be dispatched to.
+
+    Volume control: only Timer events are traced (Qt event type 1).  The
+    full event stream is far too noisy to dump per delivery.
+    """
+    global _EVENT_TRACER_INSTALLED, _event_tracer
+    if _EVENT_TRACER_INSTALLED:
+        return
+    try:
+        from pyface.qt.QtCore import QObject, QEvent, QCoreApplication
+    except Exception as e:  # pragma: no cover
+        _log.error("install_event_tracer: import failed: %s", e)
+        return
+
+    app = QCoreApplication.instance()
+    if app is None:
+        _log.error(
+            "install_event_tracer: no QApplication instance; call after app_factory"
+        )
+        return
+
+    # Dedicated logger + rotating file so the trace volume does not pollute
+    # the main diagnostics log.  Unbuffered (flush per line) so the most
+    # recent receivers survive a SIGSEGV.
+    trace_logger = logging.getLogger("pychron.m3_diag.eventtrace")
+    trace_logger.setLevel(logging.DEBUG)
+    trace_logger.propagate = False
+    if not trace_logger.handlers:
+        trace_path = os.path.join(
+            os.path.dirname(_get_log_path()), "m3_eventtrace.log"
+        )
+        try:
+            fh = logging.handlers.RotatingFileHandler(
+                trace_path, maxBytes=5 * 1024 * 1024, backupCount=3
+            )
+            fh.setLevel(logging.DEBUG)
+            fh.setFormatter(
+                logging.Formatter("%(asctime)s.%(msecs)03d %(message)s",
+                                  datefmt="%H:%M:%S")
+            )
+            trace_logger.addHandler(fh)
+        except OSError as e:
+            _log.error("install_event_tracer: log open failed: %s", e)
+            return
+
+    TIMER_EVT = int(QEvent.Timer)
+
+    class _EventTracer(QObject):
+        def eventFilter(self, obj, ev):
+            try:
+                if int(ev.type()) == TIMER_EVT:
+                    try:
+                        tid = ev.timerId()
+                    except Exception:
+                        tid = -1
+                    # Capture receiver class + id() BEFORE Qt dispatches.
+                    # If receiver is already dangling, accessing type(obj)
+                    # may itself fault - but a faulting trace point still
+                    # tells us we got here, and a successful one identifies
+                    # the next dispatch target.
+                    trace_logger.debug(
+                        "Timer cls=%s pyid=0x%x qtid=%d",
+                        type(obj).__name__,
+                        id(obj),
+                        tid,
+                    )
+            except Exception:
+                pass
+            return False  # never consume
+
+    _event_tracer = _EventTracer()
+    try:
+        app.installEventFilter(_event_tracer)
+    except Exception as e:
+        _log.error("install_event_tracer: installEventFilter failed: %s", e)
+        return
+
+    _EVENT_TRACER_INSTALLED = True
+    _log.info("event tracer installed (Timer events -> m3_eventtrace.log)")
+
+
 def install_main_thread_watchdog(stall_threshold: float = 2.0) -> None:
     """Start the watchdog poll thread immediately and arm the main-thread
     QTimer.  Must be called from the main thread, after the QApplication has
@@ -468,6 +560,12 @@ def install_late(stall_threshold: float = 5.0) -> None:
     imported, which is only guaranteed once app_factory has run)."""
     install_thread_safe_marshalling()
     install_main_thread_watchdog(stall_threshold=stall_threshold)
+    # Event tracer is opt-in: it logs one line per Timer event delivered
+    # on the main thread, which is verbose.  Enable when hunting a crash
+    # inside QCoreApplication::notifyInternal2 by setting
+    # PYCHRON_M3_EVENT_TRACE=1 in the environment.
+    if os.environ.get("PYCHRON_M3_EVENT_TRACE"):
+        install_event_tracer()
 
 
 # ============= EOF =============================================
