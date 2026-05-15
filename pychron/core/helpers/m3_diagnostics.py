@@ -85,13 +85,9 @@ def _get_log_path() -> str:
 def _attach_file_handler() -> None:
     path = _get_log_path()
     # rotate at 5 MB, keep 5 backups
-    fh = logging.handlers.RotatingFileHandler(
-        path, maxBytes=5 * 1024 * 1024, backupCount=5
-    )
+    fh = logging.handlers.RotatingFileHandler(path, maxBytes=5 * 1024 * 1024, backupCount=5)
     fh.setLevel(logging.DEBUG)
-    fmt = logging.Formatter(
-        "%(asctime)s %(levelname)s [%(threadName)s] %(message)s"
-    )
+    fmt = logging.Formatter("%(asctime)s %(levelname)s [%(threadName)s] %(message)s")
     fh.setFormatter(fmt)
     _log.addHandler(fh)
     _log.info("m3_diagnostics file handler attached: %s", path)
@@ -196,7 +192,6 @@ def install_qtimer_thread_guard() -> None:
             )
         return orig_init(self, *args, **kwargs)
 
-    @staticmethod
     def single_shot_wrapper(*args, **kwargs):
         if threading.current_thread() is not threading.main_thread():
             _log.error(
@@ -223,9 +218,9 @@ def install_qtimer_thread_guard() -> None:
 # 3. Main-thread watchdog
 # ---------------------------------------------------------------------------
 class _Watchdog:
-    def __init__(self, stall_threshold: float = 2.0,
-                 dump_cooldown: float = 10.0,
-                 heartbeat_ms: int = 500):
+    def __init__(
+        self, stall_threshold: float = 2.0, dump_cooldown: float = 10.0, heartbeat_ms: int = 500
+    ):
         self.stall_threshold = stall_threshold
         self.dump_cooldown = dump_cooldown
         self.heartbeat_ms = heartbeat_ms
@@ -250,18 +245,14 @@ class _Watchdog:
     def _dump(self, gap: float):
         try:
             frames = sys._current_frames()
-            lines = ["MAIN-THREAD STALL %.2fs (threshold %.2fs)" %
-                     (gap, self.stall_threshold)]
+            lines = ["MAIN-THREAD STALL %.2fs (threshold %.2fs)" % (gap, self.stall_threshold)]
             # Map thread ids -> Thread objects for names
             by_id = {t.ident: t for t in threading.enumerate()}
             for tid, frame in frames.items():
                 t = by_id.get(tid)
                 tname = t.name if t else "tid=%s" % tid
                 is_main = bool(t and t is threading.main_thread())
-                lines.append(
-                    "---- Thread %s%s ----" %
-                    (tname, " (MAIN)" if is_main else "")
-                )
+                lines.append("---- Thread %s%s ----" % (tname, " (MAIN)" if is_main else ""))
                 lines.extend(traceback.format_stack(frame))
             _log.error("\n".join(lines))
         except Exception as e:  # pragma: no cover
@@ -278,13 +269,10 @@ class _Watchdog:
         self.timer.setInterval(self.heartbeat_ms)
         self.timer.timeout.connect(self._on_heartbeat)
         self.timer.start()
-        _log.info("watchdog: main-thread heartbeat QTimer started (%d ms)",
-                  self.heartbeat_ms)
+        _log.info("watchdog: main-thread heartbeat QTimer started (%d ms)", self.heartbeat_ms)
 
     def start_poll_thread(self):
-        self._poll_thread = threading.Thread(
-            target=self._poll, name="M3Watchdog", daemon=True
-        )
+        self._poll_thread = threading.Thread(target=self._poll, name="M3Watchdog", daemon=True)
         self._poll_thread.start()
         _log.info(
             "watchdog: poll thread started (stall=%.1fs, cooldown=%.1fs)",
@@ -324,6 +312,7 @@ def _on_main_thread() -> bool:
 def _marshal(fn, *args, **kwargs):
     """Run fn on the main thread (deferred).  Returns None synchronously."""
     from pychron.core.ui.gui import invoke_in_main_thread
+
     invoke_in_main_thread(fn, *args, **kwargs)
     return None
 
@@ -404,7 +393,6 @@ def install_thread_safe_marshalling() -> None:
 
         _orig_qt_single_shot = QTimer.singleShot
 
-        @staticmethod
         def _safe_qt_single_shot(*a, **kw):
             if _on_main_thread():
                 return _orig_qt_single_shot(*a, **kw)
@@ -419,8 +407,7 @@ def install_thread_safe_marshalling() -> None:
             patched.append("pyface.qt.QtCore.QTimer.singleShot")
         except (TypeError, AttributeError) as e:
             _log.warning(
-                "marshalling: QTimer.singleShot replacement rejected by "
-                "PyQt/PySide binding: %s",
+                "marshalling: QTimer.singleShot replacement rejected by " "PyQt/PySide binding: %s",
                 e,
             )
     except Exception as e:  # pragma: no cover
@@ -457,9 +444,7 @@ def install_event_tracer() -> None:
 
     app = QCoreApplication.instance()
     if app is None:
-        _log.error(
-            "install_event_tracer: no QApplication instance; call after app_factory"
-        )
+        _log.error("install_event_tracer: no QApplication instance; call after app_factory")
         return
 
     # Dedicated logger + rotating file so the trace volume does not pollute
@@ -469,17 +454,14 @@ def install_event_tracer() -> None:
     trace_logger.setLevel(logging.DEBUG)
     trace_logger.propagate = False
     if not trace_logger.handlers:
-        trace_path = os.path.join(
-            os.path.dirname(_get_log_path()), "m3_eventtrace.log"
-        )
+        trace_path = os.path.join(os.path.dirname(_get_log_path()), "m3_eventtrace.log")
         try:
             fh = logging.handlers.RotatingFileHandler(
                 trace_path, maxBytes=5 * 1024 * 1024, backupCount=3
             )
             fh.setLevel(logging.DEBUG)
             fh.setFormatter(
-                logging.Formatter("%(asctime)s.%(msecs)03d %(message)s",
-                                  datefmt="%H:%M:%S")
+                logging.Formatter("%(asctime)s.%(msecs)03d %(message)s", datefmt="%H:%M:%S")
             )
             trace_logger.addHandler(fh)
         except OSError as e:

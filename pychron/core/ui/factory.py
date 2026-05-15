@@ -18,7 +18,6 @@
 from __future__ import absolute_import
 from traits.etsconfig.api import ETSConfig
 
-
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 
@@ -28,7 +27,7 @@ from traits.etsconfig.api import ETSConfig
 
 def toolkit_factory(name, klass=None):
     """Factory for getting toolkit-specific classes.
-    
+
     Returns the requested class immediately (eager loading).
     This ensures all Qt classes are available for menu initialization.
     """
@@ -36,10 +35,10 @@ def toolkit_factory(name, klass=None):
         raise NotImplementedError("wx backend is not available")
     else:
         pkg = "pychron.core.ui.qt"
-    
+
     if klass is None:
         klass = name
-    
+
     mod = __import__("{}.{}".format(pkg, name), fromlist=[klass])
     return getattr(mod, klass)
 

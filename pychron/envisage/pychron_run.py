@@ -318,6 +318,7 @@ def launch(klass):
     # heartbeat stalls (i.e. spinning beachball / wedged Qt event loop).
     try:
         from pychron.core.helpers.m3_diagnostics import install_late as _m3_install_late
+
         _m3_install_late()
     except Exception as _e:  # pragma: no cover
         logger.warning("m3_diagnostics late install failed: %r", _e)

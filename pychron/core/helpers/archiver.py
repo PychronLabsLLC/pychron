@@ -125,9 +125,7 @@ class Archiver(HasTraits):
         )
 
     def _clean_archive(self, root):
-        self.info(
-            "Archives older than {} months will be deleted".format(self.archive_months)
-        )
+        self.info("Archives older than {} months will be deleted".format(self.archive_months))
         arch = os.path.join(root, "archive")
         rdate = datetime.today() - timedelta(days=self.archive_months * 30)
 
