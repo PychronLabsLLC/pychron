@@ -51,7 +51,18 @@ class BaseTasksApplication(TasksApplication, Loggable):
     def __init__(self, *args: object, **kw: object) -> None:
         super().__init__(*args, **kw)
         self.init_logger()
-        self._task_window_layouts = self._load_task_window_layouts()
+
+        # On macOS, clear saved window layouts to prevent auto-opening windows
+        # This fixes menu bar rendering issues that occur when windows open during startup
+        import platform
+
+        if platform.system() == "Darwin":
+            # Don't load saved layouts - start with no windows
+            self._task_window_layouts = {}
+            self.debug("macOS: Cleared saved window layouts to fix menu bar rendering")
+        else:
+            self._task_window_layouts = self._load_task_window_layouts()
+
         self._first_run_prompted = False
 
     def _application_initialized_fired(self) -> None:
