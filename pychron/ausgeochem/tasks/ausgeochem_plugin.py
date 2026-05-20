@@ -20,8 +20,11 @@ from envisage.ui.tasks.task_extension import TaskExtension
 from pyface.tasks.action.schema_addition import SchemaAddition
 from traits.api import List
 
-from pychron.ausgeochem.earthdata_service import AusGeochemEarthDataService
-from pychron.ausgeochem.tasks.actions import UploadAusGeochemAction
+from pychron.ausgeochem.earthbank_service import AusGeochemEarthBankService
+from pychron.ausgeochem.tasks.actions import (
+    EarthBankLoginAction,
+    UploadAusGeochemAction,
+)
 from pychron.ausgeochem.tasks.node import AusGeochemNode
 from pychron.ausgeochem.tasks.preferences import AusGeochemPreferencesPane
 from pychron.envisage.tasks.base_task_plugin import BaseTaskPlugin
@@ -29,7 +32,7 @@ from pychron.pipeline.nodes import NodeFactory
 
 AUSGEOCHEM_TEMPLATE = """
 required:
- - pychron.ausgeochem.earthdata_service.AusGeochemEarthDataService
+ - pychron.ausgeochem.earthbank_service.AusGeochemEarthBankService
 nodes:
  - klass: UnknownNode
  - klass: AusGeochemNode
@@ -46,7 +49,7 @@ class AusGeochemPlugin(BaseTaskPlugin):
         def factory():
             node = AusGeochemNode()
             service = self.application.get_service(
-                "pychron.ausgeochem.earthdata_service.AusGeochemEarthDataService"
+                "pychron.ausgeochem.earthbank_service.AusGeochemEarthBankService"
             )
             if service is not None:
                 node.trait_set(service=service)
@@ -58,11 +61,11 @@ class AusGeochemPlugin(BaseTaskPlugin):
         return [("Share", (("AusGeochem", AUSGEOCHEM_TEMPLATE),))]
 
     def _help_tips_default(self):
-        return ["AusGeochem EarthData help: https://app.ausgeochem.org"]
+        return ["AusGeochem EarthBank help: https://app.ausgeochem.org"]
 
     def _service_offers_default(self):
         offer = self.service_offer_factory(
-            factory=AusGeochemEarthDataService, protocol=AusGeochemEarthDataService
+            factory=AusGeochemEarthBankService, protocol=AusGeochemEarthBankService
         )
         return [offer]
 
@@ -72,8 +75,11 @@ class AusGeochemPlugin(BaseTaskPlugin):
     def _task_extensions_default(self):
         actions = [
             SchemaAddition(
+                factory=EarthBankLoginAction, path="MenuBar/data.menu"
+            ),
+            SchemaAddition(
                 factory=UploadAusGeochemAction, path="MenuBar/data.menu"
-            )
+            ),
         ]
         return [TaskExtension(actions=actions)]
 

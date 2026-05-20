@@ -65,7 +65,7 @@ class StreamGraphManager(Manager):
     timer = None
     update_period = 2
     _signal_failed_cnt = 0
-    _streaming_active = True
+    _streaming_active = False
 
     def stop(self):
         self.prepare_destroy()
@@ -275,7 +275,7 @@ class StreamGraphManager(Manager):
             try:
                 setattr(self, pi, params[pi])
             except KeyError as e:
-                print("sm load settings", pi, e)
+                self.debug("load settings missing {}: {}".format(pi, e))
 
     # ===============================================================================
     # defaults

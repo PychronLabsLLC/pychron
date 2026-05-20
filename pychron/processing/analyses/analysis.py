@@ -231,14 +231,14 @@ def show_residuals_factory(record_id, isotopes):
 
 
 def show_evolutions_factory(
-    record_id,
+    record_id: str,
     isotopes,
-    show_evo=True,
-    show_equilibration=False,
-    show_baseline=False,
-    show_statistics=False,
-    ncols=1,
-    scale_to_equilibration=False,
+    show_evo: bool = True,
+    show_equilibration: bool = False,
+    show_baseline: bool = False,
+    show_statistics: bool = False,
+    ncols: int = 1,
+    scale_to_equilibration: bool = False,
     **kw
 ):
     from pychron.graph.stacked_regression_graph import (
@@ -282,7 +282,7 @@ def show_evolutions_factory(
         )
         resizable = "hv"
     else:
-        resizable = "h"
+        resizable = "hv"
         isotopes = sort_isotopes(isotopes, reverse=False, key=attrgetter("name"))
         g = StackedRegressionGraph(
             resizable=True, container_dict={"spacing": 15}, show_grouping=True
@@ -325,12 +325,12 @@ def make_title(record_id, isotopes):
 def make_graph(
     g,
     isotopes,
-    resizable,
-    show_evo=True,
-    show_equilibration=False,
-    show_baseline=False,
-    show_statistics=False,
-    scale_to_equilibration=False,
+    resizable: str,
+    show_evo: bool = True,
+    show_equilibration: bool = False,
+    show_baseline: bool = False,
+    show_statistics: bool = False,
+    scale_to_equilibration: bool = False,
 ):
     g.clear()
 
@@ -343,7 +343,7 @@ def make_graph(
     for i, iso in enumerate(isotopes):
         ymi, yma = inf, -inf
 
-        p = g.new_plot(padding=[80, 10, 10, 40], resizable=resizable)
+        p = g.new_plot(padding=[80, 10, 2, 12], resizable=resizable)
         g.add_limit_tool(p, "x")
         g.add_limit_tool(p, "y")
         g.add_axis_tool(p, p.x_axis)
@@ -837,17 +837,18 @@ class Analysis(ArArAge, IdeogramPlotable):
         return v
 
     def analysis_view_factory(self, quick=False):
-        mod, klass = self.analysis_view_klass
-        mod = __import__(
-            mod,
-            fromlist=[
-                klass,
-            ],
-        )
-        klass = getattr(mod, klass)
-        # v = self.analysis_view_klass()
-        v = klass()
-        self._analysis_view = v
+        v = self._analysis_view
+        if v is None:
+            mod, klass = self.analysis_view_klass
+            mod = __import__(
+                mod,
+                fromlist=[
+                    klass,
+                ],
+            )
+            klass = getattr(mod, klass)
+            v = klass()
+            self._analysis_view = v
         self._sync_view(v, quick=quick)
         return v
 
@@ -859,11 +860,8 @@ class Analysis(ArArAge, IdeogramPlotable):
             av = self.analysis_view
         try:
             av.load(self, quick=quick)
-        except BaseException as e:
-            import traceback
-
-            traceback.print_exc()
-            print("sync view {}".format(e))
+        except Exception as e:
+            logger.exception("Sync view failed for %s: %s", self.record_id, e)
 
     @property
     def age_string(self):

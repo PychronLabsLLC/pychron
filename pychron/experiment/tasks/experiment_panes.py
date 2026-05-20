@@ -548,35 +548,44 @@ class StatsPane(TraitsDockPane):
         self.model.active_queue = active_queue
         self.model.reset()
 
-    def traits_view(self):
-        gen_grp = BorderVGroup(
-            HGroup(UItem("pane.recalculate_button")),
+    def traits_view(self) -> View:
+        queue_grp = BorderVGroup(
+            HGroup(UItem("pane.recalculate_button"), spring),
             HGroup(
-                Readonly("nruns", width=150, label="Total Runs"),
-                UReadonly("total_time"),
+                Readonly("object.nruns", width=-150, label="Total Runs"),
+                Readonly("object.nruns_finished", label="Completed"),
+                spring,
             ),
             HGroup(
-                Readonly("nruns_finished", width=150, label="Completed"),
-                UReadonly("elapsed"),
+                Readonly("object.elapsed", width=-150, label="Elapsed"),
+                Readonly("object.remaining", label="Remaining"),
+                spring,
             ),
-            Readonly("remaining", label="Remaining"),
-            Readonly("etf", label="Est. finish"),
-            label="General",
+            HGroup(
+                Readonly("object.total_time", width=-150, label="Total Time"),
+                Readonly("object.etf", label="Estimated Finish"),
+                spring,
+            ),
+            label="Queue",
         )
         cur_grp = BorderVGroup(
-            Readonly(
-                "current_run_duration",
+            HGroup(
+                Readonly("object.current_run_duration", width=-150, label="Expected Duration"),
+                Readonly("object.run_elapsed", label="Elapsed"),
+                spring,
             ),
-            Readonly("run_elapsed"),
-            label="Current",
+            label="Current Run",
         )
         sel_grp = BorderVGroup(
-            Readonly("start_at"),
-            Readonly("end_at"),
-            Readonly("run_duration"),
-            label="Selection",
+            HGroup(
+                Readonly("object.start_at", width=-150, label="Start At"),
+                Readonly("object.end_at", label="End At"),
+                spring,
+            ),
+            Readonly("object.run_duration", label="Selected Duration"),
+            label="Selected Run",
         )
-        v = View(VGroup(gen_grp, cur_grp, sel_grp))
+        v = View(VGroup(queue_grp, cur_grp, sel_grp))
         return v
 
 
@@ -799,7 +808,7 @@ class IsotopeEvolutionPane(TraitsDockPane):
     def traits_view(self):
         v = View(
             VSplit(
-                UItem("object.plot_panel.graph_container", style="custom", height=0.75),
+                UItem("object.plot_panel.graph_container", style="custom", height=0.8),
                 VGroup(
                     HGroup(
                         Spring(springy=False, width=-5),
@@ -840,7 +849,7 @@ class IsotopeEvolutionPane(TraitsDockPane):
                         Spring(springy=False, width=-5),
                     ),
                     UItem(
-                        "object.plot_panel.analysis_view", style="custom", height=0.25
+                        "object.plot_panel.analysis_view", style="custom", height=0.2
                     ),
                 ),
             )

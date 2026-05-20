@@ -26,6 +26,8 @@ from pychron.monitors.monitor import Monitor
 from pychron.hardware.core.communicators.ethernet_communicator import (
     EthernetCommunicator,
 )
+from pychron.core.ui.gui import invoke_in_main_thread
+import threading
 import time
 
 
@@ -48,9 +50,7 @@ class Check(HasTraits):
 
         r = eval(self.rule, {"x": v})
         if r:
-            self.message = "Automated Run Check tripped. {} {} {}".format(
-                self.parameter, v, r
-            )
+            self.message = "Automated Run Check tripped. {} {} {}".format(self.parameter, v, r)
             self.tripped = True
 
         return r
@@ -98,9 +98,7 @@ class AutomatedRunMonitor(Monitor):
                 else:
                     r = self.config_get(config, section, "rule", default="")
                     if "x" not in r:
-                        self.warning_dialog(
-                            'Invalid rule. Include "x" variable. e.g "x>10"'
-                        )
+                        self.warning_dialog('Invalid rule. Include "x" variable. e.g "x>10"')
                         ok = False
                         continue
 
@@ -151,8 +149,38 @@ class AutomatedRunMonitor(Monitor):
     def _get_value(self, q):
         elm = self.extraction_line_manager
         dev = elm.get_device(q)
-        if dev:
+        if not dev:
+            return None
+
+        # The device proxy may touch Qt-owned objects, so the read must run
+        # on the main thread to avoid the M3 cross-thread QTimer crash.
+        # invoke_in_main_thread is fire-and-forget, so wrap it in a
+        # synchronous round-trip: schedule the call, block on an Event, and
+        # return the captured result. If we're already on the main thread,
+        # call directly to avoid deadlock.
+        if threading.current_thread() is threading.main_thread():
             return dev.get()
+
+        done = threading.Event()
+        holder = {}
+
+        def _run():
+            try:
+                holder["value"] = dev.get()
+            except Exception as e:
+                holder["error"] = e
+            finally:
+                done.set()
+
+        invoke_in_main_thread(_run)
+        # 10s is well above any expected device read latency but short
+        # enough that a wedged main thread surfaces as a monitor failure
+        # instead of stalling the run thread indefinitely.
+        if not done.wait(timeout=10.0):
+            return None
+        if "error" in holder:
+            raise holder["error"]
+        return holder.get("value")
 
 
 class RemoteAutomatedRunMonitor(AutomatedRunMonitor):

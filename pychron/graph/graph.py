@@ -16,6 +16,7 @@
 
 # =============enthought library imports=======================
 import csv
+import logging
 import math
 import os
 
@@ -38,10 +39,12 @@ from traits.api import Instance, List, Str, Property, Dict, Event, Bool
 from traitsui.api import View, Item, UItem
 
 from pychron.core.helpers.color_generators import colorname_generator as color_generator
+from pychron.core.helpers.color_utils import normalize_color_name
 from pychron.core.helpers.filetools import add_extension
 from pychron.graph.context_menu_mixin import ContextMenuMixin
 from pychron.graph.ml_label import MPlotAxis
 from pychron.graph.offset_plot_label import OffsetPlotLabel
+from pychron.graph.theme import themed_container_dict, themed_plot_bgcolor
 from pychron.graph.tools.axis_tool import AxisTool
 from .tools.contextual_menu_tool import ContextualMenuTool
 
@@ -57,6 +60,7 @@ CONTAINERS = {
 }
 IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".tiff", ".tif", ".gif"]
 DEFAULT_IMAGE_EXT = IMAGE_EXTENSIONS[0]
+logger = logging.getLogger(__name__)
 
 
 def name_generator(base):
@@ -82,6 +86,8 @@ def get_file_path(action="save as", **kw):
 def add_aux_axis(po, p, title="", color="black"):
     """ """
     from chaco.axis import PlotAxis
+
+    color = normalize_color_name(color)
 
     axis = PlotAxis(
         p,
@@ -123,6 +129,8 @@ def plot_axis_factory(p, key, normal, **kw):
 
 def plot_factory(legend_kw=None, **kw):
     """ """
+    if "bgcolor" in kw:
+        kw["bgcolor"] = themed_plot_bgcolor(kw["bgcolor"])
     p = Plot(data=ArrayPlotData(), **kw)
 
     vis = kw["show_legend"] if "show_legend" in kw else False
@@ -150,11 +158,8 @@ def container_factory(**kw):
 
     cklass = CONTAINERS.get(kind, VPlotContainer)
 
-    options = dict(bgcolor="white", padding=5, fill_padding=True)
-
-    for k in options:
-        if k not in list(kw.keys()):
-            kw[k] = options[k]
+    kw = themed_container_dict(**kw)
+    kw.pop("kind", None)
     container = cklass(**kw)
     return container
 
@@ -199,6 +204,7 @@ class Graph(ContextMenuMixin):
     def __init__(self, *args, **kw):
         """ """
         super(Graph, self).__init__(*args, **kw)
+        self._redraw_pending = False
         self.clear()
 
         pc = self.plotcontainer
@@ -287,7 +293,7 @@ class Graph(ContextMenuMixin):
     def rescale_x_axis(self):
         # l, h = self.selected_plot.default_index.get_bounds()
         # self.set_x_limits(l, h, plotid=self.selected_plotid)
-        print("asdf", self.selected_plot)
+        logger.debug("rescale x axis plot=%s", self.selected_plot)
         r = self.selected_plot.index_range
         r.reset()
 
@@ -353,7 +359,7 @@ class Graph(ContextMenuMixin):
                     try:
                         pi.remove(renderer)
                     except RuntimeError:
-                        print("failed removing {}".format(renderer))
+                        logger.debug("failed removing renderer=%s", renderer)
 
                 pi.plots.pop(k)
 
@@ -491,10 +497,10 @@ class Graph(ContextMenuMixin):
         try:
             plots = self.plots[plotid].plots[series]
         except KeyError:
-            print(
-                "set series label plotid={} {}".format(
-                    plotid, list(self.plots[plotid].plots.keys())
-                )
+            logger.warning(
+                "set series label failed plotid=%s keys=%s",
+                plotid,
+                list(self.plots[plotid].plots.keys()),
             )
             raise
 
@@ -518,7 +524,7 @@ class Graph(ContextMenuMixin):
             p.showplot(series) if v else p.hideplot(series)
             self.plotcontainer.invalidate_and_redraw()
         except KeyError as e:
-            print("set series visibility", e, p.series)
+            logger.warning("set series visibility failed error=%s series=%s", e, p.series)
 
     def get_x_limits(self, plotid=0):
         """ """
@@ -815,12 +821,8 @@ class Graph(ContextMenuMixin):
         plot = self.plots[plotid]
 
         si = plot.plots["aux{:03d}".format(series)][0]
-
-        oi = si.index.get_data()
-        ov = si.value.get_data()
-
-        si.index.set_data(hstack((oi, [datum[0]])))
-        si.value.set_data(hstack((ov, [datum[1]])))
+        si.index.set_data(self._append_data(si.index.get_data(), datum[0]))
+        si.value.set_data(self._append_data(si.value.get_data(), datum[1]))
 
         # if do_after:
         #     do_after_timer(do_after, add)
@@ -841,13 +843,18 @@ class Graph(ContextMenuMixin):
         try:
             names = self.series[plotid][series]
         except IndexError:
-            print("adding data", plotid, series, self.series[plotid])
+            logger.warning(
+                "add data missing series plotid=%s series=%s available=%s",
+                plotid,
+                series,
+                self.series[plotid],
+            )
+            return
 
         plot = self.plots[plotid]
         data = plot.data
         for n, ds in ((names[0], xs), (names[1], ys)):
-            xx = data.get_data(n)
-            xx = hstack((xx, ds))
+            xx = self._append_data(data.get_data(n), ds)
             data.set_data(n, xx)
 
         if update_y_limits:
@@ -879,7 +886,12 @@ class Graph(ContextMenuMixin):
         try:
             names = self.series[plotid][series]
         except (IndexError, TypeError):
-            print("adding datum", plotid, series, self.series[plotid])
+            logger.warning(
+                "add datum missing series plotid=%s series=%s available=%s",
+                plotid,
+                series,
+                self.series[plotid],
+            )
             return
 
         plot = self.plots[plotid]
@@ -890,8 +902,7 @@ class Graph(ContextMenuMixin):
         data = plot.data
         mi, ma = -inf, inf
         for i, (name, di) in enumerate(zip(names, datum)):
-            d = data.get_data(name)
-            nd = hstack((d, di))
+            nd = self._append_data(data.get_data(name), di)
             data.set_data(name, nd)
 
             if i == 1:
@@ -988,6 +999,7 @@ class Graph(ContextMenuMixin):
         pass
 
     def invalidate_and_redraw(self):
+        self._redraw_pending = False
         self.plotcontainer._layout_needed = True
         self.plotcontainer.invalidate_and_redraw()
 
@@ -995,8 +1007,11 @@ class Graph(ContextMenuMixin):
         """ """
         if force:
             self.invalidate_and_redraw()
-        else:
-            self.plotcontainer.request_redraw()
+            return
+
+        if not self._redraw_pending:
+            self._redraw_pending = True
+            do_after_timer(0, self._execute_pending_redraw)
 
     def get_next_color(self, exclude=None, plotid=0):
         cg = self.color_generators[plotid]
@@ -1278,7 +1293,7 @@ class Graph(ContextMenuMixin):
             ra = getattr(plot, "%s_range" % axis)
             return ra.low, ra.high
         except AttributeError as e:
-            print("get_limits", e)
+            logger.debug("get_limits failed error=%s", e)
 
     def _set_limits(
         self, mi, ma, axis, plotid, pad, pad_style="symmetric", force=False
@@ -1390,6 +1405,32 @@ class Graph(ContextMenuMixin):
         if change:
             self.redraw(force=force)
         return change
+
+    def _append_data(self, existing, values, limit=None):
+        if hasattr(values, "__iter__") and not isinstance(values, six.string_types):
+            new_values = array(values)
+        else:
+            new_values = array([values])
+
+        if new_values.ndim == 0:
+            new_values = new_values.reshape((1,))
+
+        if existing is None or len(existing) == 0:
+            result = new_values
+        else:
+            result = hstack((existing, new_values))
+
+        if limit:
+            result = result[-int(limit) :]
+
+        return result
+
+    def _execute_pending_redraw(self):
+        if not self._redraw_pending or self.plotcontainer is None:
+            return
+
+        self._redraw_pending = False
+        self.plotcontainer.request_redraw()
 
     def _get_selected_plotid(self):
         r = 0

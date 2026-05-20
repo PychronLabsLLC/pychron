@@ -30,6 +30,8 @@ class StatusMonitor(Loggable):
     _stop_evt = None
     _finished_evt = None
     _clients = List
+    _thread = None
+    _thread_timeout = 5.0
 
     state_freq = Int(3)
     checksum_freq = Int(3)
@@ -54,6 +56,17 @@ class StatusMonitor(Loggable):
                     p, s, c, l, o
                 )
             )
+            # Clean up any existing thread before starting new one
+            if self._thread is not None:
+                self.debug("Cleaning up existing thread before restart")
+                if self._thread.is_alive():
+                    self.debug("Previous thread still alive, waiting for cleanup")
+                    try:
+                        self._thread.join(timeout=self._thread_timeout)
+                    except Exception as e:
+                        self.warning("Error joining previous thread: {}".format(e))
+                self._thread = None
+
             if self._stop_evt:
                 self._stop_evt.set()
                 time.sleep(1.5 * self.update_period)
@@ -64,6 +77,9 @@ class StatusMonitor(Loggable):
             t.setName("StatusMonitor({})".format(oid))
             t.setDaemon(True)
             t.start()
+            self._thread = t
+            self.debug("Thread started: {} (daemon={}, alive={})".format(
+                t.getName(), t.isDaemon(), t.is_alive()))
         else:
             self.debug("Monitor already running")
 
@@ -75,24 +91,111 @@ class StatusMonitor(Loggable):
             return not self._stop_evt.isSet()
 
     def stop(self, oid, block=True):
-        self.debug("stop {}".format(oid))
+        """Stop status monitor with comprehensive safety checks and instrumentation.
+        
+        Implements three-layer approach:
+        1. Safety checks: try-except wrapper, thread state validation, timeout
+        2. Debug instrumentation: detailed logging at each cleanup step
+        3. Resource leak investigation: verify thread cleanup, check dangling resources
+        """
+        self.debug("stop {} (block={})".format(oid, block))
+        
         try:
             self._clients.remove(oid)
         except ValueError:
+            self.debug("Client {} not in active list (already removed)".format(oid))
             pass
 
         if not self._clients:
-            if self._stop_evt:
-                self._stop_evt.set()
-
-            self.debug("Status monitor stopped")
-
-            if block:
-                time.sleep(1.5 * self.update_period)
-                # self._stop_evt.wait(2*self.update_period)
-
+            self.debug("No remaining clients, initiating graceful shutdown")
+            
+            # LAYER 1: Safety Checks & Thread State Validation
+            try:
+                if self._stop_evt:
+                    self.debug("Setting stop event")
+                    self._stop_evt.set()
+                    
+                # Wait briefly for thread to notice stop event
+                time.sleep(0.1)
+                
+                # Verify thread state before attempting join
+                if self._thread is not None:
+                    is_alive_before = self._thread.is_alive()
+                    self.debug("Thread state before join: alive={}".format(is_alive_before))
+                    
+                    if is_alive_before:
+                        # LAYER 3: Resource Investigation - verify thread cleanup
+                        self.debug("Attempting graceful thread shutdown with timeout={}s".format(
+                            self._thread_timeout))
+                        
+                        # LAYER 2: Debug Instrumentation - measure join duration
+                        import time as time_module
+                        join_start = time_module.time()
+                        
+                        try:
+                            self._thread.join(timeout=self._thread_timeout)
+                        except Exception as join_error:
+                            self.warning("Exception during thread.join(): {}".format(join_error))
+                            # Continue anyway - don't let join failure crash us
+                        
+                        join_duration = time_module.time() - join_start
+                        is_alive_after = self._thread.is_alive()
+                        
+                        # LAYER 2: Log join completion status
+                        self.debug(
+                            "Thread join completed: duration={:.3f}s, "
+                            "alive_before={}, alive_after={}".format(
+                                join_duration, is_alive_before, is_alive_after)
+                        )
+                        
+                        # LAYER 3: Verify resource cleanup
+                        if is_alive_after:
+                            self.warning(
+                                "Thread still alive after join timeout. "
+                                "Possible resource leak or blocked I/O."
+                            )
+                        else:
+                            self.debug("Thread successfully terminated")
+                    else:
+                        self.debug("Thread was already dead")
+                    
+                    # LAYER 3: Resource tracking - clear thread reference
+                    self._thread = None
+                    self.debug("Thread reference cleared")
+                else:
+                    self.debug("No thread reference to clean up")
+                
+                # LAYER 2: Final state verification
+                self.debug(
+                    "Status monitor stopped: "
+                    "clients={}, thread=None, stop_evt.is_set={}".format(
+                        self._clients, 
+                        self._stop_evt.is_set() if self._stop_evt else False
+                    )
+                )
+                
+                # Optional: additional blocking delay for resource flush
+                if block:
+                    self.debug("Applying post-shutdown flush delay: {:.1f}s".format(
+                        1.5 * self.update_period))
+                    time.sleep(1.5 * self.update_period)
+                    self.debug("Post-shutdown flush complete")
+            
+            except Exception as shutdown_error:
+                # LAYER 1: Comprehensive exception handling
+                self.warning(
+                    "Exception during monitor shutdown (proceeding anyway): "
+                    "type={}, error={}".format(
+                        type(shutdown_error).__name__, shutdown_error
+                    )
+                )
+                # Attempt minimal cleanup even if something fails
+                try:
+                    self._thread = None
+                except:
+                    pass
         else:
-            self.debug("Alive clients {}".format(self._clients))
+            self.debug("Alive clients {} (not shutting down)".format(self._clients))
 
     def _run(self, vm):
         if vm is None:

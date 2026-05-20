@@ -1,1 +1,1 @@
-"""AusGeochem EarthData integration package."""
+"""AusGeochem EarthBank integration package."""

@@ -24,7 +24,16 @@ def make_geom(xyr, fmt=">fff"):
     return b"".join((struct.pack(fmt, *args)) for args in xyr).decode("utf-8")
 
 
-def markup_canvas_position(canvas, dbpos, monitor_name):
+def markup_canvas_position(canvas, dbpos, monitor_name, analyzed=None):
+    """Paint one position on the irradiation canvas.
+
+    ``analyzed``: optional pre-computed bool of whether the position
+    has any associated analyses. When provided, avoids touching
+    ``dbpos.analyzed`` (which is a property that issues a per-call
+    ``SELECT COUNT(*)``). Hot-path callers that already have a bulk
+    count cache should pass it; everyone else falls back to the
+    property.
+    """
     cgen = (
         "#{:02x}{:02x}{:02x}".format(*ci)
         for ci in ((194, 194, 194), (255, 255, 160), (255, 255, 0), (25, 230, 25))
@@ -48,7 +57,7 @@ def markup_canvas_position(canvas, dbpos, monitor_name):
         dbsam = dbpos.sample
         if dbsam:
             sample_name = dbsam.name
-            item.measured_indicator = dbpos.analyzed
+            item.measured_indicator = analyzed if analyzed is not None else dbpos.analyzed
 
             if sample_name == monitor_name:
                 item.monitor_indicator = True

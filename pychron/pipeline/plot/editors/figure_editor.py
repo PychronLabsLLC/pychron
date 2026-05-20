@@ -15,12 +15,17 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
+import logging
+from typing import Any as TypingAny
+
 from enable.component_editor import ComponentEditor
 from traits.api import Any, List
 from traitsui.api import UItem
 
 from pychron.pipeline.plot.editors.graph_editor import GraphEditor
 from pychron.pipeline.plot.figure_container import FigureContainer
+
+logger = logging.getLogger(__name__)
 
 
 class FigureEditor(GraphEditor):
@@ -57,7 +62,6 @@ class FigureEditor(GraphEditor):
         ags = []
         for p in self.figure_model.panels:
             for pp in p.figures:
-                print("pp", pp, pp.analysis_group)
                 ag = pp.analysis_group
                 group = pp.options.get_group(pp.group_id)
                 color = group.color
@@ -77,24 +81,31 @@ class FigureEditor(GraphEditor):
                 ap.clear_ylimits()
                 ap.clear_xlimits()
 
-    def set_items(self, *args, **kw):
+    def set_items(self, *args, **kw) -> None:
         self.clear_aux_plot_limits()
         super(FigureEditor, self).set_items(*args, **kw)
 
-    def force_update(self, force=False):
-        model = self._figure_model_factory()
-        model.refresh(force=force)
+    def force_update(self, force: bool = False) -> None:
+        self.request_refresh(force=force)
 
-    def _component_factory(self):
+    def _component_factory(self) -> TypingAny:
+        logger.debug("FigureEditor._component_factory() start")
         model = self._figure_model_factory()
+        force_refresh = self.consume_refresh_request()
+        logger.debug(f"Calling model.refresh(force={force_refresh})")
+        panels_rebuilt = model.refresh(force=force_refresh)
+        logger.debug(f"model.refresh() complete, panels_rebuilt={panels_rebuilt}")
 
         if not self.figure_container:
             self.figure_container = FigureContainer()
+            logger.debug("Created new FigureContainer")
         #
         omodel = self.figure_container.model
         self.figure_container.model = model
-        if model == omodel:
-            self.figure_container.model_changed()
+        if model != omodel or panels_rebuilt:
+            logger.debug(f"Calling figure_container.model_changed(clear={panels_rebuilt}, refresh_panels=False)")
+            self.figure_container.model_changed(clear=panels_rebuilt, refresh_panels=False)
+            logger.debug("figure_container.model_changed() complete")
 
         self.figure_container.component.padding = (
             self.plotter_options.get_page_margins()
@@ -107,9 +118,10 @@ class FigureEditor(GraphEditor):
             self.figure_container.component.resizable = ""
 
         self._get_component_hook(model)
+        logger.debug("FigureEditor._component_factory() returning component")
         return self.figure_container.component
 
-    def _figure_model_factory(self):
+    def _figure_model_factory(self) -> TypingAny:
         model = self.figure_model
         if model is None:
             model = self.figure_model_klass()

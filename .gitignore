@@ -14,3 +14,10 @@ notes
 alembic.ini
 update_alembic.ini
 /pychron/hddocs.md
+
+# Local working copies / backups (Felix -> Jan transition + ad-hoc backups)
+*.bak
+.claude/
+launchers-Felix/
+launchers/helpers-Jan.py
+pychron/extraction_line/switch_manager-Jan.py

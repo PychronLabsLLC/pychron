@@ -100,9 +100,7 @@ class SampleRecordView(RecordView):
         if dbrecord.project:
             self.project = dbrecord.project.name
             if dbrecord.project.principal_investigator:
-                self.principal_investigator = (
-                    dbrecord.project.principal_investigator.name
-                )
+                self.principal_investigator = dbrecord.project.principal_investigator.name
 
         for attr in (
             "name",
@@ -152,7 +150,8 @@ class LabnumberRecordView(RecordView):
 
     def _create(self, dbrecord):
         self.labnumber = dbrecord.identifier or ""
-        self.analysis_count = dbrecord.analysis_count
+        cached = getattr(dbrecord, "_cached_analysis_count", None)
+        self.analysis_count = cached if cached is not None else dbrecord.analysis_count
         pos = dbrecord
         # pos = dbrecord.irradiation_position
         if pos:

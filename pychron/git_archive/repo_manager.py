@@ -17,11 +17,13 @@
 # ============= enthought library imports =======================
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
 import time
 from datetime import datetime
+from urllib.parse import urlsplit, urlunsplit
 
 import git
 from git import Repo
@@ -41,6 +43,11 @@ from pychron.loggable import Loggable
 from pychron.pychron_constants import DATE_FORMAT, NULL_STR
 from pychron.updater.commit_view import CommitView
 from pychron.globals import globalv
+
+UUID_FILE_RE = re.compile(
+    r"^[0-9a-f]{8}\-[0-9a-f]{4}\-4[0-9a-f]{3}\-[89ab][0-9a-f]{3}\-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
 
 def get_repository_branch(path):
@@ -65,6 +72,22 @@ def isoformat_date(d):
 
     return d.strftime(DATE_FORMAT)
     # return time.mktime(time.gmtime(d))
+
+
+def sanitize_url_for_log(url):
+    url = str(url)
+    parts = urlsplit(url)
+    if parts.netloc and "@" in parts.netloc:
+        _, host = parts.netloc.rsplit("@", 1)
+        return urlunsplit(
+            (parts.scheme, "***@{}".format(host), parts.path, parts.query, parts.fragment)
+        )
+
+    # Handle SCP-like git remotes, e.g. git@github.com:org/repo.git
+    if "@" in url and "://" not in url:
+        return re.sub(r"^[^@]+@", "***@", url, count=1)
+
+    return url
 
 
 class StashCTX(object):
@@ -460,9 +483,7 @@ class GitRepoManager(Loggable):
         p = os.path.join(repo.working_tree_dir, p)
 
         p = p.replace(" ", "\ ")
-        hx = repo.git.log(
-            "--pretty=%H", "--follow", "-{}".format(limit), "--", p
-        ).split("\n")
+        hx = repo.git.log("--pretty=%H", "--follow", "-{}".format(limit), "--", p).split("\n")
 
         def func(hi):
             commit = repo.rev_parse(hi)
@@ -519,9 +540,7 @@ class GitRepoManager(Loggable):
         except GitCommandError as e:
             # Fallback for environments where GitPython index.diff can fail with
             # "git diff ... --raw -z" (exit 129). Use plain git output instead.
-            self.warning(
-                "get_local_changes fallback. index.diff failed: {}".format(e)
-            )
+            self.warning("get_local_changes fallback. index.diff failed: {}".format(e))
             try:
                 diff_filter = "".join(change_type)
                 txt = repo.git.diff("--name-only", "--diff-filter={}".format(diff_filter))
@@ -529,11 +548,7 @@ class GitRepoManager(Loggable):
                 self.warning("get_local_changes fallback failed")
                 return []
 
-            return [
-                os.path.join(root, p)
-                for p in txt.splitlines()
-                if p and p.strip()
-            ]
+            return [os.path.join(root, p) for p in txt.splitlines() if p and p.strip()]
 
         # diff_str = repo.git.diff('HEAD', '--full-index')
         # diff_str = StringIO(diff_str)
@@ -617,14 +632,16 @@ class GitRepoManager(Loggable):
         return self._repo.git.diff("HEAD", "--name-only")
         # return self._repo.is_dirty()
 
+    def get_staged_paths(self):
+        txt = self._repo.git.diff("--cached", "--name-only")
+        return [line for line in txt.splitlines() if line]
+
     def has_unpushed_commits(self, remote="origin", branch="master"):
         if self._repo:
             branch = self._clean_master_branch(branch)
             # return self._repo.git.log('--not', '--remotes', '--oneline')
             if remote in self._repo.remotes:
-                return self._repo.git.log(
-                    "{}/{}..HEAD".format(remote, branch), "--oneline"
-                )
+                return self._repo.git.log("{}/{}..HEAD".format(remote, branch), "--oneline")
 
     def add_unstaged(self, root=None, add_all=False, extension=None, use_diff=False):
         if root is None:
@@ -724,9 +741,7 @@ class GitRepoManager(Loggable):
 
         except BaseException as e:
             self.debug_exception()
-            self.warning_dialog(
-                'There was an issue trying to checkout branch "{}"'.format(name)
-            )
+            self.warning_dialog('There was an issue trying to checkout branch "{}"'.format(name))
             raise e
 
     def delete_branch(self, name):
@@ -795,9 +810,7 @@ class GitRepoManager(Loggable):
         local_commit = branch.commit
         h.local_commit = str(local_commit)
 
-        txt = repo.git.rev_list(
-            "--left-right", "{}...{}".format(local_commit, remote_commit)
-        )
+        txt = repo.git.rev_list("--left-right", "{}...{}".format(local_commit, remote_commit))
         commits = [ci[1:] for ci in txt.split("\n")]
 
         commits = [repo.commit(i) for i in commits]
@@ -838,11 +851,11 @@ class GitRepoManager(Loggable):
         try:
             remote = self._get_remote(remote)
         except AttributeError as e:
-            print("repo man pull", e)
+            self.warning("Repository pull failed: {}".format(e))
             return
 
         if remote:
-            self.debug("pulling from url: {}".format(remote.url))
+            self.debug("pulling from url: {}".format(sanitize_url_for_log(remote.url)))
 
             branch = self._clean_master_branch(branch)
             if use_progress:
@@ -852,9 +865,7 @@ class GitRepoManager(Loggable):
                     title="Pull Repository {}".format(self.name),
                     close_at_end=False,
                 )
-                prog.change_message(
-                    'Fetching branch:"{}" from "{}"'.format(branch, remote)
-                )
+                prog.change_message('Fetching branch:"{}" from "{}"'.format(branch, remote))
             try:
                 self.fetch(remote)
             except GitCommandError as e:
@@ -864,6 +875,12 @@ class GitRepoManager(Loggable):
             self.debug("fetch complete")
 
             def merge():
+                if self.get_current_branch() == "data_collection":
+                    return self._fast_forward_pull(
+                        branch="data_collection",
+                        remote=remote.name,
+                        quiet=use_auto_pull,
+                    )
                 try:
                     repo.git.merge("FETCH_HEAD")
                 except GitCommandError as e:
@@ -875,9 +892,7 @@ class GitRepoManager(Loggable):
                 if behind:
                     if self.confirmation_dialog(
                         'Repository "{}" is behind the official version by {} changes.\n'
-                        "Would you like to pull the available changes?".format(
-                            self.name, behind
-                        )
+                        "Would you like to pull the available changes?".format(self.name, behind)
                     ):
                         # show the changes
                         h = self.git_history_view(branch)
@@ -913,9 +928,7 @@ class GitRepoManager(Loggable):
                     try:
                         self._repo.git.push(remote, "main")
                         if inform:
-                            self.information_dialog(
-                                "{} push complete".format(self.name)
-                            )
+                            self.information_dialog("{} push complete".format(self.name))
                     except GitCommandError as e:
                         self.debug_exception()
                 else:
@@ -923,9 +936,7 @@ class GitRepoManager(Loggable):
 
                 if inform:
                     self.warning_dialog(
-                        "{} push failed. See log file for more details".format(
-                            self.name
-                        )
+                        "{} push failed. See log file for more details".format(self.name)
                     )
             # self._git_command(lambda g: g.push(remote, branch), tag='GitRepoManager.push')
         else:
@@ -965,6 +976,9 @@ class GitRepoManager(Loggable):
     ):
         if remote not in self._repo.remotes:
             return True
+
+        if branch == "data_collection":
+            return self._fast_forward_pull(branch=branch, remote=remote, quiet=quiet)
 
         try:
             ahead, behind = self.ahead_behind(remote)
@@ -1009,14 +1023,16 @@ class GitRepoManager(Loggable):
                     # do merge
                     try:
                         # repo.git.rebase('--preserve-merges', '{}/{}'.format(remote, branch))
-                        repo.git.merge("{}/{}".format(remote, branch))
+                        self._protected_merge(
+                            "{}/{}".format(remote, branch),
+                            inform=not quiet,
+                            reason="smart pull",
+                        )
                     except GitCommandError:
                         if self.confirmation_dialog(
                             "There appears to be a conflict with {}."
                             "\n\nWould you like to accept the master copy (Yes).\n\nOtherwise "
-                            "you will need to merge the changes manually (No)".format(
-                                self.name
-                            )
+                            "you will need to merge the changes manually (No)".format(self.name)
                         ):
                             try:
                                 repo.git.merge("--abort")
@@ -1060,9 +1076,11 @@ class GitRepoManager(Loggable):
                 self._resolve_conflicts(branch, remote, accept_our, accept_their, quiet)
             else:
                 self.debug("merging {} commits".format(behind))
-                self._git_command(
-                    lambda g: g.merge("-X", "theirs", "FETCH_HEAD"),
-                    "GitRepoManager.smart_pull/!ahead",
+                self._protected_merge(
+                    "FETCH_HEAD",
+                    strategy_option="theirs",
+                    inform=not quiet,
+                    reason="smart pull",
                 )
         else:
             self.debug("Up-to-date with {}".format(remote))
@@ -1070,6 +1088,38 @@ class GitRepoManager(Loggable):
                 self.information_dialog(
                     'Repository "{}" up-to-date with {}'.format(self.name, remote)
                 )
+
+        return True
+
+    def _fast_forward_pull(self, branch="master", remote="origin", quiet=True):
+        repo = self._repo
+        current = self.get_current_branch()
+        if current != branch:
+            msg = (
+                'Fast-forward pull for "{}" requires the branch to be checked out. '
+                'Current branch is "{}"'.format(branch, current)
+            )
+            self.warning(msg)
+            if not quiet:
+                self.warning_dialog(msg)
+            return
+
+        self.debug("fast-forward pull branch=%s remote=%s", branch, remote)
+        self._git_command(
+            lambda g: g.fetch(remote, branch),
+            "GitRepoManager._fast_forward_pull/fetch",
+        )
+        try:
+            repo.git.merge("--ff-only", "FETCH_HEAD")
+        except GitCommandError as e:
+            msg = (
+                'Fast-forward pull blocked for branch "{}". The local branch has diverged '
+                "from {}/{} and requires manual repair.".format(branch, remote, branch)
+            )
+            self.warning("{} error={}".format(msg, e))
+            if not quiet:
+                self.warning_dialog(msg)
+            return
 
         return True
 
@@ -1092,6 +1142,17 @@ class GitRepoManager(Loggable):
     def merge(self, from_, to_=None, inform=True):
         repo = self._repo
 
+        if to_ == "data_collection" and from_ not in ("data_collection", "origin/data_collection"):
+            msg = (
+                'Merging "{}" into "data_collection" is blocked. '
+                "data_collection is append-only and must not receive reverse merges "
+                "from reduction branches.".format(from_)
+            )
+            self.warning(msg)
+            if inform:
+                self.warning_dialog(msg)
+            return
+
         if to_:
             dest = getattr(repo.branches, to_)
             dest.checkout()
@@ -1099,9 +1160,7 @@ class GitRepoManager(Loggable):
         if from_.startswith("origin"):
             remote = self._get_remote("origin")
             if remote is None:
-                msg = (
-                    "Could not locate remote 'origin' for merge source {}".format(from_)
-                )
+                msg = "Could not locate remote 'origin' for merge source {}".format(from_)
                 self.warning(msg)
                 if inform:
                     self.warning_dialog(msg)
@@ -1122,7 +1181,7 @@ class GitRepoManager(Loggable):
 
         with StashCTX(repo):
             try:
-                repo.git.merge(from_)
+                self._protected_merge(from_, inform=inform, reason="branch merge")
             except GitCommandError:
                 self.debug_exception()
                 if inform:
@@ -1138,10 +1197,142 @@ class GitRepoManager(Loggable):
         index = self.index
         if index:
             try:
+                self._ensure_no_protected_deletions()
                 index.commit(msg, author=author, committer=author)
                 return True
             except git.exc.GitError as e:
                 self.warning("Commit failed: {}".format(e))
+
+    def _protected_merge(self, target, strategy_option=None, inform=True, reason="merge"):
+        repo = self._repo
+        args = ["--no-commit", "--no-ff"]
+        if strategy_option:
+            args.extend(["-X", strategy_option])
+        args.append(target)
+
+        self.debug("protected merge target=%s strategy=%s", target, strategy_option)
+
+        # Self-heal stale MERGE_HEAD left behind by a previous crash mid-pull.
+        # Three cases:
+        #   1. Real unmerged paths -> bail loudly; user must resolve.
+        #   2. Index has staged merge content (auto-merge succeeded but the
+        #      crash interrupted the final `commit --no-edit`) -> finalize the
+        #      merge by committing so we don't lose the work.
+        #   3. No conflicts, no staged content -> abort the residual state.
+        try:
+            import os
+
+            merge_head = os.path.join(repo.git_dir, "MERGE_HEAD")
+            if os.path.exists(merge_head):
+                has_conflicts = bool(repo.git.diff("--name-only", "--diff-filter=U").strip())
+                staged = bool(repo.git.diff("--cached", "--name-only").strip())
+                if has_conflicts:
+                    self.critical(
+                        "Stale MERGE_HEAD with unmerged paths; refusing to "
+                        "auto-resolve. Resolve manually in {}".format(repo.working_tree_dir)
+                    )
+                elif staged:
+                    self.warning(
+                        "Stale MERGE_HEAD detected in {} with staged "
+                        "merge content (no conflicts); finalizing the "
+                        "interrupted merge commit".format(repo.working_tree_dir)
+                    )
+                    # Apply the same protected-deletion guard the normal
+                    # merge path uses before recording the commit, so an
+                    # interrupted merge that staged deletions of UUID-backed
+                    # analysis files is aborted instead of silently
+                    # finalized.
+                    try:
+                        self._ensure_no_protected_deletions(
+                            inform=inform, reason=reason, abort_merge=True
+                        )
+                    except GitCommandError:
+                        raise
+                    try:
+                        repo.git.commit("--no-edit")
+                    except GitCommandError:
+                        self.debug_exception()
+                else:
+                    self.warning(
+                        "Stale MERGE_HEAD detected in {} (working tree "
+                        "clean); aborting residual merge state and "
+                        "retrying".format(repo.working_tree_dir)
+                    )
+                    try:
+                        repo.git.merge("--abort")
+                    except GitCommandError:
+                        # `git merge --abort` returns non-zero when there is
+                        # nothing to abort even though MERGE_HEAD exists. Fall
+                        # back to removing the marker files directly.
+                        for name in ("MERGE_HEAD", "MERGE_MSG", "MERGE_MODE"):
+                            p = os.path.join(repo.git_dir, name)
+                            try:
+                                if os.path.exists(p):
+                                    os.remove(p)
+                            except OSError:
+                                self.debug_exception()
+        except GitCommandError:
+            # Protected-deletion guard raised; let it propagate so the
+            # caller treats this as a conflict instead of retrying the
+            # merge.
+            raise
+        except Exception:
+            # Diagnostics only; never block the merge attempt on the heal path
+            self.debug_exception()
+
+        repo.git.merge(*args)
+
+        try:
+            self._ensure_no_protected_deletions(inform=inform, reason=reason, abort_merge=True)
+        except GitCommandError:
+            raise
+
+        status = repo.git.diff("--cached", "--name-only")
+        if status.strip():
+            repo.git.commit("--no-edit")
+
+    def _ensure_no_protected_deletions(self, inform=True, reason="merge", abort_merge=False):
+        protected = self._protected_uuid_deletions(self._get_deleted_paths_from_index())
+        if protected:
+            try:
+                if abort_merge:
+                    self._repo.git.merge("--abort")
+            except GitCommandError:
+                self.debug_exception()
+
+            msg = self._format_protected_merge_message(protected, reason)
+            self.warning(msg)
+            if inform:
+                self.warning_dialog(msg)
+            raise GitCommandError(
+                "git update",
+                1,
+                stderr="protected UUID-backed files would be deleted",
+            )
+
+    def _get_deleted_paths_from_index(self):
+        txt = self._repo.git.diff("--cached", "--name-status", "--diff-filter=D")
+        return [line.split("\t", 1)[1] for line in txt.splitlines() if line.startswith("D\t")]
+
+    def _protected_uuid_deletions(self, paths):
+        protected = []
+        for path in paths:
+            name = os.path.basename(path)
+            stem, _ext = os.path.splitext(name)
+            runid = stem.split(".")[0]
+            if UUID_FILE_RE.match(runid):
+                protected.append(path)
+        return protected
+
+    def _format_protected_merge_message(self, protected, reason):
+        preview = "\n".join(protected[:10])
+        if len(protected) > 10:
+            preview = "{}\n... and {} more".format(preview, len(protected) - 10)
+
+        return (
+            "Aborted {} because the merge would delete UUID-backed analysis files.\n\n"
+            "These deletions are treated as unsafe:\n{}"
+        ).format(reason, preview)
 
     def add(self, p, msg=None, msg_prefix=None, verbose=True, **kw):
         repo = self._repo
@@ -1183,9 +1374,7 @@ class GitRepoManager(Loggable):
         # l = repo.active_branch.log(*args)
         return self.cmd("log", branch, "--oneline", *args).split("\n")
 
-    def get_commits_from_log(
-        self, greps=None, max_count=None, after=None, before=None, path=None
-    ):
+    def get_commits_from_log(self, greps=None, max_count=None, after=None, before=None, path=None):
         repo = self._repo
         args = [repo.active_branch.name, "--remove-empty", "--simplify-merges"]
         if max_count:

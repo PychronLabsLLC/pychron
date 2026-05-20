@@ -16,16 +16,19 @@
 
 # ============= enthought library imports =======================
 
+import logging
 import os
 
 from chaco.api import PlotLabel
 from enable.component_editor import ComponentEditor as EnableComponentEditor
-from traits.api import Property, Event, cached_property, Any
+from traits.api import Any, Bool, Event, Property, cached_property
 from traitsui.api import View, UItem
 
 from pychron.core.helpers.iterfuncs import groupby_group_id
 from pychron.pipeline.plot.editors.base_editor import BaseEditor
 from pychron.pipeline.plot.figure_container import FigureContainer
+
+logger = logging.getLogger(__name__)
 
 
 class WarningLabel(PlotLabel):
@@ -41,6 +44,7 @@ class GraphEditor(BaseEditor):
     basename = ""
     figure_model = Any
     figure_container = Any
+    _force_refresh = Bool(False)
 
     @property
     def analyses(self):
@@ -76,7 +80,9 @@ class GraphEditor(BaseEditor):
             gc.render_component(c)
             gc.save(path)
 
-    def set_items(self, ans, is_append=False, refresh=False, compress=True):
+    def set_items(
+        self, ans, is_append: bool = False, refresh: bool = False, compress: bool = True
+    ) -> None:
         if is_append:
             self.items.extend(ans)
         else:
@@ -87,8 +93,19 @@ class GraphEditor(BaseEditor):
             if compress:
                 self._compress_groups()
             if refresh:
-                print("set items refresh")
-                self.refresh_needed = True
+                self.request_refresh()
+
+    def request_refresh(self, force: bool = False) -> None:
+        self._force_refresh = force
+        self.refresh_needed = True
+
+    def request_rebuild(self) -> None:
+        self.request_refresh(force=True)
+
+    def consume_refresh_request(self) -> bool:
+        force = self._force_refresh
+        self._force_refresh = False
+        return force
 
     def _compress_groups(self):
         ans = self.items
@@ -103,8 +120,8 @@ class GraphEditor(BaseEditor):
         if self.items:
             try:
                 comp = self._component_factory()
-            except BaseException:
-                self.debug_exception()
+            except Exception:
+                logger.exception("Failed building pipeline figure component")
                 self.warning_dialog(
                     "Failed to make figure. Check the log for more information"
                 )
