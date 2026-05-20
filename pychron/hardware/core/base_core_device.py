@@ -27,7 +27,7 @@ import inspect
 import random
 import time
 from collections import deque
-from typing import Deque, Optional
+from typing import Any, Deque, Optional
 
 from traits.api import provides
 
