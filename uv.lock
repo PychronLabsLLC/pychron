@@ -1004,6 +1004,18 @@ wheels = [
 ]
 
 [[package]]
+name = "openpyxl"
+version = "3.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "et-xmlfile" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3d/f9/88d94a75de065ea32619465d2f77b29a0469500e99012523b91cc4141cd1/openpyxl-3.1.5.tar.gz", hash = "sha256:cf0e3cf56142039133628b5acffe8ef0c12bc902d2aadd3e0fe5878dc08d1050", size = 186464, upload-time = "2024-06-28T14:03:44.161Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl", hash = "sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2", size = 250910, upload-time = "2024-06-28T14:03:41.161Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1204,6 +1216,7 @@ dependencies = [
     { name = "lxml" },
     { name = "matplotlib" },
     { name = "numpy" },
+    { name = "openpyxl" },
     { name = "peakutils" },
     { name = "pg8000" },
     { name = "prometheus-client" },
@@ -1236,6 +1249,7 @@ dependencies = [
 
 [package.optional-dependencies]
 hardware = [
+    { name = "pymodbus" },
     { name = "pyserial" },
 ]
 laser = [
@@ -1282,6 +1296,7 @@ requires-dist = [
     { name = "lxml", specifier = ">=6.0.4,<7" },
     { name = "matplotlib", specifier = ">=3.10.8,<4" },
     { name = "numpy", specifier = ">=2.3.4,<3" },
+    { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "peakutils", specifier = ">=1.3.5,<2" },
     { name = "pg8000", specifier = ">=1.31.2,<2" },
     { name = "prometheus-client", specifier = ">=0.25.0,<1" },
@@ -1362,6 +1377,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c3/b2/bc9c9196916376152d655522fdcebac55e66de6603a76a02bca1b6414f6c/pygments-2.20.0.tar.gz", hash = "sha256:6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f", size = 4955991, upload-time = "2026-03-29T13:29:33.898Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f4/7e/a72dd26f3b0f4f2bf1dd8923c85f7ceb43172af56d63c7383eb62b332364/pygments-2.20.0-py3-none-any.whl", hash = "sha256:81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176", size = 1231151, upload-time = "2026-03-29T13:29:30.038Z" },
+]
+
+[[package]]
+name = "pymodbus"
+version = "3.13.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3d/55/eee0782c2ca9fa8e7c3218caca22fe30e850cd6c0c0d475c10b8c19e5a36/pymodbus-3.13.0.tar.gz", hash = "sha256:da4c87afe772787620594c564cd8aa8a4c58ff9786382aba9550fe0ce8879f32", size = 165750, upload-time = "2026-04-12T07:43:23.067Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ed/9e/6046aa966c04f72417e7f3ee25cec975f770c934ccf83aa6b0c77400ff12/pymodbus-3.13.0-py3-none-any.whl", hash = "sha256:6ce838690b59ef3da00893699d04dc56e60abfb5b569363b7d6526470a3a44f5", size = 166398, upload-time = "2026-04-12T07:43:21.522Z" },
 ]
 
 [[package]]

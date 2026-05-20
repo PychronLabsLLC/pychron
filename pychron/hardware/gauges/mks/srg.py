@@ -50,7 +50,7 @@ class MKSSRG(CoreDevice):
     """
 
     scheme = "ascii"
-    scan_func = "get_pressure"
+    scan_func = "update_pressures"
 
     gauges = List
     display_name = Str
@@ -97,7 +97,7 @@ class MKSSRG(CoreDevice):
         self.ask("idy")
         return True
 
-    @get_float(default=0)
+    @get_float()
     def get_pressure(self, **kw):
         return self.read_pressure(**kw)
 
@@ -108,12 +108,11 @@ class MKSSRG(CoreDevice):
     def get_unit_label(self, verbose=False):
         return self.ask("ulb", verbose=verbose)
 
-    def _scan_hook(self, v):
-        if isinstance(v, tuple):
-            v = v[0] if v else None
-
-        if v is not None and self.gauges:
-            self.gauges[0].pressure = v
+    def update_pressures(self, verbose=False):
+        p = self.get_pressure(verbose=verbose)
+        if p is not None and self.gauges:
+            self.gauges[0].pressure = p
+        return p
 
     def gauge_view(self):
         return View(
