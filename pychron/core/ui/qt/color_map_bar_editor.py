@@ -61,7 +61,8 @@ class Bar(QFrame):
         if self.scale == "power":
             N = 1 / float(self.color_scalar)
             A = 1 / self.high**N
-            nv = A * v**N
+            # power-scale is undefined for v<0 (fractional N -> complex); clamp.
+            nv = A * max(v, 0) ** N
         else:
             nv = min(1, max(0, (v - self.low) / (self.high - self.low)))
 

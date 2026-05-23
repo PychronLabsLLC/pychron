@@ -20,25 +20,47 @@ from pyface.message_dialog import information
 from pyface.tasks.action.task_action import TaskAction
 
 
+SERVICE_PROTOCOL = (
+    "pychron.ausgeochem.earthbank_service.AusGeochemEarthBankService"
+)
+
+
+def _get_service(event):
+    app = event.task.application
+    return app.get_service(SERVICE_PROTOCOL)
+
+
 class UploadAusGeochemAction(TaskAction):
-    name = "Test AusGeochem EarthData Connection..."
+    name = "Test AusGeochem EarthBank Connection..."
 
     def perform(self, event):
-        app = event.task.application
-        service = app.get_service(
-            "pychron.ausgeochem.earthdata_service.AusGeochemEarthDataService"
-        )
+        service = _get_service(event)
         if service is None:
             information(None, "AusGeochem service is not available")
             return
 
         if service.test_connection():
-            information(None, "Successfully connected to AusGeochem EarthData")
+            information(None, "Successfully connected to AusGeochem EarthBank")
         else:
             information(
                 None,
-                "AusGeochem EarthData connection failed. Check credentials/logs.",
+                "AusGeochem EarthBank connection failed. Check credentials/logs.",
             )
+
+
+class EarthBankLoginAction(TaskAction):
+    name = "EarthBank Login..."
+
+    def perform(self, event):
+        service = _get_service(event)
+        if service is None:
+            information(None, "AusGeochem service is not available")
+            return
+
+        if service.login(prompt=True):
+            information(None, "EarthBank login successful")
+        else:
+            information(None, "EarthBank login cancelled or failed")
 
 
 # ============= EOF =============================================
