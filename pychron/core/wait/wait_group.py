@@ -185,12 +185,10 @@ class WaitGroup(HasTraits):
         if paused:
             state.request_pause(True)
 
-        # Reset display traits and start polling on the main thread.
-        # Fire-and-forget: even if the main thread is busy, the wait
-        # below proceeds independently.
-        invoke_in_main_thread(
-            control._begin_view, eff_duration, eff_message, paused
-        )
+        # Reset display traits and start the cosmetic tick chain on the
+        # main thread. Fire-and-forget: even if the main thread is busy,
+        # the wait below proceeds independently.
+        invoke_in_main_thread(control._begin_view, eff_duration, eff_message, paused)
 
         if not block:
             return None
