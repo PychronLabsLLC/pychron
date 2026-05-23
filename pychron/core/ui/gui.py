@@ -74,6 +74,46 @@ def invoke_in_main_thread(fn, *args, **kw):
     GUI.invoke_later(_instrumented_fn, *args, **kw)
 
 
+def invoke_after_in_main_thread(millisecs, fn, *args, **kw):
+    """Invoke `fn` on the main Qt thread after `millisecs` delay.
+
+    Thin instrumented wrapper around ``pyface.gui.GUI.invoke_after``.
+    Internally pyface creates a transient ``_FutureCall`` QObject that is
+    moved to the main thread and dispatches via ``QTimer.singleShot``.
+    The QObject is cleaned up after dispatch, so unlike a long-lived
+    ``QTimer`` it does not leave a dangling parent context behind — which
+    is the failure mode that caused the M3 segfaults under the previous
+    WaitControl polling timer design.
+
+    Safe to call from any thread.
+    """
+    from pyface.gui import GUI
+
+    _invocation_time = time.time()
+
+    def _instrumented_fn(*args, **kw):
+        elapsed = time.time() - _invocation_time
+        fn_name = getattr(fn, "__name__", str(fn))
+
+        # invoke_after has an intentional delay, so subtract the requested
+        # millisecond schedule before measuring stall.
+        stall = elapsed - (millisecs / 1000.0)
+        if stall > _event_loop_warning_threshold:
+            logger.warning(
+                f"Event loop was blocked for {stall:.2f}s past scheduled "
+                f"{millisecs}ms before invoking {fn_name}. "
+                "This may indicate the main thread is stalled."
+            )
+
+        try:
+            return fn(*args, **kw)
+        except Exception as e:
+            logger.exception(f"Exception in invoke_after_in_main_thread callback {fn_name}: {e}")
+            raise
+
+    GUI.invoke_after(millisecs, _instrumented_fn, *args, **kw)
+
+
 def time_operation(threshold=1.0):
     """Decorator to track operation timing and warn if execution is slow.
 

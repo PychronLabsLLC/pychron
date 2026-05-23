@@ -19,11 +19,21 @@ Architecture (rewritten 2026):
     WaitState  -- pure-Python timing truth (no Qt). Lives in wait_state.py.
                   Experiment thread blocks on state.wait(); UI never blocks
                   experiment progress.
-    WaitControl -- HasTraits façade. Owns a WaitState plus a Qt polling timer
-                  that mirrors snapshots into Traits so all existing
-                  ``object.wait_control.<trait>`` UI bindings keep working.
+    WaitControl -- HasTraits façade. Owns a WaitState; the UI countdown is
+                  driven by a chain of one-shot main-thread callbacks
+                  scheduled with ``invoke_after_in_main_thread`` (pyface's
+                  ``GUI.invoke_after``). Each tick reads a snapshot,
+                  mirrors it into Traits, and reschedules itself until the
+                  wait resolves.
 
-The polling timer is purely cosmetic. If the main Qt event loop is busy,
+No long-lived ``QTimer`` instance is parented to this control — the
+previous design used one and was the root cause of the M3 segfaults
+(dangling QObject parent context once the worker thread that started
+the timer exited). Each tick is a transient ``_FutureCall`` QObject
+created and freed entirely on the main thread, so there is no
+cross-thread QObject lifetime to manage.
+
+The tick chain is purely cosmetic. If the main Qt event loop is busy,
 the displayed countdown lags briefly; the experiment thread is unaffected
 because it is blocking on a threading.Event with timeout, not on Qt.
 """
@@ -33,14 +43,12 @@ from threading import Thread, current_thread
 from typing import Any, Callable, Optional
 
 # ============= enthought library imports =======================
-from pyface.qt.QtCore import QTimer
-from pyface.qt.QtWidgets import QApplication
 from pyface.ui_traits import PyfaceColor
 from traits.api import Bool, Button, Event as TEvent, Float, Int, Property, Str
 
 # ============= local library imports  ==========================
 from pychron.core.helpers.ctx_managers import no_update
-from pychron.core.ui.gui import invoke_in_main_thread
+from pychron.core.ui.gui import invoke_after_in_main_thread, invoke_in_main_thread
 from pychron.core.wait.wait_state import (
     CANCELED,
     COMPLETED,
@@ -52,7 +60,7 @@ from pychron.core.wait.wait_state import (
 )
 from pychron.loggable import Loggable
 
-_POLL_INTERVAL_MS = 100
+_TICK_INTERVAL_MS = 100
 
 
 class WaitControl(Loggable):
@@ -76,7 +84,12 @@ class WaitControl(Loggable):
     _paused = Bool
     _no_update = False
     _state: Optional[WaitState] = None
-    _poll_timer: Optional[QTimer] = None
+    # Main-thread tick chain controls. _ticking is checked at the top of
+    # every tick to decide whether to reschedule; flipping it to False is
+    # the only way to halt the chain. Reads/writes are atomic in CPython
+    # so no lock is needed.
+    _ticking: bool = False
+    _tick_seq: int = 0
     _on_finished: Optional[Callable[[], None]] = None
     _wait_thread: Optional[Thread] = None
 
@@ -138,7 +151,8 @@ class WaitControl(Loggable):
         if paused:
             state.request_pause(True)
 
-        # Reset display traits and start polling on the main thread.
+        # Reset display traits and start the cosmetic tick chain on the
+        # main thread.
         invoke_in_main_thread(self._begin_view, eff_duration, eff_message, paused)
 
         # If a callback is requested, run the blocking wait on a helper
@@ -171,13 +185,11 @@ class WaitControl(Loggable):
     def continue_wait(self) -> None:
         """Resolve the wait as 'continued'. Safe from any thread."""
         self.debug(
-            "wait_control continue page={} thread={}".format(
-                self.page_name, current_thread().name
-            )
+            "wait_control continue page={} thread={}".format(self.page_name, current_thread().name)
         )
         self.state.request_continue()
         # Mirror remaining=0 / status="continued" synchronously so callers
-        # don't have to wait for the polling timer to tick.
+        # don't have to wait for the next cosmetic tick to fire.
         self.current_time = 0
         self._sync_from_state()
 
@@ -227,11 +239,11 @@ class WaitControl(Loggable):
         self.trait_set(current_time=remaining)
 
     # ------------------------------------------------------------------
-    # Polling timer (mirrors WaitState into display traits)
+    # Main-thread tick chain (mirrors WaitState into display traits)
     # ------------------------------------------------------------------
 
     def _begin_view(self, duration: float, message: str, paused: bool) -> None:
-        """Reset display traits and start polling. Main thread only.
+        """Reset display traits and start the tick chain. Main thread only.
 
         Called via invoke_in_main_thread; safe even if the main thread is
         slow because state.wait() does not depend on this completing.
@@ -246,31 +258,43 @@ class WaitControl(Loggable):
                 message_color="black",
                 message_bgcolor="#eaebbc",
             )
-        self._ensure_polling()
+        self._start_ticking()
 
-    def _ensure_polling(self) -> None:
-        """Create (if needed) and start the polling QTimer. Main thread only."""
-        timer = self._poll_timer
-        if timer is None:
-            app = QApplication.instance()
-            timer = QTimer(app) if app is not None else QTimer()
-            timer.setInterval(_POLL_INTERVAL_MS)
-            timer.timeout.connect(self._poll)
-            self._poll_timer = timer
-        if not timer.isActive():
-            timer.start()
+    def _start_ticking(self) -> None:
+        """Begin (or restart) the main-thread tick chain.
 
-    def _stop_polling(self) -> None:
-        timer = self._poll_timer
-        if timer is not None and timer.isActive():
-            timer.stop()
+        ``_tick_seq`` increments so any in-flight tick scheduled by a
+        previous wait sees a stale sequence and exits without rescheduling.
+        Main thread only.
+        """
+        self._ticking = True
+        self._tick_seq += 1
+        invoke_after_in_main_thread(_TICK_INTERVAL_MS, self._tick, self._tick_seq)
 
-    def _poll(self) -> None:
-        """Tick: read snapshot, update display traits, stop when resolved."""
+    def _stop_ticking(self) -> None:
+        """Halt the tick chain. Safe from any thread."""
+        self._ticking = False
+
+    def _tick(self, seq: int) -> None:
+        """One tick of the cosmetic countdown. Main thread only.
+
+        Reads a snapshot of the underlying WaitState, mirrors it into
+        the display traits, and reschedules itself if the wait is still
+        running. The ``seq`` guard prevents a stale tick (from a prior
+        wait that was cancelled while a callback was already in flight)
+        from continuing to run alongside a fresh chain.
+        """
+        if not self._ticking or seq != self._tick_seq:
+            return
+
         snap = self.state.snapshot()
         self._sync_from_snapshot(snap)
+
         if snap.outcome != RUNNING:
-            self._stop_polling()
+            self._ticking = False
+            return
+
+        invoke_after_in_main_thread(_TICK_INTERVAL_MS, self._tick, seq)
 
     def _sync_from_state(self) -> None:
         self._sync_from_snapshot(self.state.snapshot())
