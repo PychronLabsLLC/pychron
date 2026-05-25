@@ -66,12 +66,9 @@ def listify(records):
 
 class BaseBrowserTask(BaseEditorTask):
     default_task_name = "Recall"
-    browser_model = Instance(
-        "pychron.envisage.browser.base_browser_model.BaseBrowserModel"
-    )
+    browser_model = Instance("pychron.envisage.browser.base_browser_model.BaseBrowserModel")
     interpreted_age_browser_model = Instance(
-        "pychron.envisage.browser."
-        "interpreted_age_browser_model.InterpretedAgeBrowserModel"
+        "pychron.envisage.browser." "interpreted_age_browser_model.InterpretedAgeBrowserModel"
     )
     dvc = Instance("pychron.dvc.dvc.DVC")
 
@@ -96,9 +93,7 @@ class BaseBrowserTask(BaseEditorTask):
 
     def __init__(self, *args, **kw):
         super(BaseBrowserTask, self).__init__(*args, **kw)
-        bind_preference(
-            self, "mounted_media_root", "pychron.browser.mounted_media_root"
-        )
+        bind_preference(self, "mounted_media_root", "pychron.browser.mounted_media_root")
 
     def prepare_destroy(self):
         if self.browser_model:
@@ -121,11 +116,7 @@ class BaseBrowserTask(BaseEditorTask):
             self.warning_dialog("Active tab must be a Recall tab")
             return
 
-        if (
-            hasattr(editor, "edit_view")
-            and editor.edit_view
-            and editor.edit_view.control
-        ):
+        if hasattr(editor, "edit_view") and editor.edit_view and editor.edit_view.control:
             editor.edit_view.show()
         else:
             e = AnalysisEditView(editor, dvc=self.dvc)
@@ -212,12 +203,14 @@ class BaseBrowserTask(BaseEditorTask):
                     pf = 60
 
                 try:
-                    records = self.dvc.make_analyses(
-                        records, pull_frequency=pf, use_progress=False
-                    )
-                except BaseException:
+                    records = self.dvc.make_analyses(records, pull_frequency=pf, use_progress=False)
+                except BaseException as e:
+                    import traceback
+
                     records = None
-                    self.debug_exception()
+                    self.critical(
+                        "make_analyses error during recall {}\n{}".format(e, traceback.format_exc())
+                    )
 
         if records:
             self._open_recall_editors(records, use_quick=use_quick)
@@ -289,10 +282,7 @@ class BaseBrowserTask(BaseEditorTask):
             blob = base64.b64decode(blob)
             if blob != "No Response":
                 x, y = array(
-                    [
-                        struct.unpack("<ff", blob[i : i + 8])
-                        for i in range(0, len(blob), 8)
-                    ]
+                    [struct.unpack("<ff", blob[i : i + 8]) for i in range(0, len(blob), 8)]
                 ).T
                 x[0] = 0
             else:
@@ -336,9 +326,7 @@ class BaseBrowserTask(BaseEditorTask):
             (
                 editor
                 for editor in self.editor_area.editors
-                if isinstance(editor, RecallEditor)
-                and editor.model
-                and editor.model.uuid == uuid
+                if isinstance(editor, RecallEditor) and editor.model and editor.model.uuid == uuid
             ),
             None,
         )
@@ -391,9 +379,7 @@ class BaseBrowserTask(BaseEditorTask):
         pass
 
     def _set_adapter_sig_figs(self):
-        self.isotope_adapter.sig_figs = (
-            self.recall_configurer.recall_options.isotope_sig_figs
-        )
+        self.isotope_adapter.sig_figs = self.recall_configurer.recall_options.isotope_sig_figs
         self.intermediate_adapter.sig_figs = (
             self.recall_configurer.recall_options.intermediate_sig_figs
         )
@@ -408,9 +394,7 @@ class BaseBrowserTask(BaseEditorTask):
                 av = rec.analysis_view_factory(quick=False)
                 av.isotope_view.isotope_adapter = self.isotope_adapter
                 av.isotope_view.intermediate_adapter = self.intermediate_adapter
-                av.isotope_view.show_intermediate = (
-                    self.recall_configurer.show_intermediate
-                )
+                av.isotope_view.show_intermediate = self.recall_configurer.show_intermediate
 
                 self.recall_configurer.set_fonts(av)
                 av.main_view.set_options(rec, self.recall_configurer.recall_options)
@@ -464,8 +448,9 @@ class BaseBrowserTask(BaseEditorTask):
             except BaseException as e:
                 import traceback
 
-                traceback.print_exc()
-                self.critical("interpeted_age_table:dclicked error {}".format(str(e)))
+                self.critical(
+                    "interpeted_age_table:dclicked error {}\n{}".format(e, traceback.format_exc())
+                )
 
     @on_trait_change("browser_model:[table:key_pressed]")
     def _handle_key_pressed(self, new):
@@ -488,8 +473,7 @@ class BaseBrowserTask(BaseEditorTask):
             except BaseException as e:
                 import traceback
 
-                traceback.print_exc()
-                self.critical("table:dclicked error {}".format(str(e)))
+                self.critical("table:dclicked error {}\n{}".format(e, traceback.format_exc()))
 
     def _dclicked_sample_hook(self):
         pass
