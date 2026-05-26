@@ -86,7 +86,7 @@ class ArArConstants(HasTraits):
 
     # cosmogenic
     use_cosmogenic_correction = Bool(False)
-    solar3836 = Property(depends_on="solar3836_v,solar43836_e")
+    solar3836 = Property(depends_on="solar3836_v,solar3836_e")
     solar3836_v = Float
     solar3836_e = Float
 
@@ -189,20 +189,21 @@ class ArArConstants(HasTraits):
         return d
 
     def cosmo_to_dict(self):
+        """Serialize cosmogenic ratios. Keys match attribute names:
+        `solar3836`, `cosmo3836`, plus `_err` suffix."""
         d = {"use_cosmogenic_correction": self.use_cosmogenic_correction}
         for a in ("cosmo", "solar"):
-            tag = "{}_3836".format(a)
-            uv = getattr(self, tag)
-            d[tag] = float(nominal_value(uv))
-            d["{}_err".format(tag)] = float(std_dev(uv))
-
+            attr = "{}3836".format(a)
+            uv = getattr(self, attr)
+            d[attr] = float(nominal_value(uv))
+            d["{}_err".format(attr)] = float(std_dev(uv))
         return d
 
     def cosmo_from_dict(self, jd):
         for a in ("cosmo", "solar"):
-            tag = "{}_3836".format(a)
-            setattr(self, "{}_3836_v".format(a), jd.get(tag, 0))
-            setattr(self, "{}_3836_e".format(a), jd.get("{}_err".format(tag), 0))
+            attr = "{}3836".format(a)
+            setattr(self, "{}_v".format(attr), jd.get(attr, 0))
+            setattr(self, "{}_e".format(attr), jd.get("{}_err".format(attr), 0))
 
         self.use_cosmogenic_correction = jd.get("use_cosmogenic_correction", False)
 

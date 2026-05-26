@@ -17,11 +17,17 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 
-from numpy import average, where, full
+from numpy import average, full, isscalar, where
 
 from pychron.core.helpers.formatting import floatfmt
-from pychron.pychron_constants import SEM, MSEM, SE
+from pychron.pychron_constants import MSEM, SE, SEM
 from .base_regressor import BaseRegressor
+
+
+def _length(x):
+    if isinstance(x, (list, tuple)):
+        return len(x)
+    return x.shape[0]
 
 
 class MeanRegressor(BaseRegressor):
@@ -34,7 +40,6 @@ class MeanRegressor(BaseRegressor):
         return full(exog.shape[0], endog.mean())
 
     def calculate(self, filtering=False, **kw):
-        # cxs, cys = self.pre_clean_ys, self.pre_clean_ys
         if not filtering:
             # prevent infinite recursion
             self.calculate_filtered_data()
@@ -42,56 +47,33 @@ class MeanRegressor(BaseRegressor):
 
     def calculate_outliers(self):
         nsigma = self.filter_outliers_dict.get("std_devs", 2)
-        res = abs(self.ys - self.mean)
-        s = self.std
-        self.filter_bound_value = s * nsigma
-        return where(res >= (s * nsigma))[0]
+        bound = self.std * nsigma
+        self.filter_bound_value = bound
+        residuals = abs(self.ys - self.mean)
+        return where(residuals >= bound)[0]
 
     def _calculate_coefficients(self):
         ys = self.clean_ys
         if self._check_integrity(ys, ys):
             return [ys.mean()]
-        else:
-            return 0
+        return [0]
 
     def _calculate_coefficient_errors(self):
         return [self.std, self.sem]
 
     @property
     def summary(self):
-        m = self.mean
-        e = self.std
-        sem = self.sem
-        return """mean={}
-std={}
-sem={}
-
-""".format(
-            m, e, sem
-        )
+        return "mean={}\nstd={}\nsem={}\n\n".format(self.mean, self.std, self.sem)
 
     def predict(self, xs=None, *args):
-        if xs is not None:
-            if isinstance(xs, (float, int)):
-                return self.mean
-
-            if isinstance(xs, (list, tuple)):
-                n = len(xs)
-            else:
-                n = xs.shape[0]
-
-            return full(n, self.mean)
-        else:
-            return self.mean
+        m = self.mean
+        if xs is None or isscalar(xs):
+            return m
+        return full(_length(xs), m)
 
     def calculate_ci(self, fx, fy):
-        #         c = self.predict(fx)
-        # fit = self.fit.lower()
-        # ec = 'sem' if fit.endswith('sem') else 'sd'
         e = self.predict_error(fx)
-        ly = fy - e
-        uy = fy + e
-        return ly, uy
+        return fy - e, fy + e
 
     def tostring(self, sig_figs=3):
         m = self.mean
@@ -121,77 +103,78 @@ sem={}
         return "Mean"
 
     def predict_error(self, x, error_calc=None):
-        if error_calc is None:
-            error_calc = self.error_calc_type
-            if not error_calc:
-                error_calc = "SEM" if "sem" in self.fit.lower() else "SD"
+        """
+        Error term for a mean-style fit. Resolution of `error_calc`:
 
-        error_calc = error_calc.lower()
-        if error_calc == SEM.lower():
+          SEM  → standard error of the mean. Subclasses define `sem`:
+                 base = std/√n;  WeightedMean = Taylor (1/√Σw).
+          MSEM → SEM × √MSWD (when MSWD>1) — standard ISOPLOT scaling.
+                 Uses `self.sem` so that base and weighted regressors apply
+                 √MSWD to the *same kind* of standard error (the SEM of the
+                 mean), not to mixed quantities.
+          SE   → `self.se`. For base mean: equal to `std` (preserved for
+                 backward compatibility with mass-spec output conventions).
+                 For weighted mean: equal to Taylor SEM.
+          SD   → sample standard deviation.
+        """
+        if error_calc is None:
+            error_calc = self.error_calc_type or ("SEM" if "sem" in self.fit.lower() else "SD")
+
+        ec = error_calc.lower()
+        if ec == SEM.lower():
             e = self.sem
-        elif error_calc in (MSEM.lower(), "msem"):
-            e = self.se * (self.mswd**0.5 if self.mswd > 1 else 1)
-        elif error_calc == SE.lower():
+        elif ec in (MSEM.lower(), "msem"):
+            mswd = self.mswd
+            e = self.sem * (mswd**0.5 if mswd > 1 else 1)
+        elif ec == SE.lower():
             e = self.se
         else:
             e = self.std
 
-        if isinstance(x, (float, int)):
+        if isscalar(x):
             return e
-        else:
-            if isinstance(x, (list, tuple)):
-                n = len(x)
-            else:
-                n = x.shape[0]
-
-            return full(n, e)
+        return full(_length(x), e)
 
     def calculate_standard_error_fit(self):
         return self.std
 
     def _check_integrity(self, x, y):
-        nx, ny = (
-            x.shape[0] if x is not None else None,
-            y.shape[0] if y is not None else None,
-        )
-        if not nx or not ny:
+        if x is None or y is None:
             return
-        if nx != ny:
+        nx, ny = x.shape[0], y.shape[0]
+        if not nx or not ny or nx != ny:
             return
-
         return True
 
 
 class WeightedMeanRegressor(MeanRegressor):
     def fast_predict2(self, endog, exog):
-        # ws = 1 / self.clean_yserr ** 2
         ws = self._get_weights()
-        mean = average(endog, weights=ws)
-        return full(exog.shape[0], mean)
+        return full(exog.shape[0], average(endog, weights=ws))
 
     @property
     def se(self):
+        """Taylor error / standard error of the weighted mean."""
+        return self.sem
+
+    @property
+    def sem(self):
         """
-        aka Taylor error, aka standard error of the weighted mean
-        :return:
+        Weighted SEM = Taylor error = 1/√Σw, where w_i = 1/σ_i².
+        Overrides base class `std/√n` which would be the unweighted SEM.
         """
         ws = self._get_weights()
-        return sum(ws) ** -0.5
+        if ws is None:
+            return 0
+        return ws.sum() ** -0.5
 
     @property
     def mean(self):
         ys = self.clean_ys
         ws = self._get_weights()
-        if self._check_integrity(ys, ws):
+        if ws is not None and self._check_integrity(ys, ws):
             return average(ys, weights=ws)
-        else:
-            return average(ys)
-
-    # @property
-    # def mean_std(self):
-    #     if len(self.weights):
-    #         var = 1 / sum(self.weights)
-    #         return var ** 0.5
+        return average(ys)
 
     def _get_weights(self):
         e = self.clean_yserr
