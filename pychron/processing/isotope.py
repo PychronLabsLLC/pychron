@@ -477,6 +477,15 @@ class IsotopicMeasurement(BaseMeasurement):
             return self._predict_at_t_zero()[0]
         return self._value
 
+    @value.setter
+    def value(self, v):
+        self.user_defined_value = True
+        try:
+            self._value = float(v)
+            self._cached_uvalue = None
+        except ValueError:
+            pass
+
     @property
     def error(self):
         if not self.use_stored_value and not self.user_defined_error and self.xs.shape[0] > 1:
@@ -488,15 +497,6 @@ class IsotopicMeasurement(BaseMeasurement):
         self.user_defined_error = True
         try:
             self._error = float(v)
-            self._cached_uvalue = None
-        except ValueError:
-            pass
-
-    @value.setter
-    def value(self, v):
-        self.user_defined_value = True
-        try:
-            self._value = float(v)
             self._cached_uvalue = None
         except ValueError:
             pass

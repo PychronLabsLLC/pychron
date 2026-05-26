@@ -31,7 +31,7 @@ def _length(x):
 
 
 class MeanRegressor(BaseRegressor):
-    _fit = "average"
+    _fit = "average"  # type: ignore[assignment]
 
     def get_exog(self, pts):
         return pts

@@ -211,7 +211,7 @@ class BaseRegressor(HasTraits):
 
         if updates:
             self.trait_setq(**updates)
-            self.dirty = True
+            self.dirty = True  # type: ignore[assignment]
             return True
 
         return False

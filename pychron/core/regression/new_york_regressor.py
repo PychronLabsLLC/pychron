@@ -307,7 +307,7 @@ class ReedYorkRegressor(YorkRegressor):
     reed 1989
     """
 
-    _degree = 1
+    _degree = 1  # type: ignore[assignment]
 
     #     def _set_degree(self, d):
     #         '''
