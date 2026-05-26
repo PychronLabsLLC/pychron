@@ -337,9 +337,7 @@ def calculate_arar_decay_factors(dc37, dc39, segments, use_mh=True):
         unity factors).
     use_mh : bool
         If True, use M&H. If False, use Dalrymple et al. 1981.
-    """.format(
-        _MAX_DECAY_EXPONENT
-    )
+    """.format(_MAX_DECAY_EXPONENT)
     if segments is None:
         return 1.0, 1.0
 
@@ -672,7 +670,7 @@ def calculate_error_t(F, ssF, j, ssJ):
     JJ = j * j
     FF = F * F
     constants = ArArConstants()
-    ll = constants().lambdak.nominal_value ** 2
+    ll = constants().lambdak.nominal_value**2
     sst = (JJ * ssF + FF * ssJ) / (ll * (1 + F * j) ** 2)
     return sst**0.5
 
