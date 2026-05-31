@@ -73,11 +73,11 @@ jobs:
           else:
               if event_name == "pull_request":
                   base = os.environ["GITHUB_BASE_REF"]
-                  cmd = ["git", "diff", "--name-only", f"origin/{base}...HEAD", "--", "*.py"]
+                  cmd = ["git", "diff", "--name-only", "--diff-filter=d", f"origin/{base}...HEAD", "--", "*.py"]
               else:
                   before = os.environ.get("GITHUB_EVENT_BEFORE")
                   if before:
-                      cmd = ["git", "diff", "--name-only", before, "HEAD", "--", "*.py"]
+                      cmd = ["git", "diff", "--name-only", "--diff-filter=d", before, "HEAD", "--", "*.py"]
                   else:
                       cmd = ["git", "ls-files", "*.py"]
 
@@ -141,11 +141,11 @@ jobs:
           else:
               if event_name == "pull_request":
                   base = os.environ["GITHUB_BASE_REF"]
-                  cmd = ["git", "diff", "--name-only", f"origin/{base}...HEAD", "--", "*.py"]
+                  cmd = ["git", "diff", "--name-only", "--diff-filter=d", f"origin/{base}...HEAD", "--", "*.py"]
               else:
                   before = os.environ.get("GITHUB_EVENT_BEFORE")
                   if before:
-                      cmd = ["git", "diff", "--name-only", before, "HEAD", "--", "*.py"]
+                      cmd = ["git", "diff", "--name-only", "--diff-filter=d", before, "HEAD", "--", "*.py"]
                   else:
                       cmd = ["git", "ls-files", "*.py"]
 

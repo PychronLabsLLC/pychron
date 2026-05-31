@@ -151,11 +151,7 @@ class BaseMeasurement(object):
             logger.warning("Unpack blob failed for %s: %s", self.name, e)
 
     def get_slope(self, n=-1):
-        if (
-            self.xs.shape[0]
-            and self.ys.shape[0]
-            and self.xs.shape[0] == self.ys.shape[0]
-        ):
+        if self.xs.shape[0] and self.ys.shape[0] and self.xs.shape[0] == self.ys.shape[0]:
             xs = self.offset_xs
             ys = self.ys
             if n != -1:
@@ -210,6 +206,17 @@ class IsotopicMeasurement(BaseMeasurement):
 
     _fn = None
 
+    # Cached intercept-at-t=0: a single ufloat shared by `value`, `error`,
+    # and `uvalue` accessors. Built once per regression-state; invalidated
+    # by `_invalidate_regressor` and refreshed inside `_regressor_factory`.
+    # Sharing a single ufloat keeps the correlation graph consistent —
+    # multiple accesses no longer create independent random variables.
+    _cached_uvalue = None
+    # Compact token used to detect data swaps that bypass setters
+    # (e.g. `iso.ys = new_array` direct assignment). Uses id() of xs/ys
+    # arrays plus the regression parameters that influence predict(0).
+    _cache_token = None
+
     def __init__(self, *args, **kw):
         super(IsotopicMeasurement, self).__init__(*args, **kw)
         self.filter_outliers_dict = dict()
@@ -226,10 +233,6 @@ class IsotopicMeasurement(BaseMeasurement):
 
     def get_gradient(self):
         return ((gradient(self.ys) ** 2).sum()) ** 0.5
-
-    def get_xsquared_coefficient(self):
-        if self._regressor:
-            return self._regressor.get_xsquared_coefficient()
 
     @property
     def efit(self):
@@ -408,6 +411,8 @@ class IsotopicMeasurement(BaseMeasurement):
             self._value, self._error = v
         else:
             self._value, self._error = nominal_value(v), std_dev(v)
+        self._cached_uvalue = None
+        self._cache_token = None
 
     def _revert_user_defined(self):
         self.user_defined_error = False
@@ -416,64 +421,83 @@ class IsotopicMeasurement(BaseMeasurement):
             self._value = self._ovalue
         if self._oerror is not None:
             self._error = self._oerror
+        self._cached_uvalue = None
+
+    def _current_cache_token(self):
+        """
+        Cheap signature of the inputs that determine `predict(0)`.
+
+        Uses `id()` of xs/ys so a wholesale array swap (`iso.ys = new`)
+        invalidates the cache without us having to hash the contents.
+        In-place mutation (`iso.ys[0] = X`) is NOT caught — callers must
+        invalidate explicitly in that case (already true for the old code
+        path before any caching existed).
+        """
+        fod = self.filter_outliers_dict
+        return (
+            id(self.xs),
+            id(self.ys),
+            self._fit,
+            self.error_type,
+            self.truncate,
+            self.time_zero_offset,
+            self.group_data,
+            tuple(sorted(fod.items())) if fod else (),
+        )
+
+    def _predict_at_t_zero(self):
+        """
+        Single regressor pass that returns (value, error) at t=0.
+
+        Cached as `_cached_uvalue` so that repeated `value`, `error`, and
+        `uvalue` accesses share the SAME ufloat instance (preserves the
+        uncertainties correlation graph) and skip redundant regressor work.
+        Fast path: tuple-compare against `_cache_token`. Slow path: rebuild
+        the regressor and refresh both the cache and the token.
+        """
+        token = self._current_cache_token()
+        if self._cached_uvalue is not None and self._cache_token == token:
+            uv = self._cached_uvalue
+            return nominal_value(uv), std_dev(uv)
+
+        reg = self.regressor
+        v = reg.predict(0)
+        e = reg.predict_error(0)
+        if isnan(v) or isinf(v):
+            v = 0
+        if isnan(e) or isinf(e):
+            e = 0
+        self._cached_uvalue = ufloat(v, e, tag=self.name)
+        self._cache_token = token
+        return v, e
 
     @property
     def value(self):
-        # if not (self.name.endswith('bs') or self.name.endswith('bk')):
-        #     print self.name, self.use_static,self.user_defined_value
-        # print 'get value', self.name, self.use_static, self._value, self.user_defined_value
-        # if self.use_static and self._value:
-        #     return self._value
-        # elif self.user_defined_value:
-        #     return self._value
-
-        if (
-            not self.use_stored_value
-            and not self.user_defined_value
-            and self.xs.shape[0] > 1
-        ):
-            v = self.regressor.predict(0)
-
-            if isnan(v) or isinf(v):
-                v = 0
-            return v
-        else:
-            return self._value
-
-    @property
-    def error(self):
-        # if self.use_static and self._error:
-        #     return self._error
-        # elif self.user_defined_error:
-        #     return self._error
-
-        if (
-            not self.use_stored_value
-            and not self.user_defined_error
-            and self.xs.shape[0] > 1
-        ):
-            v = self.regressor.predict_error(0)
-            if isnan(v) or isinf(v):
-                v = 0
-            return v
-        else:
-            return self._error
-
-    @error.setter
-    def error(self, v):
-        self.user_defined_error = True
-        try:
-            # self._oerror = self._error
-            self._error = float(v)
-        except ValueError:
-            pass
+        if not self.use_stored_value and not self.user_defined_value and self.xs.shape[0] > 1:
+            return self._predict_at_t_zero()[0]
+        return self._value
 
     @value.setter
     def value(self, v):
         self.user_defined_value = True
         try:
-            # self._ovalue = self._value
             self._value = float(v)
+            self._cached_uvalue = None
+        except ValueError:
+            pass
+
+    @property
+    def error(self):
+        if not self.use_stored_value and not self.user_defined_error and self.xs.shape[0] > 1:
+            return self._predict_at_t_zero()[1]
+        return self._error
+
+    @error.setter
+    def error(self, v):
+        self.user_defined_error = True
+        try:
+            self._error = float(v)
+            self._cached_uvalue = None
         except ValueError:
             pass
 
@@ -488,6 +512,14 @@ class IsotopicMeasurement(BaseMeasurement):
     def _regressor_factory(self, fit):
         lfit = fit.lower()
         reg = self._regressor
+
+        # Fast short-circuit: if an existing regressor was built for the
+        # exact same inputs (xs/ys identity + params), return it without
+        # touching set_regression_state / determine_fit / calculate.
+        if reg is not None and self._regression_state is not None:
+            current_token = self._current_cache_token()
+            if self._cache_token == current_token:
+                return reg
 
         if "average" in lfit:
             if not isinstance(reg, MeanRegressor):
@@ -517,8 +549,12 @@ class IsotopicMeasurement(BaseMeasurement):
         try:
             fit = reg.determine_fit(lfit)
             self.fit = fit
-            if state_changed or reg.is_dirty or getattr(reg, "_result", None) is None:
+            recompute = state_changed or reg.is_dirty or getattr(reg, "_result", None) is None
+            if recompute:
                 reg.calculate()
+                # Predicted value at t=0 may change; drop the ufloat cache.
+                self._cached_uvalue = None
+                self._cache_token = None
         except FitError:
             reg = self._regressor_factory("average")
 
@@ -529,6 +565,8 @@ class IsotopicMeasurement(BaseMeasurement):
     def _invalidate_regressor(self):
         self._regressor = None
         self._regression_state = None
+        self._cached_uvalue = None
+        self._cache_token = None
 
     def _make_regression_state(self, xs, ys):
         return (
@@ -542,16 +580,25 @@ class IsotopicMeasurement(BaseMeasurement):
             self.time_zero_offset,
         )
 
-    # @cached_property
     @property
     def uvalue(self):
-        # v = self._uvalue
-        # if v is None or self._dirty:
-        # if self.name == 'Ar39':
-        #     print self.__class__.__name__, self.value, self.error
-        v = ufloat(self.value, self.error, tag=self.name)
-
-        return v
+        """
+        Return the cached ufloat at t=0. Multiple accesses return the
+        SAME ufloat instance, so chained calculations preserve their
+        correlation graph (previously each access created an independent
+        random variable, double-counting analytical uncertainty).
+        """
+        if (
+            not self.use_stored_value
+            and not self.user_defined_value
+            and not self.user_defined_error
+            and self.xs.shape[0] > 1
+        ):
+            self._predict_at_t_zero()
+            uv = self._cached_uvalue
+            if uv is not None:
+                return uv
+        return ufloat(self.value, self.error, tag=self.name)
 
     @property
     def fit_abbreviation(self):
@@ -666,31 +713,28 @@ class BaseIsotope(IsotopicMeasurement):
         IsotopicMeasurement.__init__(self, name, detector)
         self.baseline = Baseline("{} bs".format(name), detector)
 
-    def get_baseline_corrected_value(
-        self, include_baseline_error=None, window=None, count=None
-    ):
+    def get_baseline_corrected_value(self, include_baseline_error=None, window=None, count=None):
         if include_baseline_error is None:
             include_baseline_error = self.include_baseline_error
 
-        b = self.baseline.uvalue
         if window:
             ys = self.sniff.ys[-window:]
-            v = ys.mean()
-            e = ys.std()
-            uv = ufloat(v, e, tag=self.name)
+            # ddof=1 for unbiased sample std
+            uv = ufloat(ys.mean(), ys.std(ddof=1), tag=self.name)
         elif count:
-            v = self.sniff.ys[count]
-            e = 0
-            uv = ufloat(v, e, tag=self.name)
+            uv = ufloat(self.sniff.ys[count], 0, tag=self.name)
         else:
             uv = self.uvalue
 
         if not include_baseline_error:
-            b = nominal_value(b)
-            nv = uv - b
-            return ufloat(nominal_value(nv), std_dev(nv), tag=self.name)
-        else:
-            return uv - b
+            # Subtract baseline value WITHOUT propagating its uncertainty.
+            # Use nominal_value(b) so `nv` is signal_uvalue - scalar(b);
+            # this preserves the correlation graph back to the signal
+            # variables. (Previously wrapped `nv` in a fresh ufloat, which
+            # silently destroyed the correlation graph and broke downstream
+            # error-component attribution.)
+            return uv - nominal_value(self.baseline.uvalue)
+        return uv - self.baseline.uvalue
 
     def _get_baseline_fit_abbreviation(self):
         return self.baseline.fit_abbreviation
@@ -776,26 +820,24 @@ class Isotope(BaseIsotope):
 
     def get_intensity(self, **kw):
         """
-        return the discrimination and ic_factor corrected value
-        """
-        v = self.get_disc_corrected_value(**kw) * (self.ic_factor or 1.0)
+        Return the discrimination and ic_factor corrected value.
 
-        # this is a temporary hack for handling Minna bluff data
-        if self.detector.lower() == "faraday":
-            v = v - self.blank.uvalue
-        # if self._regressor:
-        #     print 'get intensity {}{} regressor={}'.format(self.name, self.detector, id(self._regressor))
-        return v
+        Blank/baseline/background subtraction happens earlier in
+        `get_non_detector_corrected_value` (called via
+        `get_disc_corrected_value`). The same correction order applies
+        to all detectors — the previous "Minna bluff" Faraday-only
+        deferred-blank hack has been removed.
+        """
+        ic = self.ic_factor if self.ic_factor is not None else 1.0
+        return self.get_disc_corrected_value(**kw) * ic
 
     def get_disc_corrected_value(self, **kw):
-        disc = self.discrimination
-        if disc is None:
-            disc = 1
-
+        disc = self.discrimination if self.discrimination is not None else 1
         return self.get_non_detector_corrected_value(**kw) * disc
 
     def get_ic_corrected_value(self):
-        return self.get_non_detector_corrected_value() * (self.ic_factor or 1.0)
+        ic = self.ic_factor if self.ic_factor is not None else 1.0
+        return self.get_non_detector_corrected_value() * ic
 
     def no_baseline_error(self):
         v = self.get_baseline_corrected_value(include_baseline_error=False)
@@ -806,14 +848,10 @@ class Isotope(BaseIsotope):
 
     def get_non_detector_corrected_value(self, **kw):
         v = self.get_baseline_corrected_value(**kw)
-
-        # this is a temporary hack for handling Minna bluff data
-        if self.correct_for_blank and self.detector.lower() != "faraday":
+        if self.correct_for_blank:
             v = v - self.blank.uvalue
-
         if self.background:
             v = v - self.background.uvalue
-
         return v
 
     def set_ublank(self, v):

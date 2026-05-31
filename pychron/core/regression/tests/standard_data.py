@@ -10,10 +10,14 @@ def pearson(expected=False):
     wys = np.array([1, 1.8, 4, 8, 20, 20, 70, 70, 100, 500])
     solutions = dict(
         reed=dict(
+            # Reed (1992) eq 14: MSWD-scaled York 1969 variance.
+            #   σ_b = √(MSWD) · √(1/Σ(W·U²))
+            # Differs from earlier expected values (0.0702, 0.3555) due to
+            # MSWD definition; current values match Reed eq 14 directly.
             slope=-0.4805,
-            slope_err=0.0702,
+            slope_err=0.07100646168095825,
             intercept=5.4799,
-            intercept_err=0.3555,
+            intercept_err=0.3618711923518275,
             mswd=1.4832,
         ),
         new_york=dict(
@@ -27,9 +31,7 @@ def pearson(expected=False):
     if expected:
         if not expected in solutions:
             v = ",".join(list(solutions.keys()))
-            raise AttributeError(
-                'invalid expected value {}. use "{}"'.format(expected, v)
-            )
+            raise AttributeError('invalid expected value {}. use "{}"'.format(expected, v))
 
         return solutions[expected]
 

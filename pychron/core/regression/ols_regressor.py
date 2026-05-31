@@ -18,14 +18,16 @@ import logging
 
 from numpy import (
     asarray,
+    atleast_1d,
     column_stack,
-    sqrt,
     dot,
-    linalg,
-    zeros_like,
     hstack,
+    isscalar,
+    linalg,
     ones_like,
-    array,
+    sqrt,
+    vander,
+    zeros_like,
 )
 from statsmodels.api import OLS
 from traits.api import Int, Property
@@ -117,51 +119,38 @@ class OLSRegressor(BaseRegressor):
 
         integrity_check = True
         if not self._check_integrity(cxs, cys, verbose=True):
+            # Single point: duplicate it so the engine has 2 rows to fit.
             if len(cxs) == 1 and len(cys) == 1:
                 cxs = hstack((cxs, cxs[0]))
                 cys = hstack((cys, cys[0]))
                 integrity_check = False
-                # cys.append(cys[0])
             else:
-                self._result = None
-                self.clear_dirty()
-                logger.debug("A integrity check failed")
-                # import traceback
-                # traceback.print_stack()
+                self._abort_calculate("A integrity check failed")
                 return
 
-        if integrity_check:
-            if not filtering:
-                # prevent infinite recursion
-                fx, fy = self.calculate_filtered_data()
-            else:
-                fx, fy = cxs, cys
+        if integrity_check and not filtering:
+            fx, fy = self.calculate_filtered_data()
         else:
             fx, fy = cxs, cys
 
         X = self._get_X(fx)
+        if integrity_check and not self._check_integrity(X, fy):
+            self._abort_calculate("B integrity check failed")
+            return
 
-        if X is not None:
-            if integrity_check and not self._check_integrity(X, fy):
-                self._result = None
-                self.clear_dirty()
-                logger.debug("B integrity check failed")
-                # self.debug('B integrity check failed')
-                return
+        ols = self._engine_factory(fy, X, check_integrity=integrity_check)
+        if ols is None:
+            self._abort_calculate("engine factory returned None")
+            return
 
-            # try:
-            ols = self._engine_factory(fy, X, check_integrity=integrity_check)
-            if ols is None:
-                self._result = None
-                self.clear_dirty()
-                return
-            self._ols = ols
-            self._result = ols.fit()
-            self.clear_dirty()
-            # except Exception as e:
-            #     import traceback
-            #
-            #     traceback.print_exc()
+        self._ols = ols
+        self._result = ols.fit()
+        self.clear_dirty()
+
+    def _abort_calculate(self, reason):
+        self._result = None
+        self.clear_dirty()
+        logger.debug(reason)
 
     def calculate_prediction_envelope(self, fx, fy):
         from statsmodels.sandbox.regression.predstd import wls_prediction_std
@@ -170,37 +159,22 @@ class OLSRegressor(BaseRegressor):
         return iv_l, iv_u, self._result.model.exog[::, 1]
 
     def predict(self, pos):
-        return_single = False
-        if isinstance(pos, (float, int)):
-            return_single = True
-            pos = [pos]
-
-        pos = asarray(pos)
-
-        x = self._get_X(xs=pos)
+        return_single = isscalar(pos)
+        pos = atleast_1d(asarray(pos))
 
         res = self._result
-        if res:
-            pred = res.predict(x)
-            if return_single:
-                pred = pred[0]
-            return pred
-        else:
-            if return_single:
-                return 0
-            else:
-                return zeros_like(pos)
+        if res is None:
+            return 0 if return_single else zeros_like(pos)
+
+        pred = res.predict(self._get_X(xs=pos))
+        return pred[0] if return_single else pred
 
     def predict_error(self, x, error_calc=None):
         if error_calc is None:
             error_calc = self.error_calc_type
 
-        return_single = False
-        if isinstance(x, (float, int)):
-            x = [x]
-            return_single = True
-
-        x = asarray(x)
+        return_single = isscalar(x)
+        x = atleast_1d(asarray(x))
 
         if not error_calc or error_calc == "CI":
             e = self.calculate_ci_error(x)
@@ -211,149 +185,55 @@ class OLSRegressor(BaseRegressor):
 
         if return_single:
             try:
-                e = e[0]
+                return e[0]
             except TypeError:
-                e = 0
+                return 0
         return e
-
-    def predict_error_algebraic(self, x, error_calc="SEM"):
-        """
-        draper and smith 24
-
-        predict error in y using equation 1.4.6 p.22
-        """
-        s = self.calculate_standard_error_fit()
-        xs = self.xs
-        Xbar = xs.mean()
-        n = float(xs.shape[0])
-
-        def calc_error(Xk):
-            a = 1 / n + (Xk - Xbar) ** 2 / ((xs - Xbar) ** 2).sum()
-            if error_calc == SEM:
-                var_Ypred = s * s * a
-            else:
-                var_Ypred = s * s * (1 + a)
-
-            return sqrt(var_Ypred)
-
-        return [calc_error(xi) for xi in x]
 
     def predict_error_matrix(self, x, error_calc="SEM"):
         """
-        predict the error in y using matrix math
-        draper and smith chapter 2.4 page 56
+        Predict the error in y using matrix math.
+        Draper & Smith chapter 2.4 page 56.
 
-        Xk'=(1, x, x**2...x)
-
+        For each xi, varY_hat = Xk @ covarM @ Xk.T where Xk = [1, xi, xi^2, ...].
+        Vectorized across all xi via the row-wise diagonal:
+            varY_hat = ((Xk @ covarM) * Xk).sum(axis=1)
         """
+        if self._result is None:
+            return zeros_like(x)
+
         x = asarray(x)
         sef = self.calculate_standard_error_fit()
+        covarM = asarray(self.var_covar)
 
-        covarM = array(self.var_covar)
+        Xk = self._get_X(xs=x)
+        varY_hat = (Xk.dot(covarM) * Xk).sum(axis=1)
 
-        def calc_hat(xi):
-            Xk = self._get_X(xi).T
-            varY_hat = Xk.T.dot(covarM).dot(Xk)
-            return varY_hat[0, 0]
-
-        error_calc = error_calc.lower()
-        if error_calc == SEM.lower():
-
-            def func(xi):
-                varY_hat = calc_hat(xi)
-                return sef * sqrt(varY_hat)
-
-        elif error_calc == MSEM.lower():
+        ec = error_calc.lower()
+        if ec == SEM.lower():
+            return sef * sqrt(varY_hat)
+        if ec == MSEM.lower():
             mswd = self.mswd
-
-            def func(xi):
-                varY_hat = calc_hat(xi)
-                m = mswd**0.5 if mswd > 1 else 1
-                return sef * sqrt(varY_hat) * m
-
-        else:
-
-            def func(xi):
-                varY_hat = calc_hat(xi)
-                return sqrt(sef**2 + sef**2 * varY_hat)
-
-        if not self._result:
-            return zeros_like(x)
-        else:
-            return [func(xi) for xi in x]
-            # func = calc_sem if error_calc == 'SEM' else calc_sd
-            # return [func(xi) for xi in x]
-
-    def predict_error_al(self, x, error_calc="sem"):
-        """
-        predict error in y using MassSpec Algorithm
-
-        only here for verification
-
-        """
-        cov_varM = array(self.var_covar)
-        se = self.calculate_standard_error_fit()
-
-        def predict_yi_err(xi):
-            """
-            bx= x**0,x**1,x**n where n= degree of fit linear=2, parabolic=3 etc
-            """
-            bx = asarray([pow(xi, i) for i in range(self.degree + 1)])
-            bx_covar = bx.dot(cov_varM)
-            bx_covar = asarray(bx_covar)[0]
-            var = sum(bx * bx_covar)
-            #            print var
-            s = se * var**0.5
-            if error_calc == "sd":
-                s = (se**2 + s**2) ** 0.5
-
-            return s
-
-        if isinstance(x, (float, int)):
-            x = [x]
-        x = asarray(x)
-
-        return [predict_yi_err(xi) for xi in x]
-
-        # def calculate_y(self, x):
-        #     coeffs = self.coefficients
-        #     return polyval(coeffs, x)
-        #
-        # def calculate_yerr(self, x):
-        #     if abs(x) < 1e-14:
-        #         return self.coefficient_errors[0]
-        #     return
-
-        # def calculate_x(self, y):
-        # return 0
+            m = mswd**0.5 if mswd > 1 else 1
+            return sef * sqrt(varY_hat) * m
+        # SD: sqrt(sef^2 + sef^2 * varY_hat) = sef * sqrt(1 + varY_hat)
+        return sef * sqrt(1.0 + varY_hat)
 
     def _get_rsquared(self):
-        if self._result:
-            return self._result.rsquared
-        else:
-            return 0
+        return self._result.rsquared if self._result is not None else 0
 
     def _get_rsquared_adj(self):
-        if self._result:
-            return self._result.rsquared_adj
-        else:
-            return 0
+        return self._result.rsquared_adj if self._result is not None else 0
 
     def _calculate_coefficients(self):
         """
         params = [c,b,a]
         where y=ax**2+bx+c
         """
-        if self._result:
-            return self._result.params
-        else:
-            return [0, 0]
+        return self._result.params if self._result is not None else [0, 0]
 
     def _calculate_coefficient_errors(self):
-        if self._result:
-            return self._result.bse
-        else:
-            return [0, 0]
+        return self._result.bse if self._result is not None else [0, 0]
 
     def _engine_factory(self, fy, X, check_integrity=True):
         return OLS(fy, X)
@@ -389,19 +269,15 @@ class OLSRegressor(BaseRegressor):
 
     def _get_X(self, xs=None):
         """
-        returns X matrix
-        X=[[1,xi,xi^2,...]
-            .
-            .
-            .
-            [1,xj,xj^2,...]
-            ]
+        Returns the design matrix X = [[1, xi, xi^2, ...], ...].
+
+        Uses np.vander(increasing=True) which is significantly faster than
+        building columns via list comprehension + column_stack for higher
+        degrees.
         """
         if xs is None:
             xs = self.clean_xs
-
-        cols = [pow(xs, i) for i in range(self.degree + 1)]
-        return column_stack(cols)
+        return vander(atleast_1d(asarray(xs)), self.degree + 1, increasing=True)
 
 
 class PolynomialRegressor(OLSRegressor):
@@ -434,22 +310,4 @@ class MultipleLinearRegressor(OLSRegressor):
         return xs
 
 
-if __name__ == "__main__":
-    #    xs = np.linspace(0, 10, 20)
-    #    bo = 4
-    #    b1 = 3
-    #    ei = np.random.rand(len(xs))
-    #    ys = bo + b1 * xs + ei
-    #    print ys
-    #    p = '/Users/ross/Sandbox/61311-36b'
-    #    xs, ys = np.loadtxt(p, unpack=True)
-    # #    xs, ys = np.loadtxt(p)
-    #    m = PolynomialRegressor(xs=xs, ys=ys, degree=2)
-    #    print m.calculate_y(0)
-    xs = [(0, 0), (1, 0), (2, 0)]
-    ys = [0, 1, 2.01]
-    r = MultipleLinearRegressor(xs=xs, ys=ys, fit="linear")
-    print(r.predict([(0, 1)]))
-    print(r.predict_error([(0, 2)]))
-    print(r.predict_error([(0.1, 1)]))
 # ============= EOF =============================================

@@ -15,15 +15,11 @@
 # ===============================================================================
 
 # ============= standard library imports ========================
-from numpy import where, polyval, polyfit
+from numpy import where
 
-# ============= enthought library imports =======================
 from traits.api import Str
 
 from pychron.core.regression.base_regressor import BaseRegressor
-
-
-# ============= local library imports  ==========================
 
 
 class InterpolationRegressor(BaseRegressor):
@@ -45,11 +41,8 @@ class InterpolationRegressor(BaseRegressor):
             xs = (xs,)
 
         exc = self.get_excluded()
-        xs = (func(xi, exc, attr) for xi in xs)
-
-        # filter out None values. None values will occur if integrity checks on xs,ys and yserr fail
-        # if preceding and no value found use the first following value e.g index 0
-        return [xi for xi in xs if xi is not None]
+        # Drop None values from failed integrity checks.
+        return [v for v in (func(xi, exc, attr) for xi in xs) if v is not None]
 
     def succeeding_predictors(self, *args, **kw):
         return self._adjacent_predictors("after", *args, **kw)
@@ -58,173 +51,70 @@ class InterpolationRegressor(BaseRegressor):
         return self._adjacent_predictors("before", *args, **kw)
 
     def _adjacent_predictors(self, direction, timestamp, exc, attr="value"):
-        xs = self.xs
-        ys = self.ys
-        es = self.yserr
+        xs, ys, es = self.xs, self.ys, self.yserr
+        if not self._check_integrity(xs, ys) or not self._check_integrity(ys, es):
+            return
 
-        if self._check_integrity(xs, ys) and self._check_integrity(ys, es):
-            if direction == "before":
-                try:
-                    ti = where(xs <= timestamp)[0][-1]
-                except IndexError:
-                    ti = 0
+        if direction == "before":
+            hits = where(xs <= timestamp)[0]
+            ti = hits[-1] if len(hits) else 0
+            while ti in exc and ti > 0:
+                ti -= 1
+        else:
+            n = len(xs)
+            hits = where(xs >= timestamp)[0]
+            ti = hits[0] if len(hits) else n - 1
+            while ti in exc and ti < n:
+                ti += 1
 
-                while ti in exc and ti > 0:
-                    ti -= 1
-            else:
-                n = len(self.xs)
-                try:
-                    ti = where(xs >= timestamp)[0][0]
-                except IndexError:
-                    ti = n - 1
-
-                while ti in exc and ti < n:
-                    ti += 1
-
-            if attr == "value":
-                v = ys[ti]
-            else:
-                v = es[ti]
-            return v
+        source = ys if attr == "value" else es
+        return source[ti]
 
     def bracketing_average_predictors(self, tm, exc, attr="value"):
         try:
             pb, ab, _, _ = self._bracketing_predictors(tm, exc, attr)
-
-            if attr == "value":
-                v = (pb + ab) / 2.0
-            else:
-                v = ((pb**2 + ab**2) ** 0.5) / 2.0
-
         except TypeError:
-            if attr == "value":
-                v = self.ys[0]
-            else:
-                v = self.yserr[0]
-        return v
+            return (self.ys if attr == "value" else self.yserr)[0]
+
+        if attr == "value":
+            return (pb + ab) / 2.0
+        return ((pb**2 + ab**2) ** 0.5) / 2.0
 
     def bracketing_interpolate_predictors(self, tm, exc, attr="value"):
         try:
             pb, ab, x, _ = self._bracketing_predictors(tm, exc, attr)
-
-            if tm >= x[1]:
-                v = self.yserr[-1] if attr == "error" else self.ys[-1]
-            elif tm <= x[0]:
-                v = self.yserr[0] if attr == "error" else self.ys[0]
-            else:
-                if attr == "error":
-                    """
-                    geometrically sum the errors and weight by the fractional difference
-
-                    0----10----------------100
-                    f=0.1
-                    """
-                    f = (tm - x[0]) / (x[1] - x[0])
-                    v = (((1 - f) * pb) ** 2 + (f * ab) ** 2) ** 0.5
-                else:
-                    v = polyval(polyfit(x, [pb, ab], 1), tm)
-
         except TypeError:
-            if attr == "value":
-                v = self.ys[0]
-            else:
-                v = self.yserr[0]
-        return v
+            return (self.ys if attr == "value" else self.yserr)[0]
+
+        source = self.yserr if attr == "error" else self.ys
+        if tm >= x[1]:
+            return source[-1]
+        if tm <= x[0]:
+            return source[0]
+
+        f = (tm - x[0]) / (x[1] - x[0])
+        if attr == "error":
+            # Geometrically sum the errors weighted by the fractional distance.
+            return (((1 - f) * pb) ** 2 + (f * ab) ** 2) ** 0.5
+        return pb + f * (ab - pb)
 
     def _bracketing_predictors(self, tm, exc, attr):
-        xs = self.xs
-        ys = self.ys
-        es = self.yserr
-
-        try:
-            ti = where(xs < tm)[0][-1]
-
+        xs, ys, es = self.xs, self.ys, self.yserr
+        n = self.n
+        hits = where(xs < tm)[0]
+        if len(hits):
+            ti = hits[-1]
             li = ti
-            hi = ti + 1
+            hi = min(ti + 1, n - 1)
             while li in exc and li > 0:
                 li -= 1
-            while hi in exc and hi < self.n:
+            while hi in exc and hi < n - 1:
                 hi += 1
+        else:
+            li = hi = 0
 
-            if attr == "value":
-                pb = ys[li]
-                ab = ys[hi]
-            else:
-                pb = es[li]
-                ab = es[hi]
+        source = ys if attr == "value" else es
+        return source[li], source[hi], (xs[li], xs[hi]), (li, hi)
 
-            args = pb, ab, (xs[li], xs[hi]), (li, hi)
-        except IndexError:
-            li, hi = 0, 0
-            if attr == "value":
-                pb = ys[li]
-                ab = ys[hi]
-            else:
-                pb = es[li]
-                ab = es[hi]
-
-            args = pb, ab, (xs[li], xs[hi]), (li, hi)
-
-        return args
-
-
-# class GaussianRegressor(BaseRegressor):
-#     def _calculate_coefficients(self):
-#         pass
-#     def predict(self, xs):
-#         if isinstance(xs, (float, int)):
-#             xs = [xs]
-#         xs = asarray(xs)
-#
-#         gp = self._calculate()
-#         ypred, mse = gp.predict(xs, eval_MSE=True)
-#         sigma = mse ** 0.5
-#         return ypred, sigma
-#
-#     def _calculate(self):
-#         from sklearn.gaussian_process.gaussian_process import GaussianProcess
-#
-#         X = self.xs.reshape((self.xs.shape[0], 1))
-#         y = self.ys
-#         yserr = self.yserr
-#         nugget = (yserr / y) ** 2
-#         gp = GaussianProcess(
-# #                             nugget=nugget
-#                              )
-#
-#         gp.fit(X, y)
-#         return gp
-
-# if __name__ == '__main__':
-#     import numpy as np
-#     from matplotlib import pyplot as pl
-#     n = 20
-#     xs = np.linspace(0, 10, n)
-# #    ys = a * xs + b
-#     def f(xx):
-#         a = 0
-#         b = 2
-#         return a * xx + b
-#
-#     yserr = [np.random.normal() for _ in range(n)]
-#     gp = GaussianRegressor(xs=xs, ys=f(xs) + yserr, yserr=yserr)
-#
-#     x = np.atleast_2d(np.linspace(0, 10, 1000)).T
-#     y_pred, sigma = gp.predict(x)
-#     fig = pl.figure()
-#
-#     pl.plot(x, f(x), 'r:', label=u'$f(x) = x\,\sin(x)$')
-#     pl.plot(xs, f(xs) + yserr, 'r.', markersize=10, label=u'Observations')
-#     pl.plot(x, y_pred, 'b-', label=u'Prediction')
-#     pl.fill(np.concatenate([x, x[::-1]]), \
-#             np.concatenate([y_pred - 1.9600 * sigma,
-#                            (y_pred + 1.9600 * sigma)[::-1]]), \
-#             alpha=.5, fc='b', ec='None', label='95% confidence interval')
-#     pl.xlabel('$x$')
-#     pl.ylabel('$f(x)$')
-#     pl.ylim(-10, 20)
-#     pl.legend(loc='upper left')
-#
-#     pl.show()
 
 # ============= EOF =============================================

@@ -94,10 +94,7 @@ class IsotopeGroup(HasTraits):
     _sv = None
 
     def save_stored_value_state(self):
-        self._sv = [
-            (i.use_stored_value, i.baseline.use_stored_value)
-            for i in self.iter_isotopes()
-        ]
+        self._sv = [(i.use_stored_value, i.baseline.use_stored_value) for i in self.iter_isotopes()]
 
     def iter_isotopes(self):
         return (self.isotopes[k] for k in self.isotope_keys)
@@ -112,8 +109,11 @@ class IsotopeGroup(HasTraits):
 
         if attr in self.isotopes:
             return self.isotopes[attr].baseline
-        else:
-            return Baseline()
+        # Empty Baseline fallback for unknown keys. Previously called
+        # `Baseline()` with no args → TypeError (Baseline inherits
+        # BaseMeasurement.__init__(name, detector)). Use the requested
+        # attr as the placeholder name so log messages stay informative.
+        return Baseline("{} bs".format(attr), "")
 
     def has_attr(self, attr):
         if attr in self.computed:
@@ -175,11 +175,7 @@ class IsotopeGroup(HasTraits):
             r = self.isotopes[attr].baseline.uvalue
         except KeyError:
             r = next(
-                (
-                    iso.baseline.uvalue
-                    for iso in self.itervalues()
-                    if iso.detector == attr
-                ),
+                (iso.baseline.uvalue for iso in self.itervalues() if iso.detector == attr),
                 None,
             )
         return r
@@ -386,9 +382,7 @@ class IsotopeGroup(HasTraits):
                     except KeyError:
                         self.isotopes[name] = iso = Isotope(name, detector)
         else:
-            iso = next(
-                (iso for iso in self.itervalues() if iso.detector == detector), None
-            )
+            iso = next((iso for iso in self.itervalues() if iso.detector == detector), None)
 
         if iso:
             if kind == "sniff":
