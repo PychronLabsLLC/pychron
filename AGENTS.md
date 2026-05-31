@@ -35,6 +35,9 @@ editing the science or instrument layers (`pychron/processing`,
 - `docs/ai/noble_gas_mass_spectrometer.md` — the instrument that measures the
   isotopes: ion source/acceleration voltage, magnet/MFTABLE mass dispersion,
   detectors/gain/deflection, resolution, peak centering, and tuning scans.
+- `docs/ai/extraction_and_uhv.md` — the UHV front end that releases and delivers
+  the gas: valves/interlocks, vacuum gauges/pumps, furnaces and laser extraction
+  devices, and PID temperature control.
 
 Repo Map
 ========

@@ -8,7 +8,8 @@ structure; this one maps the geochronology.
 If you are touching `pychron/processing`, `pychron/pipeline`,
 `pychron/experiment`, `pychron/spectrometer`, or `pychron/dvc`, read this first.
 For the instrument that produces the isotope data, see the companion primer
-`docs/ai/noble_gas_mass_spectrometer.md`.
+`docs/ai/noble_gas_mass_spectrometer.md`; for the UHV line that extracts and
+delivers the gas, see `docs/ai/extraction_and_uhv.md`.
 
 ---
 

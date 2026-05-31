@@ -1,8 +1,9 @@
 # Noble-Gas Mass Spectrometer — Domain Primer for Agents
 
-Companion to `docs/ai/arar_geochronology.md`. That doc covers the *science*
-(turning argon isotopes into ages); this one covers the *instrument* that
-measures those isotopes. Read it before editing `pychron/spectrometer`,
+Companion to `docs/ai/arar_geochronology.md` (the *science* — turning argon
+isotopes into ages) and `docs/ai/extraction_and_uhv.md` (the *front end* — the
+UHV line that extracts and delivers the gas). This one covers the *instrument*
+that measures those isotopes. Read it before editing `pychron/spectrometer`,
 `pychron/spectrometer/ion_optics`, `pychron/spectrometer/jobs`, or detector/
 magnet/source device code — it explains *why* parameters like resolution,
 sensitivity, peak center, deflection, and acceleration voltage exist and how
