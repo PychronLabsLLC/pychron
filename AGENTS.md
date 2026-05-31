@@ -19,6 +19,26 @@ Pychron is a long-lived scientific application with mixed concerns:
 
 Favor conservative, low-regression changes over broad rewrites.
 
+Domain Context
+==============
+
+Pychron is an **⁴⁰Ar/³⁹Ar geochronology** application: it runs a noble-gas mass
+spectrometry lab and reduces argon-isotope data into geologic ages. Before
+editing the science or instrument layers (`pychron/processing`,
+`pychron/pipeline`, `pychron/experiment`, `pychron/spectrometer`,
+`pychron/dvc`), read the relevant domain primer first. Use them to understand
+*why* a function exists, not just what it does:
+
+- `docs/ai/arar_geochronology.md` — the lab workflow and the
+  isotope-correction → F → J → age math, with a glossary mapping geochronology
+  terms to the code that implements them.
+- `docs/ai/noble_gas_mass_spectrometer.md` — the instrument that measures the
+  isotopes: ion source/acceleration voltage, magnet/MFTABLE mass dispersion,
+  detectors/gain/deflection, resolution, peak centering, and tuning scans.
+- `docs/ai/extraction_and_uhv.md` — the UHV front end that releases and delivers
+  the gas: valves/interlocks, vacuum gauges/pumps, furnaces and laser extraction
+  devices, and PID temperature control.
+
 Repo Map
 ========
 
