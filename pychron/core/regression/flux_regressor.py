@@ -23,11 +23,12 @@ from numpy import (
     column_stack,
     ones_like,
     ravel,
+    searchsorted,
     zeros_like,
 )
 from scipy.interpolate import Rbf, bisplev, bisplrep, griddata
 from statsmodels.regression.linear_model import OLS, WLS
-from traits.api import Bool, Enum, Int
+from traits.api import Bool, Enum, Int, Str
 
 from pychron.core.geometry.geometry import calc_distances
 from pychron.core.regression.base_regressor import BaseRegressor
@@ -123,11 +124,20 @@ class IDWRegressor(InterpolationRegressor):
         return self._invdisttree(pts, nnear=nnear, eps=eps, p=p)
 
 
-def linear_interp(xy, xs, js):
-    """Linear interpolate js[0..1] over the distance from xs[0] to (xy projected onto xs[0..1])."""
-    x2 = ((xs[0][0] - xs[1][0]) ** 2 + (xs[0][1] - xs[1][1]) ** 2) ** 0.5
-    x = ((xy[0] - xs[0][0]) ** 2 + (xy[1] - xs[0][1]) ** 2) ** 0.5
-    return js[0] + x * (js[1] - js[0]) / x2
+def lever_fraction(xy, p0, p1):
+    """Fraction of ``xy`` projected onto the segment p0->p1 (0 at p0, 1 at p1).
+
+    Uses the scalar projection (dot product) so an unknown that is off the
+    p0-p1 line is handled correctly; the previous Euclidean-distance version
+    always returned a non-negative magnitude and so could not represent a
+    point lying "before" p0. The fraction is left unclamped so points outside
+    the pair extrapolate linearly.
+    """
+    dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+    d2 = dx * dx + dy * dy
+    if d2 == 0:
+        return 0.0
+    return ((xy[0] - p0[0]) * dx + (xy[1] - p0[1]) * dy) / d2
 
 
 class NearestNeighborFluxRegressor(SpecialFluxRegressor):
@@ -167,9 +177,94 @@ class NearestNeighborFluxRegressor(SpecialFluxRegressor):
         if style == AVERAGE:
             return vs.std() if return_error else vs.mean()
         if style == LINEAR:
-            src = self.clean_yserr[idx] if return_error else self.clean_ys[idx]
-            return linear_interp((x, y), self.clean_xs[idx], src)
+            p0, p1 = self.clean_xs[idx][0], self.clean_xs[idx][-1]
+            f = lever_fraction((x, y), p0, p1)
+            if return_error:
+                e0, e1 = self.clean_yserr[idx][0], self.clean_yserr[idx][-1]
+                # propagate in quadrature, weighted by fractional distance
+                return (((1 - f) * e0) ** 2 + (f * e1) ** 2) ** 0.5
+            j0, j1 = vs[0], vs[-1]
+            return j0 + f * (j1 - j0)
         return 0
+
+
+class Bracketing1DRegressor(SpecialFluxRegressor):
+    """1-D bracketing flux model (lever-rule interpolation).
+
+    Monitors are positioned along a single coordinate (``xs`` is 1-D; the
+    caller projects 2-D tray positions onto the chosen axis). For an unknown
+    at coordinate ``p`` the straddling monitor pair (one below, one above) is
+    located and J is linearly interpolated between them (the lever rule):
+
+        f = (p - x0) / (x1 - x0)
+        j = y0 + f * (y1 - y0)
+
+    The error is propagated in quadrature, weighting each monitor by its
+    fractional distance::
+
+        jerr = sqrt(((1 - f) * e0)^2 + (f * e1)^2)
+
+    Outside the monitor range the nearest end pair's slope is extrapolated
+    (``f`` is allowed outside [0, 1]).
+    """
+
+    one_d_axis = Str("X")
+    _order = None
+    _sxs = None
+    _sys = None
+    _ses = None
+
+    def calculate(self):
+        # sort once; order maps sorted index -> original monitor index so
+        # set_neighbors can report the bracketing monitors' hole ids.
+        self._order = argsort(self.clean_xs)
+        self._sxs = self.clean_xs[self._order]
+        self._sys = self.clean_ys[self._order]
+        self._ses = self.clean_yserr[self._order]
+
+    def _bracket_indices(self, p):
+        """Return (lo, hi, f) in sorted-index space for coordinate ``p``.
+
+        lo/hi straddle ``p`` when in range; at/below the low end the first
+        pair (0, 1) is used and above the high end the last pair, so ``f``
+        extrapolates past the ends.
+        """
+        sxs = self._sxs
+        n = sxs.shape[0]
+        hi = int(searchsorted(sxs, p))
+        if hi <= 0:
+            lo, hi = 0, 1
+        elif hi >= n:
+            lo, hi = n - 2, n - 1
+        else:
+            lo = hi - 1
+
+        x0, x1 = sxs[lo], sxs[hi]
+        f = 0.0 if x1 == x0 else (p - x0) / (x1 - x0)
+        return lo, hi, f
+
+    def _predict_one(self, p, return_error):
+        lo, hi, f = self._bracket_indices(p)
+        if return_error:
+            e0, e1 = self._ses[lo], self._ses[hi]
+            return (((1 - f) * e0) ** 2 + (f * e1) ** 2) ** 0.5
+        y0, y1 = self._sys[lo], self._sys[hi]
+        return y0 + f * (y1 - y0)
+
+    def _predict(self, pts, return_error=False):
+        if self._sxs.shape[0] < 2:
+            return zeros_like(asarray(pts, dtype=float))
+        return [self._predict_one(float(p), return_error) for p in pts]
+
+    def set_neighbors(self, unks, mons):
+        if self._sxs.shape[0] < 2:
+            return
+        order = self._order
+        for unk in unks:
+            p = unk.x if self.one_d_axis == "X" else unk.y
+            lo, hi, _ = self._bracket_indices(float(p))
+            unk.bracket_a = mons[order[lo]].hole_id
+            unk.bracket_b = mons[order[hi]].hole_id
 
 
 class BowlFluxRegressor(MultipleLinearRegressor):
