@@ -12,6 +12,9 @@ required-markers = [
     "platform_machine == 'x86_64' and sys_platform == 'darwin'",
 ]
 
+[manifest]
+constraints = [{ name = "pyqt5-qt5", marker = "platform_machine == 'AMD64' and sys_platform == 'win32'", specifier = "==5.15.2" }]
+
 [[package]]
 name = "aiofiles"
 version = "25.1.0"
@@ -1240,6 +1243,7 @@ dependencies = [
     { name = "scikit-image" },
     { name = "scipy" },
     { name = "segno" },
+    { name = "setuptools" },
     { name = "six" },
     { name = "sqlalchemy" },
     { name = "statsmodels" },
@@ -1325,6 +1329,7 @@ requires-dist = [
     { name = "scikit-image", specifier = ">=0.26.0,<1" },
     { name = "scipy", specifier = ">=1.16.2,<2" },
     { name = "segno", specifier = ">=1.6,<2" },
+    { name = "setuptools", specifier = "<81" },
     { name = "six", specifier = ">=1.17.0,<2" },
     { name = "sqlalchemy", specifier = ">=2.0.44,<3" },
     { name = "statsmodels", specifier = ">=0.14.5,<1" },
