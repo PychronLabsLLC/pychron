@@ -26,6 +26,11 @@ required-environments = [
     "sys_platform == 'darwin' and platform_machine == 'arm64'",
     "sys_platform == 'darwin' and platform_machine == 'x86_64'"
 ]
+# pyqt5-qt5 >5.15.2 dropped win_amd64 wheels; pin the last version that
+# ships one on Windows so `uv lock` stays resolvable across all required envs.
+constraint-dependencies = [
+    "pyqt5-qt5==5.15.2; sys_platform == 'win32' and platform_machine == 'AMD64'",
+]
 
 [project]
 name = "pychrondc"
