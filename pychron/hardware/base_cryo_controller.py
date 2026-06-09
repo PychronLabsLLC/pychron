@@ -16,14 +16,14 @@
 import string
 import time
 
-from traits.api import Float
+from traits.api import Bool, Float
 
 from pychron.hardware import get_float
 from pychron.hardware.core.core_device import CoreDevice
 
 
 class BaseCryoController(CoreDevice):
-    verify_setpoint = True
+    verify_setpoint = Bool(True)
 
     # configurable setpoint limits. defaults permissive (no limit)
     setpoint_min = Float(float("-inf"))

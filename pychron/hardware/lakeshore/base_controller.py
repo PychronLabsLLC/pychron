@@ -133,7 +133,7 @@ class BaseLakeShoreController(BaseCryoController):
 
     graph_klass = StreamStackedGraph
 
-    verify_setpoint = Bool
+    verify_setpoint = Bool(False)
 
     protocol_kind = Enum("GPIB", "SCPI")
     protocol = None
