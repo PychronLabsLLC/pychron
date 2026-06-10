@@ -66,8 +66,8 @@ class ValidationReport:
     @property
     def incomplete_entries_sorted(self) -> List[tuple]:
         """Get incomplete entries sorted by number of missing fields."""
-        items = [(name, len(fields)) for name, fields in self.missing_fields_by_entry.items()]
-        return sorted(items, key=lambda x: x[1], reverse=True)
+        items = [(name, fields or []) for name, fields in self.missing_fields_by_entry.items()]
+        return sorted(items, key=lambda x: len(x[1]), reverse=True)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert report to dictionary."""

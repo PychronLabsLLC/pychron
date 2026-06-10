@@ -51,8 +51,7 @@ class ConfigTemplate:
         config = configparser.ConfigParser()
 
         # Add device name and class info
-        if "General" not in self.settings:
-            config.add_section("General")
+        config.add_section("General")
         config.set("General", "name", device_name)
         config.set("General", "device_class", self.device_class)
 

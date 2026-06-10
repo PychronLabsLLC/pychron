@@ -244,9 +244,9 @@ class TestLibraryFilter(unittest.TestCase):
         filter_obj.reset()
 
         self.assertEqual(filter_obj.search_text, "")
-        self.assertIsNone(filter_obj.company_filter)
-        self.assertIsNone(filter_obj.comm_type_filter)
-        self.assertIsNone(filter_obj.completeness_filter)
+        self.assertEqual(filter_obj.company_filter, "")
+        self.assertEqual(filter_obj.comm_type_filter, "")
+        self.assertEqual(filter_obj.completeness_filter, "")
 
 
 class TestLibrarySearcher(unittest.TestCase):
