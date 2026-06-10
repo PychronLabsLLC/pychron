@@ -17,50 +17,85 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 import os
-from configparser import ConfigParser, RawConfigParser
+from configparser import ConfigParser
+from typing import Any, List, Optional, Tuple
+
 import yaml
 
 # ============= local library imports  ==========================
-from pychron.core.codetools.inspection import caller
+from pychron.config_conversion import convert_cfg_to_yaml
+from pychron.core.helpers.strtools import to_bool
 from pychron.core.yaml import yload
 from pychron.paths import paths
 
 
 class YAMLParser:
-    def __init__(self, obj):
-        self._obj = obj
+    """ConfigParser-compatible facade over a YAML mapping.
 
-    def write(self, fp):
-        yaml.dump(self._obj, fp)
+    YAML is the preferred configuration format. This adapter lets code written
+    against the ConfigParser API (has_section/has_option/get/set/write/...)
+    consume and produce YAML files transparently.
+    """
 
-    def has_section(self, section):
-        return self._obj.get(section)
+    def __init__(self, obj: Optional[dict] = None):
+        self._obj = obj if isinstance(obj, dict) else {}
 
-    def has_option(self, section, option):
-        try:
-            return self._obj[section][option]
-        except KeyError:
-            pass
+    # reading
+    def sections(self) -> List[str]:
+        return list(self._obj.keys())
 
-    def options(self, section):
-        d = self._obj.get(section)
-        return d.keys()
+    def has_section(self, section: str) -> bool:
+        return section in self._obj
 
-    def get(self, section, option):
-        s = self._obj.get(section)
-        return s.get(option)
+    def has_option(self, section: str, option: str) -> bool:
+        sec = self._obj.get(section)
+        return isinstance(sec, dict) and option in sec
 
-    def getfloat(self, *args, **kw):
-        return float(self.get(*args, **kw))
+    def options(self, section: str) -> List[str]:
+        sec = self._obj.get(section)
+        return list(sec.keys()) if isinstance(sec, dict) else []
 
-    def getint(self, *args, **kw):
-        return int(self.get(*args, **kw))
+    def items(self, section: str) -> List[Tuple[str, Any]]:
+        sec = self._obj.get(section)
+        return list(sec.items()) if isinstance(sec, dict) else []
 
-    def getboolean(self, *args, **kw):
-        return bool(self.get(*args, **kw))
+    def get(self, section: str, option: str) -> Any:
+        sec = self._obj.get(section)
+        if isinstance(sec, dict):
+            return sec.get(option)
+
+    def getfloat(self, section: str, option: str) -> Optional[float]:
+        v = self.get(section, option)
+        if v is not None:
+            return float(v)
+
+    def getint(self, section: str, option: str) -> Optional[int]:
+        v = self.get(section, option)
+        if v is not None:
+            return int(v)
+
+    def getboolean(self, section: str, option: str) -> Optional[bool]:
+        v = self.get(section, option)
+        if v is not None:
+            return to_bool(v)
+
+    # writing
+    def add_section(self, section: str) -> None:
+        self._obj.setdefault(section, {})
+
+    def remove_section(self, section: str) -> None:
+        self._obj.pop(section, None)
+
+    def set(self, section: str, option: str, value: Any) -> None:
+        self._obj.setdefault(section, {})[option] = value
+
+    def write(self, fp) -> None:
+        yaml.dump(self._obj, fp, default_flow_style=False, sort_keys=False)
 
 
 class ParserWrapper:
+    """Lazily wraps either a ConfigParser (.cfg) or a YAMLParser (.yaml/.yml)."""
+
     _parser = None
 
     def add_section(self, name):
@@ -79,8 +114,7 @@ class ParserWrapper:
             p.read(path)
         else:
             with open(path, "r") as rfile:
-                p = yload(rfile)
-                p = YAMLParser(p)
+                p = YAMLParser(yload(rfile))
 
         self._parser = p
 
@@ -103,9 +137,7 @@ class ConfigMixin:
             r = config.options(section)
         return r
 
-    def config_get(
-        self, config, section, option, cast=None, optional=False, default=None
-    ):
+    def config_get(self, config, section, option, cast=None, optional=False, default=None):
         if cast is not None:
             func = getattr(config, "get{}".format(cast))
         else:
@@ -132,7 +164,16 @@ class ConfigMixin:
         with open(path, "w") as f:
             config.write(f)
 
-    def get_configuration(self, path=None, name=None, warn=True, set_path=True):
+    def get_configuration(self, path=None, name=None, warn=True, set_path=True, auto_convert=True):
+        """Locate and read this object's configuration file.
+
+        Resolution order when no explicit path is given: ``<name>.yaml``,
+        ``<name>.yml``, ``<name>.cfg``. YAML is the preferred format; when a
+        legacy ``.cfg`` file is found it is converted to a sibling ``.yaml``
+        file on the fly (the original is left in place) and the YAML file is
+        loaded instead. Pass ``auto_convert=False`` to read a ``.cfg``
+        directly.
+        """
         if path is None:
             path = self.config_path
             if path is None:
@@ -156,6 +197,14 @@ class ConfigMixin:
                         path = os.path.join(base, "{}.cfg".format(name))
 
         if path is not None and os.path.isfile(path):
+            if auto_convert and path.endswith(".cfg"):
+                converted = convert_cfg_to_yaml(path)
+                if converted:
+                    self.info("using yaml configuration {} for legacy {}".format(converted, path))
+                    path = converted
+                else:
+                    self.debug("failed converting {} to yaml. using legacy cfg".format(path))
+
             config = self.configparser_factory()
             self.debug("loading configuration from {}".format(path))
             config.read(path)

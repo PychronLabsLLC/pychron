@@ -269,8 +269,8 @@ The observability system creates metrics **on demand** as your application runs:
 - `docs/prometheus_initialization.md` - How Prometheus initializes
 
 ### For Developers
-- `PROMETHEUS_PLUGIN.md` - Plugin architecture and design
-- `PROMETHEUS_IMPLEMENTATION.md` - Implementation details
+- `docs/prometheus_plugin.md` - Plugin architecture and design
+- `docs/prometheus_events.md` - What operations emit Prometheus events
 - `test/observability/` - Test suite demonstrating usage
 
 ### For DevOps
@@ -312,7 +312,7 @@ avg(pychron_executor_active_tasks)         # Typical load
 
 - **Want to export metrics elsewhere?** See `docs/observability.md` for remote storage options
 - **Need alerting?** Configure Alertmanager in Prometheus setup
-- **Custom metrics?** See integration examples in `PROMETHEUS_IMPLEMENTATION.md`
+- **Custom metrics?** See integration patterns in `docs/prometheus_plugin.md`
 - **Running in production?** Check `ops/` directory for deployment configs
 
 ## Getting Help

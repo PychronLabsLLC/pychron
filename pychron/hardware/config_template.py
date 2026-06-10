@@ -12,6 +12,8 @@ from typing import Any, Dict, Optional
 import configparser
 import json
 
+import yaml
+
 
 @dataclass
 class ConfigTemplate:
@@ -51,8 +53,7 @@ class ConfigTemplate:
         config = configparser.ConfigParser()
 
         # Add device name and class info
-        if "General" not in self.settings:
-            config.add_section("General")
+        config.add_section("General")
         config.set("General", "name", device_name)
         config.set("General", "device_class", self.device_class)
 
@@ -75,6 +76,26 @@ class ConfigTemplate:
         output = io.StringIO()
         config.write(output)
         return output.getvalue()
+
+    def to_yaml_config_content(self, device_name: str) -> str:
+        """Generate YAML config content from template.
+
+        YAML is the preferred configuration format; use this instead of
+        to_config_content for new device configs.
+
+        Args:
+            device_name: Name of the device to use in config
+
+        Returns:
+            String content suitable for writing to a .yaml config file
+        """
+        obj: Dict[str, Dict[str, Any]] = {
+            section: dict(options) for section, options in self.settings.items()
+        }
+        general = obj.setdefault("General", {})
+        general["name"] = device_name
+        general["device_class"] = self.device_class
+        return yaml.dump(obj, default_flow_style=False, sort_keys=False)
 
     @classmethod
     def from_config_file(cls, path: Path, name: str) -> "ConfigTemplate":

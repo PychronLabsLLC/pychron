@@ -32,6 +32,7 @@ class InitializerError(BaseException):
 
 class Initializer(Loggable):
     name = "Initializer"
+    device_prefs = Any
     _init_list = List
     _parser = Any
 
@@ -48,10 +49,6 @@ class Initializer(Loggable):
 
         ok = True
         self.info("Running Initializer")
-        nsteps = (
-            sum([self._get_nsteps(idict["plugin_name"]) for idict in self._init_list])
-            + 1
-        )
         try:
             for idict in self._init_list:
                 ok = self._run(**idict)
@@ -69,9 +66,6 @@ class Initializer(Loggable):
 
         return ok
 
-    def info(self, msg, **kw):
-        super(Initializer, self).info(msg, **kw)
-
     def _run(self, name=None, manager=None, plugin_name=None):
         parser = self._parser
         if manager is not None:
@@ -85,7 +79,7 @@ class Initializer(Loggable):
         if plugin_name:
             mp = self._get_plugin(plugin_name)
         else:
-            mp, name = self._get_plugin_by_name(name)
+            mp = self._get_plugin(name)
 
         if mp is not None:
             if not globalv.ignore_initialization_required:
@@ -97,7 +91,8 @@ class Initializer(Loggable):
         if managers:
             self.info("loading managers - {}".format(", ".join(managers)))
             manager.name = name
-            self._load_managers(manager, managers, plugin_name)
+            if not self._load_managers(manager, managers, plugin_name):
+                return False
 
         self._load_elements(mp, manager, name, plugin_name)
 
@@ -116,11 +111,12 @@ class Initializer(Loggable):
         valve_flags = parser.get_valve_flags(mp, element=True)
 
         valve_flags_attrs = []
-        if valve_flags:
-            for vf in valve_flags:
-                vs = vf.find("valves")
-                if vs:
-                    vs = vs.split(",")
+        for vf in valve_flags:
+            vs = vf.find("valves")
+            if vs is not None and vs.text:
+                vs = [v.strip() for v in vs.text.split(",")]
+            else:
+                vs = None
             valve_flags_attrs.append((vf.text.strip(), vs))
 
         if devices:
@@ -136,7 +132,7 @@ class Initializer(Loggable):
             self._load_timed_flags(manager, timed_flags)
 
         if valve_flags_attrs:
-            self.info("loading valve flags - {}".format(",".join(valve_flags_attrs)))
+            self.info("loading valve flags - {}".format(", ".join(f for f, _ in valve_flags_attrs)))
             self._load_valve_flags(manager, valve_flags_attrs)
 
     # loaders
@@ -182,9 +178,7 @@ class Initializer(Loggable):
                     dev = manager.create_device(device, dev_class=dev_class)
                 else:
                     if dev_class and dev.__class__.__name__ != dev_class:
-                        dev = manager.create_device(
-                            device, dev_class=dev_class, obj=dev
-                        )
+                        dev = manager.create_device(device, dev_class=dev_class, obj=dev)
 
             except AttributeError:
                 dev = manager.create_device(device, dev_class=dev_class)
@@ -243,6 +237,8 @@ class Initializer(Loggable):
             self.info("finish {} loading".format(mi))
             man.finish_loading()
 
+        return True
+
     def _register_loaded_device(self, dev, result):
         if not result.loaded or self.application is None:
             return
@@ -259,9 +255,7 @@ class Initializer(Loggable):
             self.info("failed connecting to {}".format(dev.name))
 
         if result.initialized is None:
-            self.debug(
-                "{} initialize function does not return a boolean".format(dev.name)
-            )
+            self.debug("{} initialize function does not return a boolean".format(dev.name))
             raise NotImplementedError
 
         if result.initialized is not True:
@@ -273,9 +267,7 @@ class Initializer(Loggable):
             self.warning("Failed post initialization for {}".format(dev.name))
 
         if result.failed_phase:
-            self.debug(
-                "bootstrap {} incomplete. {}".format(dev.name, result.summary())
-            )
+            self.debug("bootstrap {} incomplete. {}".format(dev.name, result.summary()))
 
         manager.devices.append(dev)
 
@@ -312,19 +304,6 @@ Do you want to quit to enable {} in the Initialization File?""".format(
         parser = self._parser
         mp = parser.get_plugin(name)
         return mp
-
-    def _get_nsteps(self, plugin_name):
-        parser = self._parser
-        mp = self._get_plugin(plugin_name)
-
-        ns = 0
-        if mp is not None:
-            ns += 2 * (len(parser.get_managers(mp)) + 1)
-            ns += 3 * (len(parser.get_devices(mp)) + 1)
-            ns += len(parser.get_flags(mp)) + 1
-            ns += len(parser.get_timed_flags(mp)) + 1
-
-        return ns
 
 
 # ========================= EOF ===================================

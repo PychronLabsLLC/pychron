@@ -220,4 +220,4 @@ def _setup_baseline_on_main_thread(self):
 
 ## Questions?
 
-Refer to the M3 ARM64 segfault fix documentation: `m3_arm64_segfault_fix.md`
+See `pychron/core/ui/crash_diagnostics.py` for the crash analysis implementation.

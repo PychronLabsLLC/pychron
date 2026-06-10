@@ -304,5 +304,5 @@ except Exception as e:
 **Documentation**:
 - `docs/observability.md` - User guide and deployment
 - `docs/prometheus_initialization.md` - Initialization subsystem details
-- `PROMETHEUS_IMPLEMENTATION.md` - Implementation guide for developers
+- `docs/prometheus_events.md` - What operations emit Prometheus events
 
