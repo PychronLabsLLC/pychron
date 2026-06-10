@@ -49,6 +49,16 @@ class TestConfigTemplate(unittest.TestCase):
         self.assertIn("my_device", content)
         self.assertIn("TestDevice", content)
 
+    def test_to_yaml_config_content(self):
+        """Test generating YAML config content from template."""
+        import yaml
+
+        content = self.template.to_yaml_config_content("my_device")
+        obj = yaml.safe_load(content)
+        self.assertEqual(obj["General"]["name"], "my_device")
+        self.assertEqual(obj["General"]["device_class"], "TestDevice")
+        self.assertEqual(obj["Communications"]["port"], "COM1")
+
     def test_to_json_from_json(self):
         """Test JSON serialization."""
         json_str = self.template.to_json()
