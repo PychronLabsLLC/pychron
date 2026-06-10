@@ -75,8 +75,7 @@ class CrashAnalysis:
                 lines.append(f"  {line}\n")
 
         lines.append("\nReferenced Files:\n")
-        lines.append("  - M3_INSTRUMENTATION.md - How to enable crash diagnostics\n")
-        lines.append("  - m3_arm64_segfault_fix.md - Details of the fix\n")
+        lines.append("  - docs/m3_instrumentation.md - How to enable crash diagnostics\n")
 
         return "".join(lines)
 
