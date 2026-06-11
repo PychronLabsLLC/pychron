@@ -201,6 +201,41 @@ class EthernetCommunicatorTestCase(unittest.TestCase):
         self.assertIsNone(communicator.handler)
         self.assertIsNone(communicator.read_handler)
 
+    def test_message_frame_use_warns_deprecation_once(self):
+        communicator = EthernetCommunicator(name="spec_comm")
+        communicator.kind = "TCP"
+        communicator.host = "127.0.0.1"
+        communicator.port = 8000
+        communicator.simulation = False
+        communicator.write_terminator = "\r"
+        communicator.log_response = lambda *args, **kw: None
+        communicator._ask = lambda *args, **kw: "OK"
+        warnings = []
+        communicator.warning = lambda msg: warnings.append(msg)
+
+        frame = MessageFrame(message_len=True, nmessage_len=4)
+        communicator.ask("GetData", verbose=False, message_frame=frame, retries=1)
+        communicator.ask("GetData", verbose=False, message_frame=frame, retries=1)
+
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("deprecated", warnings[0])
+
+    def test_no_deprecation_warning_without_message_frame(self):
+        communicator = EthernetCommunicator(name="spec_comm")
+        communicator.kind = "TCP"
+        communicator.host = "127.0.0.1"
+        communicator.port = 8000
+        communicator.simulation = False
+        communicator.write_terminator = "\r"
+        communicator.log_response = lambda *args, **kw: None
+        communicator._ask = lambda *args, **kw: "OK"
+        warnings = []
+        communicator.warning = lambda msg: warnings.append(msg)
+
+        communicator.ask("GetData", verbose=False, retries=1)
+
+        self.assertEqual(warnings, [])
+
     def test_ask_records_start_and_end_device_io_events(self):
         communicator = EthernetCommunicator(name="spec_comm")
         communicator.kind = "TCP"
