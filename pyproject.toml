@@ -112,7 +112,8 @@ valve = [
 
 [dependency-groups]
 dev = [
-    "black",
+    # Pin to the same version as .pre-commit-config.yaml so CI and pre-commit agree
+    "black==24.10.0",
     "mypy>=1.20.1,<2",
     "pre-commit>=4.2.0,<5",
     "types-requests",
