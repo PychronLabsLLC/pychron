@@ -2,10 +2,12 @@ import unittest
 import json
 import tempfile
 from pathlib import Path
+from typing import Optional
 from unittest import mock
 
 from pychron.hardware.core.checksum_helper import computeCRC
 
+_IMPORT_ERROR: Optional[ModuleNotFoundError] = None
 try:
     from pychron.hardware.core.communicators.ethernet_communicator import (
         EthernetCommunicator,
@@ -14,13 +16,11 @@ try:
         UDPHandler,
     )
 except ModuleNotFoundError as exc:
-    EthernetCommunicator = None
-    MessageFrame = None
-    TCPHandler = None
-    UDPHandler = None
+    EthernetCommunicator = None  # type: ignore[assignment, misc]
+    MessageFrame = None  # type: ignore[assignment, misc]
+    TCPHandler = None  # type: ignore[assignment, misc]
+    UDPHandler = None  # type: ignore[assignment, misc]
     _IMPORT_ERROR = exc
-else:
-    _IMPORT_ERROR = None
 
 from pychron.experiment.telemetry.context import TelemetryContext
 from pychron.experiment.telemetry.recorder import TelemetryRecorder

@@ -24,6 +24,7 @@ import codecs
 import os
 import time
 from threading import RLock
+from typing import Optional, Tuple
 
 from pychron.headless_config_loadable import HeadlessConfigLoadable
 
@@ -86,7 +87,6 @@ class Communicator(HeadlessConfigLoadable):
     Base class for all communicators, e.g. SerialCommunicator, EthernetCommunicator
     """
 
-    _lock = None
     simulation = True
     write_terminator = chr(13)  # '\r'
     read_terminator = ""
@@ -101,7 +101,7 @@ class Communicator(HeadlessConfigLoadable):
     simulator_seed = 1
     replay_mode = "strict"
     fault_names = None
-    _comms_report_attrs = None
+    _comms_report_attrs: Optional[Tuple[str, ...]] = None
 
     def __init__(self, *args, **kw):
         """ """
@@ -153,9 +153,7 @@ class Communicator(HeadlessConfigLoadable):
         self.backend = self.config_get(
             config, "Communications", "backend", optional=True, default="real"
         )
-        self.fixture_path = self.config_get(
-            config, "Communications", "fixture_path", optional=True
-        )
+        self.fixture_path = self.config_get(config, "Communications", "fixture_path", optional=True)
         self.scenario_path = self.config_get(
             config, "Communications", "scenario_path", optional=True
         )
@@ -246,9 +244,7 @@ class Communicator(HeadlessConfigLoadable):
                 backend=self.backend,
             )
         except BaseException:
-            self.warning(
-                "Failed configuring transport backend '{}'".format(self.backend)
-            )
+            self.warning("Failed configuring transport backend '{}'".format(self.backend))
             self.debug_exception()
 
     def _resolve_backend_path(self, config_path, value):
@@ -317,9 +313,7 @@ class Communicator(HeadlessConfigLoadable):
             for key in self._comms_report_attrs:
                 c, value = self._get_report_value(key)
                 self.debug(
-                    "{:<10s} {:<30s} {}".format(
-                        "{}:".format(key.capitalize()), str(c), value
-                    )
+                    "{:<10s} {:<30s} {}".format("{}:".format(key.capitalize()), str(c), value)
                 )
         else:
             self.debug("Comms report not yet implemented")
