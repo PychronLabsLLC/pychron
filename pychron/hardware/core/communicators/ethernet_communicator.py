@@ -35,6 +35,15 @@ from pychron.regex import IPREGEX
 
 
 class MessageFrame(object):
+    """Length-prefix/CRC framing for ethernet messages.
+
+    .. deprecated::
+        The custom framing protocol (hex length prefix + CRC16, configured via
+        a ``message_frame`` string such as ``L4,-,C4``) was experimental and is
+        slated for removal. Use terminator-based reads instead, or a standard
+        transport (e.g. ZeroMQ) for pychron-to-pychron links.
+    """
+
     def __init__(self, message_len=False, nmessage_len=4, checksum=False, nchecksum=4):
         self.nchecksum = nchecksum
         self.checksum = checksum
@@ -251,6 +260,7 @@ class EthernetCommunicator(Communicator):
     strip = True
     # default_timeout = 3
     default_datasize = 2**12
+    _message_frame_deprecation_warned = False
 
     _comms_report_attrs = (
         "host",
@@ -316,6 +326,8 @@ class EthernetCommunicator(Communicator):
         self.message_frame = self.config_get(
             config, "Communications", "message_frame", optional=True, default=""
         )
+        if self.message_frame:
+            self._warn_message_frame_deprecated("config option 'message_frame'")
         # self.default_timeout = self.config_get(
         #     config,
         #     "Communications",
@@ -337,10 +349,22 @@ class EthernetCommunicator(Communicator):
 
         return True
 
+    def _warn_message_frame_deprecated(self, source: str) -> None:
+        if self._message_frame_deprecation_warned:
+            return
+        self._message_frame_deprecation_warned = True
+        self.warning(
+            f"{source}: the custom message framing protocol (length prefix/CRC, "
+            "e.g. 'L4,-,C4') is deprecated and will be removed. Use "
+            "terminator-based reads or a standard transport instead."
+        )
+
     def open(self, *args, **kw):
         for k in ("host", "port", "message_frame", "kind"):
             if k in kw:
                 setattr(self, k, kw[k])
+        if kw.get("message_frame"):
+            self._warn_message_frame_deprecated("open() keyword 'message_frame'")
 
         if self.transport_adapter is not None:
             self.simulation = True
@@ -473,6 +497,9 @@ class EthernetCommunicator(Communicator):
                 #                                                  self.port, timeout))
                 h.keep_alive = not self.use_end
                 h.open_socket(addrs, timeout=timeout or 1, bind=bind)
+                if self.message_frame:
+                    # catches direct attribute assignment (e.g. pychron_device)
+                    self._warn_message_frame_deprecated("message_frame attribute")
                 h.set_frame(self.message_frame)
                 h.datasize = self.default_datasize
                 h.strip = self.strip
@@ -513,10 +540,12 @@ class EthernetCommunicator(Communicator):
         @param quiet: if true do not log the response
         @param info: str to add to response
         @param timeout: timeout in seconds
-        @param message_frame: MessageFrame object
+        @param message_frame: MessageFrame object (deprecated)
         @param delay: delay in seconds to wait before a `cmd` is sent
 
         """
+        if message_frame is not None:
+            self._warn_message_frame_deprecated("ask() keyword 'message_frame'")
 
         operation_started_at = time.time()
         command_preview = self._command_preview(cmd)
