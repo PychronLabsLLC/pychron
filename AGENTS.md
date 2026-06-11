@@ -86,6 +86,10 @@ Code Changes
 ============
 
 - Prefer focused edits over opportunistic refactors.
+- Always use f-string syntax for string formatting in new and edited code. When
+  you touch a line or function that uses `str.format(...)` or `%` formatting,
+  replace it with an f-string as part of the edit. Do not sweep the repo
+  converting `.format` calls outside the code you are already changing.
 - Add type annotations to any function you touch. If a full signature annotation
   would force broader churn, annotate the parameters and return value needed for
   the current edit and keep the rest of the change scoped.
