@@ -74,6 +74,11 @@ class Handler(object):
     keep_alive = False
     strip = True
 
+    def __init__(self):
+        # partial data carried across a socket.timeout so a line split by a
+        # timeout is not discarded (single stream per handler)
+        self._partial = b""
+
     def set_frame(self, f):
         self.message_frame = MessageFrame()
         if f:
@@ -120,9 +125,20 @@ class Handler(object):
         nm = frame.nmessage_len if frame.message_len else 0
         msg_len = None
 
-        data = b""
+        # resume from any partial line stashed by a previous timeout
+        data = self._partial
+        self._partial = b""
+
         while 1:
-            s = recv(datasize)
+            if terminator is not None and data and data.endswith(terminator):
+                break
+
+            try:
+                s = recv(datasize)
+            except socket.timeout:
+                # keep what we have; the next call resumes from it
+                self._partial = data
+                raise
             if not s:
                 break
 
@@ -261,6 +277,10 @@ class EthernetCommunicator(Communicator):
     # default_timeout = 3
     default_datasize = 2**12
     _message_frame_deprecation_warned = False
+    # called after a new (non-bound) handler connects; use for session setup
+    # such as re-sending a Login after an automatic reconnect
+    on_connect = None
+    _in_on_connect = False
 
     _comms_report_attrs = (
         "host",
@@ -477,6 +497,21 @@ class EthernetCommunicator(Communicator):
 
         return handler
 
+    def _fire_on_connect(self, handler):
+        cb = self.on_connect
+        if cb is None or self._in_on_connect:
+            return
+        # the callback receives the fresh handler and should write session
+        # setup (e.g. Login) directly to it rather than via ask(); the guard
+        # stops a connect->callback->connect loop
+        self._in_on_connect = True
+        try:
+            cb(handler)
+        except BaseException:
+            self.debug_exception()
+        finally:
+            self._in_on_connect = False
+
     def get_handler(self, addrs=None, timeout=None, bind=False):
         if timeout is None:
             timeout = self.timeout
@@ -507,6 +542,7 @@ class EthernetCommunicator(Communicator):
                 # caching them here would clobber and leak the write handler
                 if not bind:
                     self.handler = h
+                    self._fire_on_connect(h)
             return h
         except socket.error as e:
             self.debug(
