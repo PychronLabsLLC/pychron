@@ -263,7 +263,7 @@ class EthernetCommunicator(Communicator):
 
     @property
     def address(self):
-        return "{}://{}:{}".format(self.kind, self.host, self.port)
+        return f"{self.kind}://{self.host}:{self.port}"
 
     def load(self, config, path):
         """ """
@@ -366,7 +366,7 @@ class EthernetCommunicator(Communicator):
             return None
         text = str(cmd).strip()
         if len(text) > 96:
-            text = "{}...".format(text[:93])
+            text = f"{text[:93]}..."
         return text
 
     def _record_io_checkpoint(
@@ -424,7 +424,7 @@ class EthernetCommunicator(Communicator):
         cmd = self.test_cmd
 
         if cmd:
-            self.debug("sending test command {}".format(cmd))
+            self.debug(f"sending test command {cmd}")
             r = self.ask(cmd)
             if r is None:
                 self.simulation = True
@@ -483,9 +483,8 @@ class EthernetCommunicator(Communicator):
             return h
         except socket.error as e:
             self.debug(
-                "Get Handler {}. timeout={}. comms simulation={}".format(
-                    str(e), timeout, globalv.communication_simulation
-                )
+                f"Get Handler {e}. timeout={timeout}. "
+                f"comms simulation={globalv.communication_simulation}"
             )
             self.error_mode = True
             if bind:
@@ -531,7 +530,7 @@ class EthernetCommunicator(Communicator):
         )
 
         if self.transport_adapter is not None:
-            payload = "{}{}".format(cmd, self.write_terminator)
+            payload = f"{cmd}{self.write_terminator}"
             with self._lock:
                 r = self.transport_adapter.request(
                     payload,
@@ -561,7 +560,7 @@ class EthernetCommunicator(Communicator):
 
         if self.simulation:
             if verbose:
-                self.info("no handle    {}".format(cmd.strip()))
+                self.info(f"no handle    {cmd.strip()}")
             self._record_io_checkpoint(
                 "ask",
                 stage="end",
@@ -572,7 +571,7 @@ class EthernetCommunicator(Communicator):
             )
             return
 
-        cmd = "{}{}".format(cmd, self.write_terminator)
+        cmd = f"{cmd}{self.write_terminator}"
 
         r = None
         with self._lock:
@@ -582,7 +581,7 @@ class EthernetCommunicator(Communicator):
             if timeout is None:
                 timeout = self.timeout
 
-            re = "ERROR: Connection refused: {}, timeout={}".format(self.address, timeout)
+            re = f"ERROR: Connection refused: {self.address}, timeout={timeout}"
             for i in range(retries):
                 r = self._ask(
                     cmd,
@@ -595,7 +594,7 @@ class EthernetCommunicator(Communicator):
                     break
                 else:
                     time.sleep(0.025)
-                    self.debug("doing retry {}".format(i))
+                    self.debug(f"doing retry {i}")
                     # else:
                     #     self._reset_connection()
 
@@ -689,7 +688,7 @@ class EthernetCommunicator(Communicator):
                     )
                     return response
                 except socket.timeout as e:
-                    self.warning("read. read packet. error: {}".format(e))
+                    self.warning(f"read. read packet. error: {e}")
                     self.error_mode = True
                     self._record_io_checkpoint(
                         "readline",
@@ -737,7 +736,7 @@ class EthernetCommunicator(Communicator):
                         )
                         return response
                     except socket.timeout as e:
-                        self.warning("read. read packet. error: {}".format(e))
+                        self.warning(f"read. read packet. error: {e}")
                         self.error_mode = True
                         self._record_io_checkpoint(
                             "read",
@@ -777,7 +776,7 @@ class EthernetCommunicator(Communicator):
 
     def tell(self, cmd: Any, verbose: bool = True, quiet: bool = False, info: Any = None) -> None:
         if self.transport_adapter is not None:
-            payload = "{}{}".format(cmd, self.write_terminator)
+            payload = f"{cmd}{self.write_terminator}"
             with self._lock:
                 self.transport_adapter.write(payload)
                 if verbose or self.verbose and not quiet:
@@ -791,7 +790,7 @@ class EthernetCommunicator(Communicator):
             handler = self.get_handler()
             if handler:
                 try:
-                    cmd = "{}{}".format(cmd, self.write_terminator)
+                    cmd = f"{cmd}{self.write_terminator}"
                     handler.send_packet(cmd)
                     if verbose or self.verbose and not quiet:
                         self.log_tell(cmd, info)
@@ -806,7 +805,7 @@ class EthernetCommunicator(Communicator):
                         True, "tell", duration_seconds=time.time() - operation_started_at
                     )
                 except socket.error as e:
-                    self.warning("tell. send packet. error: {}".format(e))
+                    self.warning(f"tell. send packet. error: {e}")
                     self.error_mode = True
                     self._record_io_checkpoint(
                         "tell",
@@ -866,12 +865,10 @@ class EthernetCommunicator(Communicator):
                 return handler.get_packet(message_frame=message_frame)
             except socket.error as e:
                 self.debug_exception()
-                self.warning(
-                    "ask. get packet for {}. error: {} address: {}".format(cmd, e, handler.address)
-                )
+                self.warning(f"ask. get packet for {cmd}. error: {e} address: {handler.address}")
                 self.error_mode = True
         except socket.error as e:
-            self.warning("ask. send packet. error: {} address: {}".format(e, handler.address))
+            self.warning(f"ask. send packet. error: {e} address: {handler.address}")
             self.error_mode = True
 
 
