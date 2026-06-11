@@ -97,51 +97,42 @@ class Handler(object):
 
     def _recvall(self, recv, datasize=None, frame=None, terminator=None):
         """
-        recv: callable that accepts 1 argument (datasize). should return a str
+        recv: callable that accepts 1 argument (datasize). should return bytes
         """
-        # ss = []
-        total = 0
-
-        # disable message len checking
-        # msg_len = 1
-        # if self.use_message_len_checking:
-        # msg_len = 0
-
-        msg_len = None
-        nm = -1
-
         if frame is None:
-            frame = self.message_frame
+            frame = self.message_frame or MessageFrame()
 
-        if frame.message_len:
-            msg_len = 0
-            nm = frame.nmessage_len
-
-        data = b""
         if datasize is None:
             datasize = self.datasize
 
         if terminator is None:
             terminator = self.read_terminator
 
+        nm = frame.nmessage_len if frame.message_len else 0
+        msg_len = None
+
+        data = b""
         while 1:
             s = recv(datasize)
             if not s:
                 break
 
-            if msg_len is not None:
-                msg_len = int(s[:nm], 16)
-
-            total += len(s)
             data += s
+
+            if frame.message_len and msg_len is None and len(data) >= nm:
+                try:
+                    msg_len = int(data[:nm], 16)
+                except ValueError:
+                    return
+
             if terminator is not None:
                 if data.endswith(terminator):
                     break
+            elif frame.message_len:
+                if msg_len is not None and len(data) >= nm + msg_len:
+                    break
             else:
-                if msg_len and total >= msg_len:
-                    break
-                else:
-                    break
+                break
 
         if frame.message_len:
             # trim off header
@@ -151,14 +142,15 @@ class Handler(object):
             nc = frame.nchecksum
             checksum = data[-nc:]
             data = data[:-nc]
-            comp = computeCRC(data)
+            comp = computeCRC(data).encode("utf-8")
             if comp != checksum:
                 return
 
-        # else:
-        #     data = self._recv_into(datasize)
+        try:
+            data = data.decode("utf-8")
+        except UnicodeDecodeError:
+            return
 
-        data = data.decode("utf-8")
         if self.strip:
             data = data.strip()
         return data
@@ -172,20 +164,27 @@ class Handler(object):
         inputs = [self.sock]
         outputs = []
         readable, writable, exceptional = select.select(inputs, outputs, inputs, timeout)
+        if not readable or readable[0] != self.sock:
+            return
 
-        buff = bytearray(2**12)
-        if readable:
-            rsock = readable[0]
-            if rsock == self.sock:
-                st = time.time()
-                while 1:
-                    rsock.recv_into(buff)
-                    if terminator in buff:
-                        data = buff.split(terminator)[0]
-                        return data.decode("utf-8")
+        data = b""
+        st = time.time()
+        while time.time() - st <= timeout:
+            try:
+                chunk = self.sock.recv(self.datasize)
+            except socket.timeout:
+                continue
 
-                    if time.time() - st > timeout:
-                        break
+            if not chunk:
+                # peer closed the connection
+                break
+
+            data += chunk
+            if terminator in data:
+                try:
+                    return data.split(terminator)[0].decode("utf-8")
+                except UnicodeDecodeError:
+                    return
 
 
 class TCPHandler(Handler):
@@ -477,7 +476,10 @@ class EthernetCommunicator(Communicator):
                 h.set_frame(self.message_frame)
                 h.datasize = self.default_datasize
                 h.strip = self.strip
-                self.handler = h
+                # bound read handlers are cached separately (see get_read_handler);
+                # caching them here would clobber and leak the write handler
+                if not bind:
+                    self.handler = h
             return h
         except socket.error as e:
             self.debug(
@@ -641,12 +643,16 @@ class EthernetCommunicator(Communicator):
         if self.transport_adapter is not None:
             return self.transport_adapter.select_read(*args, **kw)
 
-        timeout = self.timeout
-        handler = self.get_handler(timeout=timeout)
-        if handler:
-            handler = self.get_read_handler(handler, timeout=timeout)
+        with self._lock:
+            timeout = self.timeout
+            handler = self.get_handler(timeout=timeout)
+            if handler:
+                handler = self.get_read_handler(handler, timeout=timeout)
 
-        return handler.select_read(*args, **kw)
+            if not handler:
+                return
+
+            return handler.select_read(*args, **kw)
 
     def readline(self, terminator: Any = b"\r\n") -> Any:
         if self.transport_adapter is not None:
@@ -657,47 +663,48 @@ class EthernetCommunicator(Communicator):
         self._record_io_checkpoint(
             "readline", stage="start", flush=True, terminator=terminator_preview
         )
-        timeout = self._reset_error_mode()
+        with self._lock:
+            timeout = self._reset_error_mode()
 
-        handler = self.get_handler(timeout=timeout)
-        if handler:
-            handler = self.get_read_handler(handler, timeout=timeout)
+            handler = self.get_handler(timeout=timeout)
+            if handler:
+                handler = self.get_read_handler(handler, timeout=timeout)
 
-        if handler:
-            if isinstance(terminator, str):
-                terminator = terminator.encode("utf8")
+            if handler:
+                if isinstance(terminator, str):
+                    terminator = terminator.encode("utf8")
 
-            try:
-                response = handler.readline(terminator)
-                self._record_io_checkpoint(
-                    "readline",
-                    stage="end",
-                    success=True,
-                    duration_seconds=time.time() - operation_started_at,
-                    terminator=terminator_preview,
-                    response_preview=self._command_preview(response),
-                )
-                self._notify_health(
-                    True, "readline", duration_seconds=time.time() - operation_started_at
-                )
-                return response
-            except socket.timeout as e:
-                self.warning("read. read packet. error: {}".format(e))
-                self.error_mode = True
-                self._record_io_checkpoint(
-                    "readline",
-                    stage="end",
-                    success=False,
-                    duration_seconds=time.time() - operation_started_at,
-                    terminator=terminator_preview,
-                    error=str(e),
-                )
-                self._notify_health(
-                    False,
-                    "readline",
-                    error=str(e),
-                    duration_seconds=time.time() - operation_started_at,
-                )
+                try:
+                    response = handler.readline(terminator)
+                    self._record_io_checkpoint(
+                        "readline",
+                        stage="end",
+                        success=True,
+                        duration_seconds=time.time() - operation_started_at,
+                        terminator=terminator_preview,
+                        response_preview=self._command_preview(response),
+                    )
+                    self._notify_health(
+                        True, "readline", duration_seconds=time.time() - operation_started_at
+                    )
+                    return response
+                except socket.timeout as e:
+                    self.warning("read. read packet. error: {}".format(e))
+                    self.error_mode = True
+                    self._record_io_checkpoint(
+                        "readline",
+                        stage="end",
+                        success=False,
+                        duration_seconds=time.time() - operation_started_at,
+                        terminator=terminator_preview,
+                        error=str(e),
+                    )
+                    self._notify_health(
+                        False,
+                        "readline",
+                        error=str(e),
+                        duration_seconds=time.time() - operation_started_at,
+                    )
 
     def read(self, datasize: Any = None, *args: Any, **kw: Any) -> Any:
         if self.transport_adapter is not None:
