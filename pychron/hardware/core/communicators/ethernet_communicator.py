@@ -35,6 +35,15 @@ from pychron.regex import IPREGEX
 
 
 class MessageFrame(object):
+    """Length-prefix/CRC framing for ethernet messages.
+
+    .. deprecated::
+        The custom framing protocol (hex length prefix + CRC16, configured via
+        a ``message_frame`` string such as ``L4,-,C4``) was experimental and is
+        slated for removal. Use terminator-based reads instead, or a standard
+        transport (e.g. ZeroMQ) for pychron-to-pychron links.
+    """
+
     def __init__(self, message_len=False, nmessage_len=4, checksum=False, nchecksum=4):
         self.nchecksum = nchecksum
         self.checksum = checksum
@@ -97,51 +106,42 @@ class Handler(object):
 
     def _recvall(self, recv, datasize=None, frame=None, terminator=None):
         """
-        recv: callable that accepts 1 argument (datasize). should return a str
+        recv: callable that accepts 1 argument (datasize). should return bytes
         """
-        # ss = []
-        total = 0
-
-        # disable message len checking
-        # msg_len = 1
-        # if self.use_message_len_checking:
-        # msg_len = 0
-
-        msg_len = None
-        nm = -1
-
         if frame is None:
-            frame = self.message_frame
+            frame = self.message_frame or MessageFrame()
 
-        if frame.message_len:
-            msg_len = 0
-            nm = frame.nmessage_len
-
-        data = b""
         if datasize is None:
             datasize = self.datasize
 
         if terminator is None:
             terminator = self.read_terminator
 
+        nm = frame.nmessage_len if frame.message_len else 0
+        msg_len = None
+
+        data = b""
         while 1:
             s = recv(datasize)
             if not s:
                 break
 
-            if msg_len is not None:
-                msg_len = int(s[:nm], 16)
-
-            total += len(s)
             data += s
+
+            if frame.message_len and msg_len is None and len(data) >= nm:
+                try:
+                    msg_len = int(data[:nm], 16)
+                except ValueError:
+                    return
+
             if terminator is not None:
                 if data.endswith(terminator):
                     break
+            elif frame.message_len:
+                if msg_len is not None and len(data) >= nm + msg_len:
+                    break
             else:
-                if msg_len and total >= msg_len:
-                    break
-                else:
-                    break
+                break
 
         if frame.message_len:
             # trim off header
@@ -151,14 +151,15 @@ class Handler(object):
             nc = frame.nchecksum
             checksum = data[-nc:]
             data = data[:-nc]
-            comp = computeCRC(data)
+            comp = computeCRC(data).encode("utf-8")
             if comp != checksum:
                 return
 
-        # else:
-        #     data = self._recv_into(datasize)
+        try:
+            data = data.decode("utf-8")
+        except UnicodeDecodeError:
+            return
 
-        data = data.decode("utf-8")
         if self.strip:
             data = data.strip()
         return data
@@ -172,20 +173,27 @@ class Handler(object):
         inputs = [self.sock]
         outputs = []
         readable, writable, exceptional = select.select(inputs, outputs, inputs, timeout)
+        if not readable or readable[0] != self.sock:
+            return
 
-        buff = bytearray(2**12)
-        if readable:
-            rsock = readable[0]
-            if rsock == self.sock:
-                st = time.time()
-                while 1:
-                    rsock.recv_into(buff)
-                    if terminator in buff:
-                        data = buff.split(terminator)[0]
-                        return data.decode("utf-8")
+        data = b""
+        st = time.time()
+        while time.time() - st <= timeout:
+            try:
+                chunk = self.sock.recv(self.datasize)
+            except socket.timeout:
+                continue
 
-                    if time.time() - st > timeout:
-                        break
+            if not chunk:
+                # peer closed the connection
+                break
+
+            data += chunk
+            if terminator in data:
+                try:
+                    return data.split(terminator)[0].decode("utf-8")
+                except UnicodeDecodeError:
+                    return
 
 
 class TCPHandler(Handler):
@@ -252,6 +260,7 @@ class EthernetCommunicator(Communicator):
     strip = True
     # default_timeout = 3
     default_datasize = 2**12
+    _message_frame_deprecation_warned = False
 
     _comms_report_attrs = (
         "host",
@@ -264,7 +273,7 @@ class EthernetCommunicator(Communicator):
 
     @property
     def address(self):
-        return "{}://{}:{}".format(self.kind, self.host, self.port)
+        return f"{self.kind}://{self.host}:{self.port}"
 
     def load(self, config, path):
         """ """
@@ -317,6 +326,8 @@ class EthernetCommunicator(Communicator):
         self.message_frame = self.config_get(
             config, "Communications", "message_frame", optional=True, default=""
         )
+        if self.message_frame:
+            self._warn_message_frame_deprecated("config option 'message_frame'")
         # self.default_timeout = self.config_get(
         #     config,
         #     "Communications",
@@ -338,10 +349,22 @@ class EthernetCommunicator(Communicator):
 
         return True
 
+    def _warn_message_frame_deprecated(self, source: str) -> None:
+        if self._message_frame_deprecation_warned:
+            return
+        self._message_frame_deprecation_warned = True
+        self.warning(
+            f"{source}: the custom message framing protocol (length prefix/CRC, "
+            "e.g. 'L4,-,C4') is deprecated and will be removed. Use "
+            "terminator-based reads or a standard transport instead."
+        )
+
     def open(self, *args, **kw):
         for k in ("host", "port", "message_frame", "kind"):
             if k in kw:
                 setattr(self, k, kw[k])
+        if kw.get("message_frame"):
+            self._warn_message_frame_deprecated("open() keyword 'message_frame'")
 
         if self.transport_adapter is not None:
             self.simulation = True
@@ -367,7 +390,7 @@ class EthernetCommunicator(Communicator):
             return None
         text = str(cmd).strip()
         if len(text) > 96:
-            text = "{}...".format(text[:93])
+            text = f"{text[:93]}..."
         return text
 
     def _record_io_checkpoint(
@@ -425,7 +448,7 @@ class EthernetCommunicator(Communicator):
         cmd = self.test_cmd
 
         if cmd:
-            self.debug("sending test command {}".format(cmd))
+            self.debug(f"sending test command {cmd}")
             r = self.ask(cmd)
             if r is None:
                 self.simulation = True
@@ -474,16 +497,21 @@ class EthernetCommunicator(Communicator):
                 #                                                  self.port, timeout))
                 h.keep_alive = not self.use_end
                 h.open_socket(addrs, timeout=timeout or 1, bind=bind)
+                if self.message_frame:
+                    # catches direct attribute assignment (e.g. pychron_device)
+                    self._warn_message_frame_deprecated("message_frame attribute")
                 h.set_frame(self.message_frame)
                 h.datasize = self.default_datasize
                 h.strip = self.strip
-                self.handler = h
+                # bound read handlers are cached separately (see get_read_handler);
+                # caching them here would clobber and leak the write handler
+                if not bind:
+                    self.handler = h
             return h
         except socket.error as e:
             self.debug(
-                "Get Handler {}. timeout={}. comms simulation={}".format(
-                    str(e), timeout, globalv.communication_simulation
-                )
+                f"Get Handler {e}. timeout={timeout}. "
+                f"comms simulation={globalv.communication_simulation}"
             )
             self.error_mode = True
             if bind:
@@ -512,10 +540,12 @@ class EthernetCommunicator(Communicator):
         @param quiet: if true do not log the response
         @param info: str to add to response
         @param timeout: timeout in seconds
-        @param message_frame: MessageFrame object
+        @param message_frame: MessageFrame object (deprecated)
         @param delay: delay in seconds to wait before a `cmd` is sent
 
         """
+        if message_frame is not None:
+            self._warn_message_frame_deprecated("ask() keyword 'message_frame'")
 
         operation_started_at = time.time()
         command_preview = self._command_preview(cmd)
@@ -529,7 +559,7 @@ class EthernetCommunicator(Communicator):
         )
 
         if self.transport_adapter is not None:
-            payload = "{}{}".format(cmd, self.write_terminator)
+            payload = f"{cmd}{self.write_terminator}"
             with self._lock:
                 r = self.transport_adapter.request(
                     payload,
@@ -559,7 +589,7 @@ class EthernetCommunicator(Communicator):
 
         if self.simulation:
             if verbose:
-                self.info("no handle    {}".format(cmd.strip()))
+                self.info(f"no handle    {cmd.strip()}")
             self._record_io_checkpoint(
                 "ask",
                 stage="end",
@@ -570,7 +600,7 @@ class EthernetCommunicator(Communicator):
             )
             return
 
-        cmd = "{}{}".format(cmd, self.write_terminator)
+        cmd = f"{cmd}{self.write_terminator}"
 
         r = None
         with self._lock:
@@ -580,7 +610,7 @@ class EthernetCommunicator(Communicator):
             if timeout is None:
                 timeout = self.timeout
 
-            re = "ERROR: Connection refused: {}, timeout={}".format(self.address, timeout)
+            re = f"ERROR: Connection refused: {self.address}, timeout={timeout}"
             for i in range(retries):
                 r = self._ask(
                     cmd,
@@ -593,7 +623,7 @@ class EthernetCommunicator(Communicator):
                     break
                 else:
                     time.sleep(0.025)
-                    self.debug("doing retry {}".format(i))
+                    self.debug(f"doing retry {i}")
                     # else:
                     #     self._reset_connection()
 
@@ -641,12 +671,16 @@ class EthernetCommunicator(Communicator):
         if self.transport_adapter is not None:
             return self.transport_adapter.select_read(*args, **kw)
 
-        timeout = self.timeout
-        handler = self.get_handler(timeout=timeout)
-        if handler:
-            handler = self.get_read_handler(handler, timeout=timeout)
+        with self._lock:
+            timeout = self.timeout
+            handler = self.get_handler(timeout=timeout)
+            if handler:
+                handler = self.get_read_handler(handler, timeout=timeout)
 
-        return handler.select_read(*args, **kw)
+            if not handler:
+                return
+
+            return handler.select_read(*args, **kw)
 
     def readline(self, terminator: Any = b"\r\n") -> Any:
         if self.transport_adapter is not None:
@@ -657,47 +691,48 @@ class EthernetCommunicator(Communicator):
         self._record_io_checkpoint(
             "readline", stage="start", flush=True, terminator=terminator_preview
         )
-        timeout = self._reset_error_mode()
+        with self._lock:
+            timeout = self._reset_error_mode()
 
-        handler = self.get_handler(timeout=timeout)
-        if handler:
-            handler = self.get_read_handler(handler, timeout=timeout)
+            handler = self.get_handler(timeout=timeout)
+            if handler:
+                handler = self.get_read_handler(handler, timeout=timeout)
 
-        if handler:
-            if isinstance(terminator, str):
-                terminator = terminator.encode("utf8")
+            if handler:
+                if isinstance(terminator, str):
+                    terminator = terminator.encode("utf8")
 
-            try:
-                response = handler.readline(terminator)
-                self._record_io_checkpoint(
-                    "readline",
-                    stage="end",
-                    success=True,
-                    duration_seconds=time.time() - operation_started_at,
-                    terminator=terminator_preview,
-                    response_preview=self._command_preview(response),
-                )
-                self._notify_health(
-                    True, "readline", duration_seconds=time.time() - operation_started_at
-                )
-                return response
-            except socket.timeout as e:
-                self.warning("read. read packet. error: {}".format(e))
-                self.error_mode = True
-                self._record_io_checkpoint(
-                    "readline",
-                    stage="end",
-                    success=False,
-                    duration_seconds=time.time() - operation_started_at,
-                    terminator=terminator_preview,
-                    error=str(e),
-                )
-                self._notify_health(
-                    False,
-                    "readline",
-                    error=str(e),
-                    duration_seconds=time.time() - operation_started_at,
-                )
+                try:
+                    response = handler.readline(terminator)
+                    self._record_io_checkpoint(
+                        "readline",
+                        stage="end",
+                        success=True,
+                        duration_seconds=time.time() - operation_started_at,
+                        terminator=terminator_preview,
+                        response_preview=self._command_preview(response),
+                    )
+                    self._notify_health(
+                        True, "readline", duration_seconds=time.time() - operation_started_at
+                    )
+                    return response
+                except socket.timeout as e:
+                    self.warning(f"read. read packet. error: {e}")
+                    self.error_mode = True
+                    self._record_io_checkpoint(
+                        "readline",
+                        stage="end",
+                        success=False,
+                        duration_seconds=time.time() - operation_started_at,
+                        terminator=terminator_preview,
+                        error=str(e),
+                    )
+                    self._notify_health(
+                        False,
+                        "readline",
+                        error=str(e),
+                        duration_seconds=time.time() - operation_started_at,
+                    )
 
     def read(self, datasize: Any = None, *args: Any, **kw: Any) -> Any:
         if self.transport_adapter is not None:
@@ -730,7 +765,7 @@ class EthernetCommunicator(Communicator):
                         )
                         return response
                     except socket.timeout as e:
-                        self.warning("read. read packet. error: {}".format(e))
+                        self.warning(f"read. read packet. error: {e}")
                         self.error_mode = True
                         self._record_io_checkpoint(
                             "read",
@@ -770,7 +805,7 @@ class EthernetCommunicator(Communicator):
 
     def tell(self, cmd: Any, verbose: bool = True, quiet: bool = False, info: Any = None) -> None:
         if self.transport_adapter is not None:
-            payload = "{}{}".format(cmd, self.write_terminator)
+            payload = f"{cmd}{self.write_terminator}"
             with self._lock:
                 self.transport_adapter.write(payload)
                 if verbose or self.verbose and not quiet:
@@ -784,7 +819,7 @@ class EthernetCommunicator(Communicator):
             handler = self.get_handler()
             if handler:
                 try:
-                    cmd = "{}{}".format(cmd, self.write_terminator)
+                    cmd = f"{cmd}{self.write_terminator}"
                     handler.send_packet(cmd)
                     if verbose or self.verbose and not quiet:
                         self.log_tell(cmd, info)
@@ -799,7 +834,7 @@ class EthernetCommunicator(Communicator):
                         True, "tell", duration_seconds=time.time() - operation_started_at
                     )
                 except socket.error as e:
-                    self.warning("tell. send packet. error: {}".format(e))
+                    self.warning(f"tell. send packet. error: {e}")
                     self.error_mode = True
                     self._record_io_checkpoint(
                         "tell",
@@ -859,12 +894,10 @@ class EthernetCommunicator(Communicator):
                 return handler.get_packet(message_frame=message_frame)
             except socket.error as e:
                 self.debug_exception()
-                self.warning(
-                    "ask. get packet for {}. error: {} address: {}".format(cmd, e, handler.address)
-                )
+                self.warning(f"ask. get packet for {cmd}. error: {e} address: {handler.address}")
                 self.error_mode = True
         except socket.error as e:
-            self.warning("ask. send packet. error: {} address: {}".format(e, handler.address))
+            self.warning(f"ask. send packet. error: {e} address: {handler.address}")
             self.error_mode = True
 
 

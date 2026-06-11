@@ -24,6 +24,7 @@ import codecs
 import os
 import time
 from threading import RLock
+from typing import Optional, Tuple
 
 from pychron.headless_config_loadable import HeadlessConfigLoadable
 
@@ -36,7 +37,7 @@ def prep_str(s):
     for c in s:
         oc = ord(c)
         if not 0x20 <= oc <= 0x7E:
-            c = "[{:02d}]".format(ord(c))
+            c = f"[{ord(c):02d}]"
         ns += c
     return ns
 
@@ -50,7 +51,7 @@ def convert(re):
                 try:
                     re = codecs.decode(re, "hex")
                 except binascii.Error:
-                    re = "".join(("[{}]".format(str(b)) for b in re))
+                    re = "".join((f"[{b}]" for b in re))
 
         return re
 
@@ -86,7 +87,6 @@ class Communicator(HeadlessConfigLoadable):
     Base class for all communicators, e.g. SerialCommunicator, EthernetCommunicator
     """
 
-    _lock = None
     simulation = True
     write_terminator = chr(13)  # '\r'
     read_terminator = ""
@@ -101,7 +101,7 @@ class Communicator(HeadlessConfigLoadable):
     simulator_seed = 1
     replay_mode = "strict"
     fault_names = None
-    _comms_report_attrs = None
+    _comms_report_attrs: Optional[Tuple[str, ...]] = None
 
     def __init__(self, *args, **kw):
         """ """
@@ -153,9 +153,7 @@ class Communicator(HeadlessConfigLoadable):
         self.backend = self.config_get(
             config, "Communications", "backend", optional=True, default="real"
         )
-        self.fixture_path = self.config_get(
-            config, "Communications", "fixture_path", optional=True
-        )
+        self.fixture_path = self.config_get(config, "Communications", "fixture_path", optional=True)
         self.scenario_path = self.config_get(
             config, "Communications", "scenario_path", optional=True
         )
@@ -246,9 +244,7 @@ class Communicator(HeadlessConfigLoadable):
                 backend=self.backend,
             )
         except BaseException:
-            self.warning(
-                "Failed configuring transport backend '{}'".format(self.backend)
-            )
+            self.warning(f"Failed configuring transport backend '{self.backend}'")
             self.debug_exception()
 
     def _resolve_backend_path(self, config_path, value):
@@ -275,7 +271,7 @@ class Communicator(HeadlessConfigLoadable):
             cmd = ncmd
 
         if info is not None:
-            msg = "{}    {}".format(info, cmd)
+            msg = f"{info}    {cmd}"
         else:
             msg = cmd
 
@@ -292,12 +288,12 @@ class Communicator(HeadlessConfigLoadable):
             cmd = ncmd
 
         if re and len(re) > 100:
-            re = "{}...".format(re[:97])
+            re = f"{re[:97]}..."
 
         if info and info != "":
-            msg = "{}    {} ===>> {}".format(info, cmd, re)
+            msg = f"{info}    {cmd} ===>> {re}"
         else:
-            msg = "{} ===>> {}".format(cmd, re)
+            msg = f"{cmd} ===>> {re}"
 
         self.info(msg)
 
@@ -313,14 +309,11 @@ class Communicator(HeadlessConfigLoadable):
 
     def _generate_comms_report(self):
         if self._comms_report_attrs:
-            self.debug("{:<10s} {:<20s}          Value".format("Param:", "Config:"))
+            self.debug(f"{'Param:':<10s} {'Config:':<20s}          Value")
             for key in self._comms_report_attrs:
                 c, value = self._get_report_value(key)
-                self.debug(
-                    "{:<10s} {:<30s} {}".format(
-                        "{}:".format(key.capitalize()), str(c), value
-                    )
-                )
+                label = f"{key.capitalize()}:"
+                self.debug(f"{label:<10s} {str(c):<30s} {value}")
         else:
             self.debug("Comms report not yet implemented")
 

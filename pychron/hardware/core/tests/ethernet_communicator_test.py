@@ -2,7 +2,12 @@ import unittest
 import json
 import tempfile
 from pathlib import Path
+from typing import Optional
+from unittest import mock
 
+from pychron.hardware.core.checksum_helper import computeCRC
+
+_IMPORT_ERROR: Optional[ModuleNotFoundError] = None
 try:
     from pychron.hardware.core.communicators.ethernet_communicator import (
         EthernetCommunicator,
@@ -11,13 +16,11 @@ try:
         UDPHandler,
     )
 except ModuleNotFoundError as exc:
-    EthernetCommunicator = None
-    MessageFrame = None
-    TCPHandler = None
-    UDPHandler = None
+    EthernetCommunicator = None  # type: ignore[assignment, misc]
+    MessageFrame = None  # type: ignore[assignment, misc]
+    TCPHandler = None  # type: ignore[assignment, misc]
+    UDPHandler = None  # type: ignore[assignment, misc]
     _IMPORT_ERROR = exc
-else:
-    _IMPORT_ERROR = None
 
 from pychron.experiment.telemetry.context import TelemetryContext
 from pychron.experiment.telemetry.recorder import TelemetryRecorder
@@ -83,6 +86,105 @@ class EthernetCommunicatorTestCase(unittest.TestCase):
 
         self.assertEqual(response, "TEST")
 
+    def test_message_frame_accumulates_multiple_chunks(self):
+        handler = TCPHandler()
+        handler.sock = _FakeSocket(recv_chunks=[b"0008AB", b"CDEFGH"])
+        frame = MessageFrame(message_len=True, nmessage_len=4)
+
+        response = handler.get_packet(message_frame=frame)
+
+        self.assertEqual(response, "ABCDEFGH")
+
+    def test_message_frame_header_split_across_chunks(self):
+        handler = TCPHandler()
+        handler.sock = _FakeSocket(recv_chunks=[b"00", b"04TE", b"ST"])
+        frame = MessageFrame(message_len=True, nmessage_len=4)
+
+        response = handler.get_packet(message_frame=frame)
+
+        self.assertEqual(response, "TEST")
+
+    def test_message_frame_invalid_length_header_returns_none(self):
+        handler = TCPHandler()
+        handler.sock = _FakeSocket(recv_chunks=[b"ZZZZTEST"])
+        frame = MessageFrame(message_len=True, nmessage_len=4)
+
+        response = handler.get_packet(message_frame=frame)
+
+        self.assertIsNone(response)
+
+    def test_readline_accumulates_until_terminator(self):
+        handler = TCPHandler()
+        handler.sock = _FakeSocket(recv_chunks=[b"A", b"B", b"\r", b"\n"])
+
+        response = handler.readline(b"\r\n")
+
+        self.assertEqual(response, "AB")
+
+    def test_checksum_frame_accepts_valid_crc(self):
+        payload = b"TEST"
+        crc = computeCRC(payload).encode("utf-8")
+        handler = TCPHandler()
+        handler.sock = _FakeSocket(recv_chunks=[payload + crc])
+        frame = MessageFrame(checksum=True, nchecksum=4)
+
+        response = handler.get_packet(message_frame=frame)
+
+        self.assertEqual(response, "TEST")
+
+    def test_checksum_frame_rejects_invalid_crc(self):
+        handler = TCPHandler()
+        handler.sock = _FakeSocket(recv_chunks=[b"TEST0000"])
+        frame = MessageFrame(checksum=True, nchecksum=4)
+
+        response = handler.get_packet(message_frame=frame)
+
+        self.assertIsNone(response)
+
+    def test_invalid_utf8_returns_none(self):
+        handler = TCPHandler()
+        handler.sock = _FakeSocket(recv_chunks=[b"\xff\xfe"])
+
+        response = handler.get_packet()
+
+        self.assertIsNone(response)
+
+    def test_select_read_accumulates_chunks(self):
+        handler = TCPHandler()
+        handler.sock = _FakeSocket(recv_chunks=[b"HEL", b"LO#\r\n"])
+
+        with mock.patch(
+            "pychron.hardware.core.communicators.ethernet_communicator.select.select",
+            return_value=([handler.sock], [], []),
+        ):
+            response = handler.select_read()
+
+        self.assertEqual(response, "HELLO")
+
+    def test_select_read_returns_none_when_peer_closes(self):
+        handler = TCPHandler()
+        handler.sock = _FakeSocket(recv_chunks=[b"partial"])
+
+        with mock.patch(
+            "pychron.hardware.core.communicators.ethernet_communicator.select.select",
+            return_value=([handler.sock], [], []),
+        ):
+            response = handler.select_read()
+
+        self.assertIsNone(response)
+
+    def test_select_read_returns_none_when_not_readable(self):
+        handler = TCPHandler()
+        handler.sock = _FakeSocket()
+
+        with mock.patch(
+            "pychron.hardware.core.communicators.ethernet_communicator.select.select",
+            return_value=([], [], []),
+        ):
+            response = handler.select_read()
+
+        self.assertIsNone(response)
+
     def test_reset_closes_read_and_write_handlers(self):
         communicator = EthernetCommunicator()
         communicator.handler = TCPHandler()
@@ -98,6 +200,41 @@ class EthernetCommunicatorTestCase(unittest.TestCase):
         self.assertTrue(read_sock.closed)
         self.assertIsNone(communicator.handler)
         self.assertIsNone(communicator.read_handler)
+
+    def test_message_frame_use_warns_deprecation_once(self):
+        communicator = EthernetCommunicator(name="spec_comm")
+        communicator.kind = "TCP"
+        communicator.host = "127.0.0.1"
+        communicator.port = 8000
+        communicator.simulation = False
+        communicator.write_terminator = "\r"
+        communicator.log_response = lambda *args, **kw: None
+        communicator._ask = lambda *args, **kw: "OK"
+        warnings = []
+        communicator.warning = lambda msg: warnings.append(msg)
+
+        frame = MessageFrame(message_len=True, nmessage_len=4)
+        communicator.ask("GetData", verbose=False, message_frame=frame, retries=1)
+        communicator.ask("GetData", verbose=False, message_frame=frame, retries=1)
+
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("deprecated", warnings[0])
+
+    def test_no_deprecation_warning_without_message_frame(self):
+        communicator = EthernetCommunicator(name="spec_comm")
+        communicator.kind = "TCP"
+        communicator.host = "127.0.0.1"
+        communicator.port = 8000
+        communicator.simulation = False
+        communicator.write_terminator = "\r"
+        communicator.log_response = lambda *args, **kw: None
+        communicator._ask = lambda *args, **kw: "OK"
+        warnings = []
+        communicator.warning = lambda msg: warnings.append(msg)
+
+        communicator.ask("GetData", verbose=False, retries=1)
+
+        self.assertEqual(warnings, [])
 
     def test_ask_records_start_and_end_device_io_events(self):
         communicator = EthernetCommunicator(name="spec_comm")
@@ -139,6 +276,35 @@ class EthernetCommunicatorTestCase(unittest.TestCase):
 
         self.assertEqual(failures[-1][0], "ask")
         self.assertIn("Connection refused", failures[-1][1])
+
+    def test_select_read_with_failed_handler_returns_none(self):
+        communicator = EthernetCommunicator(name="spec_comm")
+        communicator.kind = "TCP"
+        communicator.host = "127.0.0.1"
+        communicator.port = 8000
+        communicator.get_handler = lambda *args, **kw: None
+
+        self.assertIsNone(communicator.select_read())
+
+    def test_read_handler_does_not_clobber_write_handler(self):
+        communicator = EthernetCommunicator(name="spec_comm")
+        communicator.kind = "UDP"
+        communicator.host = "127.0.0.1"
+        communicator.port = 8000
+        communicator.read_port = 8001
+
+        write_handler = TCPHandler()
+        write_handler.sock = _FakeSocket()
+        write_handler.address = ("127.0.0.1", 8000)
+        communicator.handler = write_handler
+
+        read_handler = communicator.get_read_handler(write_handler)
+
+        self.assertIsNot(read_handler, write_handler)
+        self.assertIs(communicator.read_handler, read_handler)
+        self.assertIs(communicator.handler, write_handler)
+        if read_handler:
+            read_handler.end()
 
     def test_successful_write_calls_health_success_callback(self):
         communicator = EthernetCommunicator(name="spec_comm")
