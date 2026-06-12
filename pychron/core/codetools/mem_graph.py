@@ -1,4 +1,7 @@
+import os
+
 from pylab import *
+from matplotlib.pyplot import show, tight_layout
 
 
 def plot_mem(p, use_histogram=True):

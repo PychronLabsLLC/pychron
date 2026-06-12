@@ -151,7 +151,7 @@ class XMLParser(object):
             self._root = Element("root")
 
     def _parse_file(self, p: Any) -> bool:
-        txt = None
+        txt: str | bytes | None = None
         if isinstance(p, str):
             txt = ""
             if os.path.isfile(p):

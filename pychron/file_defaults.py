@@ -418,10 +418,10 @@ spec_d = dict(
 SPECTRUM_PRESENTATION = make_presentation(**spec_d)
 SPECTRUM_SCREEN = make_screen(**spec_d)
 
-radial_d = dict()
+radial_d: dict[str, bool] = dict()
 RADIAL_SCREEN = make_screen(**radial_d)
 
-regression_series_d = dict()
+regression_series_d: dict[str, bool] = dict()
 REGRESSION_SERIES_SCREEN = make_screen(**regression_series_d)
 
 FLUX_CONSTANTS_DEFAULT = """

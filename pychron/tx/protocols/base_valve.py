@@ -88,14 +88,6 @@ class BaseValveProtocol(ServiceProtocol):
             result = InvalidValveErrorCode(data)
         return result
 
-    def _get_valve_state(self, data):
-        if isinstance(data, dict):
-            data = data["value"]
-        result = self._manager.get_valve_state(data)
-        if result is None:
-            result = InvalidValveErrorCode(data)
-        return result
-
     def _open(self, data):
         """
         Open a valve. Valve name e.g. A

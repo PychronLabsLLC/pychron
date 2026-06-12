@@ -137,7 +137,7 @@ def main():
 if __name__ == "__main__":
     rt = "/Users/ross/Sandbox/runscripts"
     out = "/Users/ross/Sandbox/runscripts/out"
-    out = os.path.join(paths.scripts_dir, "ms_runscripts")
+    out = os.path.join(str(paths.scripts_dir), "ms_runscripts")
     name = "Quick Air x1"
 
     for root, dirs, files in os.walk(rt):

@@ -18,7 +18,10 @@
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 
+import os
+
 from pylab import *
+from matplotlib.pyplot import show
 
 
 def plot_scan(p, name=None):

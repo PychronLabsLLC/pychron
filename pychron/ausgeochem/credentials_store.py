@@ -46,16 +46,16 @@ import sys
 KEYRING_SERVICE = "pychron.earthbank"
 
 _logger = logging.getLogger(__name__)
-_fallback_store = {}
+_fallback_store: dict[str, str] = {}
 
 # -- backend probes ----------------------------------------------------------
 
-_keyring = None
-_keyring_errors = None
 try:
     import keyring as _keyring
     import keyring.errors as _keyring_errors
 except ImportError:
+    _keyring = None  # type: ignore[assignment]
+    _keyring_errors = None  # type: ignore[assignment]
     _logger.warning("'keyring' not installed; falling back to encrypted file")
 
 
@@ -91,8 +91,8 @@ try:
 
     _have_crypto = True
 except ImportError:
-    Fernet = None
-    InvalidToken = Exception
+    Fernet = None  # type: ignore[assignment, misc]
+    InvalidToken = Exception  # type: ignore[assignment, misc]
     _logger.warning("'cryptography' not installed; cannot encrypt credentials at rest")
 
 

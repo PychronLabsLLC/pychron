@@ -327,23 +327,23 @@ def calc_growth(before, cls=None, group=None, count=None, write=False, print_obj
 def show_refs(cls):
     obj = next((o for o in gc.get_objects() if type(o) == cls), None)
     if obj:
-        print("================= {} referrers ================".format(cls))
+        print(f"================= {cls} referrers ================")
         #         print '{} referrers'.format(obj)
         for ri in gc.get_referrers(obj):
             keys = ""
             if isinstance(ri, dict):
                 keys = ",".join(list(ri.keys()))
 
-            print("{:<30s} {} {}".format(str(id(ri)), type(ri), ri, keys))
+            print(f"{id(ri)!s:<30} {type(ri)} {ri} {keys}")
 
-        print("================== {} referents ================".format(cls))
+        print(f"================== {cls} referents ================")
         #         print '{} referents'.format(obj)
         for ri in gc.get_referents(obj):
             keys = ""
             if isinstance(ri, dict):
                 keys = ",".join(list(ri.keys()))
 
-            print("{:<30s} {} {}".format(str(id(ri)), type(ri), ri, keys))
+            print(f"{id(ri)!s:<30} {type(ri)} {ri} {keys}")
 
 
 def get_type(cls):

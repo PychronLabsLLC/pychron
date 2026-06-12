@@ -43,6 +43,5 @@ def server(kind, addr):
 
 
 if __name__ == "__main__":
-    addr = "127.0.0.1", 1054
     addr = "/tmp/hardware"
     server("unix", addr)
