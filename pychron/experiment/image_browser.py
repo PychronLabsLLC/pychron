@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from chaco.api import ArrayPlotData, Plot, HPlotContainer
 from chaco.tools.api import ZoomTool, PanTool
 from chaco.tools.image_inspector_tool import ImageInspectorOverlay, ImageInspectorTool
@@ -46,10 +44,11 @@ from traitsui.api import (
 )
 
 # ============= standard library imports ========================
-import Image
-from numpy import array
+import http.client
 import os
-import six.moves.http_client
+
+from numpy import array
+from PIL import Image
 
 # ============= local library imports  ==========================
 from pychron.core.ui.custom_label_editor import CustomLabel
@@ -134,9 +133,7 @@ class ImageEditor(HasTraits):
                 Item(
                     "names",
                     show_label=False,
-                    editor=ListStrEditor(
-                        editable=False, selected="selected", operations=[]
-                    ),
+                    editor=ListStrEditor(editable=False, selected="selected", operations=[]),
                     height=0.6,
                 ),
                 Item("image_spec", show_label=False, style="custom", height=0.4),
@@ -193,8 +190,8 @@ class ImageBrowser(IsotopeDatabaseManager):
     def _connection_factory(self, reset=False):
         if reset or self._conn is None:
             host, port = "localhost", 8081
-            url = "{}:{}".format(host, port)
-            conn = six.moves.http_client.HTTPConnection(url)
+            url = f"{host}:{port}"
+            conn = http.client.HTTPConnection(url)
         else:
             conn = self._conn
 
@@ -229,9 +226,9 @@ class ImageBrowser(IsotopeDatabaseManager):
     #        return array(im)
 
     def _get_cached(self, name):
-        self.info("retrieve {} from cache directory".format(name))
+        self.info(f"retrieve {name} from cache directory")
         p = os.path.join(self.cache_dir, name)
-        with open(p, "r") as rfile:
+        with open(p, "rb") as rfile:
             im = Image.open(rfile)
             im = im.convert("RGB")
             return array(im)

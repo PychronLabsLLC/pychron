@@ -36,7 +36,7 @@ from sqlalchemy.sql.expression import func
 
 from pychron.database.core.base_orm import BaseMixin, NameMixin, UserMixin
 from pychron.database.orms.isotope.util import foreignkey, stringcolumn
-from pychron.experiment.utilities.identifier import make_runid
+from pychron.experiment.utilities.runid import make_runid
 from .util import Base
 
 
@@ -74,9 +74,7 @@ class meas_AnalysisTable(Base, BaseMixin):
         # lazy='dynamic',
         backref="analysis",
     )
-    peak_center = relationship(
-        "meas_PeakCenterTable", backref="analysis", uselist=False
-    )
+    peak_center = relationship("meas_PeakCenterTable", backref="analysis", uselist=False)
 
     # proc relationships
     blanks_histories = relationship("proc_BlanksHistoryTable", backref="analysis")
@@ -84,13 +82,9 @@ class meas_AnalysisTable(Base, BaseMixin):
     blanks_values = relationship("proc_BlanksSetValueTable", backref="analysis")
     preceding_blanks = relationship("proc_BlanksTable", backref="preceding_analysis")
 
-    interpreted_age_sets = relationship(
-        "proc_InterpretedAgeSetTable", backref="analysis"
-    )
+    interpreted_age_sets = relationship("proc_InterpretedAgeSetTable", backref="analysis")
 
-    backgrounds_histories = relationship(
-        "proc_BackgroundsHistoryTable", backref="analysis"
-    )
+    backgrounds_histories = relationship("proc_BackgroundsHistoryTable", backref="analysis")
     backgrounds_sets = relationship("proc_BackgroundsSetTable", backref="analysis")
 
     detector_intercalibration_histories = relationship(
@@ -100,9 +94,7 @@ class meas_AnalysisTable(Base, BaseMixin):
         "proc_DetectorIntercalibrationSetTable", backref="analysis"
     )
 
-    detector_param_histories = relationship(
-        "proc_DetectorParamHistoryTable", backref="analysis"
-    )
+    detector_param_histories = relationship("proc_DetectorParamHistoryTable", backref="analysis")
 
     fit_histories = relationship("proc_FitHistoryTable", backref="analysis")
 
@@ -208,9 +200,7 @@ class meas_SpectrometerParametersTable(Base, BaseMixin):
     zsymmetry = Column(Float)
     zfocus = Column(Float)
     hash = Column(String(32))
-    measurements = relationship(
-        "meas_MeasurementTable", backref="spectrometer_parameters"
-    )
+    measurements = relationship("meas_MeasurementTable", backref="spectrometer_parameters")
 
 
 class meas_SpectrometerDeflectionsTable(Base, BaseMixin):
@@ -244,9 +234,7 @@ class meas_MeasurementTable(Base, BaseMixin):
     #                                         uselist=False
     #                                         )
     analyses = relationship("meas_AnalysisTable", backref="measurement")
-    deflections = relationship(
-        "meas_SpectrometerDeflectionsTable", backref="measurement"
-    )
+    deflections = relationship("meas_SpectrometerDeflectionsTable", backref="measurement")
 
 
 class meas_PeakCenterTable(Base, BaseMixin):
