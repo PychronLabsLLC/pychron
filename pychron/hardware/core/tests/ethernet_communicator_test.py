@@ -38,7 +38,10 @@ class _FakeSocket:
 
     def recv(self, datasize):
         if self.recv_chunks:
-            return self.recv_chunks.pop(0)
+            chunk = self.recv_chunks.pop(0)
+            if isinstance(chunk, Exception):
+                raise chunk
+            return chunk
         return b""
 
     def recvfrom(self, datasize):
@@ -120,6 +123,19 @@ class EthernetCommunicatorTestCase(unittest.TestCase):
         response = handler.readline(b"\r\n")
 
         self.assertEqual(response, "AB")
+
+    def test_readline_preserves_partial_line_across_timeout(self):
+        import socket as socket_module
+
+        handler = TCPHandler()
+        handler.sock = _FakeSocket(recv_chunks=[b"PAR", socket_module.timeout(), b"TIAL", b"\r\n"])
+
+        with self.assertRaises(socket_module.timeout):
+            handler.readline(b"\r\n")
+
+        response = handler.readline(b"\r\n")
+
+        self.assertEqual(response, "PARTIAL")
 
     def test_checksum_frame_accepts_valid_crc(self):
         payload = b"TEST"
@@ -276,6 +292,30 @@ class EthernetCommunicatorTestCase(unittest.TestCase):
 
         self.assertEqual(failures[-1][0], "ask")
         self.assertIn("Connection refused", failures[-1][1])
+
+    def test_on_connect_fires_for_new_handler_with_guard(self):
+        communicator = EthernetCommunicator(name="spec_comm")
+        communicator.kind = "TCP"
+        communicator.host = "127.0.0.1"
+        communicator.port = 8000
+        connects = []
+
+        def on_connect(handler):
+            connects.append(handler)
+            # re-entrant get_handler must not fire the hook again
+            communicator.get_handler()
+
+        communicator.on_connect = on_connect
+
+        fake_handler = TCPHandler()
+        fake_handler.sock = _FakeSocket()
+        fake_handler.address = ("127.0.0.1", 8000)
+
+        with mock.patch.object(TCPHandler, "open_socket", lambda self_, addrs, **kw: None):
+            handler = communicator.get_handler()
+
+        self.assertEqual(len(connects), 1)
+        self.assertIs(connects[0], handler)
 
     def test_select_read_with_failed_handler_returns_none(self):
         communicator = EthernetCommunicator(name="spec_comm")
