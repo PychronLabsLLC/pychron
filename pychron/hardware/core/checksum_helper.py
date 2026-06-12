@@ -15,12 +15,6 @@
 # ===============================================================================
 
 
-from __future__ import absolute_import
-from __future__ import print_function
-
-from six.moves import range
-
-
 def computeBCC(data_str):
     """
     data str= ASCII string

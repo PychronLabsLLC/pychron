@@ -18,7 +18,6 @@
 import os
 import time
 
-import six
 
 from pychron.core.utils import alphas
 
@@ -153,7 +152,7 @@ class IsotopeRecordView(object):
             if sam:
                 self.sample = sam.name
                 if sam.project:
-                    if isinstance(sam.project, (str, six.text_type)):
+                    if isinstance(sam.project, str):
                         self.project = sam.project.lower()
                     else:
                         self.project = sam.project.name.lower()
@@ -162,9 +161,7 @@ class IsotopeRecordView(object):
             if irp is not None:
                 irl = irp.level
                 ir = irl.irradiation
-                self.irradiation_info = "{}{} {}".format(
-                    ir.name, irl.name, irp.position
-                )
+                self.irradiation_info = "{}{} {}".format(ir.name, irl.name, irp.position)
 
             try:
                 self.mass_spectrometer = dbrecord.mass_spectrometer
@@ -197,9 +194,7 @@ class IsotopeRecordView(object):
                 self.timestamp = time.mktime(self.rundate.timetuple())
                 if meas:
                     try:
-                        self.meas_script_name = self._clean_script_name(
-                            meas.script.name
-                        )
+                        self.meas_script_name = self._clean_script_name(meas.script.name)
                     except AttributeError as e:
                         pass
                         # print 'IsotopeRecord create meas 2 {}'.format(e)
@@ -208,9 +203,7 @@ class IsotopeRecordView(object):
 
                 if ext is not None:
                     try:
-                        self.extract_script_name = self._clean_script_name(
-                            ext.script.name
-                        )
+                        self.extract_script_name = self._clean_script_name(ext.script.name)
                     except AttributeError as e:
                         pass
                         # print 'IsotopeRecord create ext 1 {}'.format(e)
@@ -237,9 +230,7 @@ class IsotopeRecordView(object):
         return n
 
     def to_string(self):
-        return "{} {} {} {}".format(
-            self.identifier, self.aliquot, self.timestamp, self.uuid
-        )
+        return "{} {} {} {}".format(self.identifier, self.aliquot, self.timestamp, self.uuid)
 
     @property
     def record_id(self):

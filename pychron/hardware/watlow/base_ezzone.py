@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # =============enthought library imports========================
-from __future__ import absolute_import
-from __future__ import print_function
 from traits.api import (
     HasTraits,
     Enum,
@@ -52,7 +50,6 @@ from pychron.hardware.watlow import (
     baudmap,
     ibaudmap,
 )
-from six.moves import zip
 
 
 class Protocol:
@@ -210,14 +207,10 @@ class BaseWatlowEZZone(HasTraits):
     olsmin = Float(0.0)
     olsmax = Float(100.0)
 
-    max_output = Property(
-        Float(enter_set=True, auto_set=False), depends_on="_max_output"
-    )
+    max_output = Property(Float(enter_set=True, auto_set=False), depends_on="_max_output")
     _max_output = Float(100)
 
-    input_scale_low = Property(
-        Float(auto_set=False, enter_set=True), depends_on="_input_scale_low"
-    )
+    input_scale_low = Property(Float(auto_set=False, enter_set=True), depends_on="_input_scale_low")
     _input_scale_low = Float(0)
 
     input_scale_high = Property(
@@ -254,19 +247,13 @@ class BaseWatlowEZZone(HasTraits):
     enable_tru_tune = Property(Bool, depends_on="_enable_tru_tune")
     _enable_tru_tune = Bool
 
-    tru_tune_band = Property(
-        Int(auto_set=False, enter_set=True), depends_on="_tru_tune_band"
-    )
+    tru_tune_band = Property(Int(auto_set=False, enter_set=True), depends_on="_tru_tune_band")
     _tru_tune_band = Int(0)
 
-    tru_tune_gain = Property(
-        Enum(("1", "2", "3", "4", "5", "6")), depends_on="_tru_tune_gain"
-    )
+    tru_tune_gain = Property(Enum(("1", "2", "3", "4", "5", "6")), depends_on="_tru_tune_gain")
     _tru_tune_gain = Str
 
-    heat_algorithm = Property(
-        Enum("PID", "On-Off", "Off"), depends_on="_heat_algorithm"
-    )
+    heat_algorithm = Property(Enum("PID", "On-Off", "Off"), depends_on="_heat_algorithm")
     _heat_algorithm = Str
 
     sensor1_type = Property(
@@ -424,9 +411,7 @@ class BaseWatlowEZZone(HasTraits):
         self._process_memory_len = 0
         self.info("programming memory block")
         for i, ta in enumerate(self._process_memory_block):
-            self.set_assembly_definition_address(
-                self._process_working_address + 2 * i, ta
-            )
+            self.set_assembly_definition_address(self._process_working_address + 2 * i, ta)
             self._process_memory_len += 2
 
     def report_pid(self):
@@ -537,7 +522,7 @@ class BaseWatlowEZZone(HasTraits):
                 nbytes=13,
                 nregisters=self._process_memory_len,
                 verbose=verbose,
-                **kw
+                **kw,
             )
 
             if not args or not isinstance(args, (tuple, list)):
@@ -577,7 +562,7 @@ class BaseWatlowEZZone(HasTraits):
                     self._process_working_address,
                     nbytes=13,
                     nregisters=self._process_memory_len,
-                    **kw
+                    **kw,
                 )
                 if args:
                     t, _ = args
@@ -626,12 +611,8 @@ class BaseWatlowEZZone(HasTraits):
             cast="boolean",
             default=False,
         )
-        self.set_attribute(
-            config, "min_output_scale", "Output", "scale_low", cast="float"
-        )
-        self.set_attribute(
-            config, "max_output_scale", "Output", "scale_high", cast="float"
-        )
+        self.set_attribute(config, "min_output_scale", "Output", "scale_low", cast="float")
+        self.set_attribute(config, "max_output_scale", "Output", "scale_high", cast="float")
 
         self.set_attribute(config, "setpointmin", "Setpoint", "min", cast="float")
         self.set_attribute(config, "setpointmax", "Setpoint", "max", cast="float")
@@ -1289,9 +1270,7 @@ class BaseWatlowEZZone(HasTraits):
         if v > 0:
             self.output_scale_low = self.min_output_scale
 
-        v = (
-            self.max_output_scale - self.min_output_scale
-        ) * v / 100.0 + self.output_scale_low
+        v = (self.max_output_scale - self.min_output_scale) * v / 100.0 + self.output_scale_low
         self.output_scale_high = v
         # self.set_output_scale_high(v)
         self._load_max_output()
@@ -1325,9 +1304,7 @@ class BaseWatlowEZZone(HasTraits):
         p = os.path.join(self.configuration_dir_path, "pid.csv")
         if not os.path.isfile(p):
             self.warning(
-                "No pid.csv file in configuration dir. {}".format(
-                    self.configuration_dir_path
-                )
+                "No pid.csv file in configuration dir. {}".format(self.configuration_dir_path)
             )
             return
 

@@ -15,13 +15,11 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 import re
 from datetime import datetime
 
-import six
 from git import Repo, Blob, Diff
 from gitdb.util import hex_to_bin
 
@@ -138,7 +136,7 @@ def ahead_behind(repo, fetch=True, remote="origin"):
 
 
 def get_repo(repo):
-    if isinstance(repo, (str, six.text_type)):
+    if isinstance(repo, str):
         if not os.path.isdir(repo):
             return
         repo = Repo(repo)
@@ -181,11 +179,7 @@ def fu(repo, text):
 
         # Make sure the mode is set if the path is set. Otherwise the resulting blob is invalid
         # We just use the one mode we should have parsed
-        a_mode = (
-            old_mode
-            or deleted_file_mode
-            or (a_path and (b_mode or new_mode or new_file_mode))
-        )
+        a_mode = old_mode or deleted_file_mode or (a_path and (b_mode or new_mode or new_file_mode))
         b_mode = b_mode or new_mode or new_file_mode or (b_path and a_mode)
         ablob = Blob(repo, hex_to_bin(a_blob_id), mode=a_mode, path=a_path)
         bblob = Blob(repo, hex_to_bin(b_blob_id), mode=b_mode, path=a_path)

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from git.exc import InvalidGitRepositoryError
 from pyface.tasks.action.schema_addition import SchemaAddition

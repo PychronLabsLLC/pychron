@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from traitsui.api import Controller, View, Item
 
 
@@ -22,8 +21,7 @@ class ConfigureDump(Controller):
         v = View(
             Item(
                 "dump_funnel_safety_override",
-                tooltip="Override safety check that the funnel must be down to "
-                "actuate magnets",
+                tooltip="Override safety check that the funnel must be down to " "actuate magnets",
             ),
             title="Configure Dump",
             resizable=True,

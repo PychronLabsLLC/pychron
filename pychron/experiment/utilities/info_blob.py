@@ -16,9 +16,7 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import struct
-from six.moves import range
 
 
 # ============= local library imports  ==========================

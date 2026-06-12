@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.qt import QtCore, QtGui
 from traits.trait_types import Event
 from traitsui.api import View, UItem

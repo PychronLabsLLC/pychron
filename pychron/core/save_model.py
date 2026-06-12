@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.constant import OK
 from pyface.file_dialog import FileDialog
 from traits.api import HasTraits, Str, Bool, Button
@@ -100,7 +99,7 @@ class SaveController(Controller):
             HGroup(UItem("controller.use_finder_button"), spring),
             Item("path", style="readonly"),
             label=label,
-            **kw
+            **kw,
         )
         return path_group
 

@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 
 from traits.api import HasTraits, Any, List, Str, Bool, Float
 from traitsui.api import UItem, InstanceEditor, VGroup, Item, EnumEditor, TableEditor
@@ -48,9 +47,7 @@ class MFTableConfig(HasTraits, PersistenceMixin):
     pdetectors = List(dump=True)
 
     def dump(self, verbose=False):
-        self.pdetectors = [
-            (d.name, d.enabled, d.deflection) for d in self.detectors if d.enabled
-        ]
+        self.pdetectors = [(d.name, d.enabled, d.deflection) for d in self.detectors if d.enabled]
         super(MFTableConfig, self).dump(verbose=verbose)
 
     def get_finish_position(self):

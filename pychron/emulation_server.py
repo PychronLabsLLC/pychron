@@ -18,9 +18,7 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
-from __future__ import print_function
-import six.moves.socketserver
+import socketserver
 import select
 import socket
 import sys
@@ -54,7 +52,7 @@ class EmulationServer(object):
             return
 
         print("serving on {}:{}".format(host, port))
-        server = six.moves.socketserver.TCPServer((host, port), self.emulator)
+        server = socketserver.TCPServer((host, port), self.emulator)
         server.allow_reuse_address = True
         self.server = server
 

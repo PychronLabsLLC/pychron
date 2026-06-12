@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 from typing import Any
 
-import six
 from pyface.qt.QtGui import (
     QCompleter,
     QSizePolicy,
@@ -102,9 +101,7 @@ class _ComboboxEditor(SimpleEditor):
                 #                        self.update_autoset_text_object)
             insert_policy = getattr(QComboBox, "NoInsert", None)
             if insert_policy is None:
-                insert_policy = getattr(
-                    getattr(QComboBox, "InsertPolicy", None), "NoInsert", None
-                )
+                insert_policy = getattr(getattr(QComboBox, "InsertPolicy", None), "NoInsert", None)
             if insert_policy is not None:
                 control.setInsertPolicy(insert_policy)
 
@@ -148,7 +145,7 @@ class _ComboboxEditor(SimpleEditor):
     def update_text_object(self, text: str) -> None:
         """Handles the user typing text into the combo box text entry field."""
         if self._no_enum_update == 0:
-            value = six.text_type(text)
+            value = str(text)
             if self.factory.use_strict_values:
                 try:
                     value = self.mapping[value]

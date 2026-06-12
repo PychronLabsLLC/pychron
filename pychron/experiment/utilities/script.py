@@ -18,10 +18,7 @@
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 
-from __future__ import absolute_import
 from os.path import isfile, join
-
-from six.moves import zip
 
 
 def script_name_candidates(name, mass_spectrometer="", extension=".py"):

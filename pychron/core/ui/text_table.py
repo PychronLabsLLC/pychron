@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, List, on_trait_change, Callable, Bool, Int, Property
 
 from pychron.core.helpers.formatting import floatfmt
@@ -174,9 +173,7 @@ class SimpleTextTableAdapter(TextTableAdapter):
             columns = self.columns
 
         rs = [self._make_header_row(columns=columns)]
-        rs.extend(
-            [TextRow(*[self._cell_factory(ri, args) for args in columns]) for ri in sg]
-        )
+        rs.extend([TextRow(*[self._cell_factory(ri, args) for args in columns]) for ri in sg])
         tt = TextTable(border=True, *rs)
         return tt
 
@@ -223,10 +220,7 @@ class ValueErrorAdapter(TextTableAdapter):
         #            ri =
         #            rs.append(ri)
         rs.extend(
-            [
-                TextRow(*[self._cell_factory(vi, args) for args in self.columns])
-                for vi in value
-            ]
+            [TextRow(*[self._cell_factory(vi, args) for args in self.columns]) for vi in value]
         )
 
         tt = TextTable(border=True, *rs)

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Bool, Str, Float, Int, Enum
 from traitsui.api import View, HGroup, UItem, EnumEditor
 
@@ -39,9 +38,7 @@ class Detector(HasTraits):
             HGroup(
                 UItem("use"),
                 UItem("label", width=-30, style="readonly"),
-                UItem(
-                    "isotope", editor=EnumEditor(name="isotopes"), enabled_when="use"
-                ),
+                UItem("isotope", editor=EnumEditor(name="isotopes"), enabled_when="use"),
                 UItem(
                     "fit",
                     enabled_when="use",

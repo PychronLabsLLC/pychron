@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 
@@ -107,9 +105,7 @@ class Hop(HasTraits):
     def to_string(self):
         vs = [str(self.counts), str(self.settle)]
         hs = "'{}'".format(
-            ", ".join(
-                [p.to_string() for p in self.positions if p.isotope and p.detector]
-            )
+            ", ".join([p.to_string() for p in self.positions if p.isotope and p.detector])
         )
 
         return "({}, {})".format(hs, ", ".join(vs))
@@ -480,9 +476,7 @@ class HopEditorView(Controller):
             ObjectColumn(name="name", label="", editable=False),
             ObjectColumn(name="counts"),
             ObjectColumn(name="settle", label="Settle (s)"),
-            ObjectColumn(
-                name="isotopes_label", editable=False, width=175, label="Isotopes"
-            ),
+            ObjectColumn(name="isotopes_label", editable=False, width=175, label="Isotopes"),
         ]
 
         hgrp = VGroup(
@@ -532,9 +526,7 @@ class HopEditorView(Controller):
         v = View(
             VGroup(
                 VGroup(grp, label="Editor"),
-                VGroup(
-                    UItem("object.text", editor=teditor, style="custom"), label="Text"
-                ),
+                VGroup(UItem("object.text", editor=teditor, style="custom"), label="Text"),
             ),
             # toolbar=ToolBar(),
             width=690,

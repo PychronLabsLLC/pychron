@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 # ============= standard library imports ========================
 from sqlalchemy.exc import DBAPIError
@@ -140,9 +139,7 @@ class FluxMonitorEditor(Loggable):
 
     def _delete_button_fired(self):
         name = self.selected_monitor_name
-        if self.confirmation_dialog(
-            'Are you sure you want to delete "{}"'.format(name)
-        ):
+        if self.confirmation_dialog('Are you sure you want to delete "{}"'.format(name)):
             db = self.db
             dbmon = db.get_flux_monitor(name, key="name")
             db.delete(dbmon)
@@ -171,9 +168,7 @@ class FluxMonitorEditor(Loggable):
                     ),
                     UItem(
                         "monitor_names",
-                        editor=ListStrEditor(
-                            selected="selected_monitor_name", editable=False
-                        ),
+                        editor=ListStrEditor(selected="selected_monitor_name", editable=False),
                     ),
                 ),
                 UItem("selected_monitor", style="custom"),

@@ -15,7 +15,6 @@
 # ===============================================================================
 """Envisage plugin that contributes the Pychron Cloud preferences pane."""
 
-from __future__ import absolute_import
 
 from pychron.cloud.tasks.preferences import CloudPreferencesPane
 from pychron.envisage.tasks.base_task_plugin import BaseTaskPlugin

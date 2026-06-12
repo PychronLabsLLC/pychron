@@ -15,9 +15,7 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
-from __future__ import print_function
-import six.moves.cPickle as pickle
+import pickle
 
 from traits.api import Bool, Any, Instance, Button, Property, Event, on_trait_change
 from traitsui.api import View, Item, Handler, HGroup
@@ -342,9 +340,7 @@ ImageGradmax={}, (z={})""".format(
 
                     pz = x
 
-                if not (
-                    controller.timer.isActive() and not self._evt_autofocusing.isSet()
-                ):
+                if not (controller.timer.isActive() and not self._evt_autofocusing.isSet()):
                     break
                 time.sleep(p)
 

@@ -20,7 +20,6 @@
 
 
 # ============= EOF =============================================
-from __future__ import absolute_import
 from pychron.core.helpers.strtools import to_bool
 
 

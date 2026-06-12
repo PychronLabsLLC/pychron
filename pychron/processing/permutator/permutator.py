@@ -15,7 +15,6 @@
 # # ===============================================================================
 #
 # # ============= enthought library imports =======================
-# from __future__ import absolute_import
 # from traits.api import Property, cached_property, Button, HasTraits
 # from traitsui.api import View
 # # ============= standard library imports ========================
@@ -32,8 +31,6 @@
 # from pychron.processing.permutator.view import PermutatorResultsView
 # from pychron.pipeline.plot.editors.ideogram_editor import IdeogramEditor
 # from pychron.pychron_constants import ARGON_KEYS
-# from six.moves import range
-# from six.moves import zip
 #
 #
 # # class PermutationResults(object):

@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import json
 import os
@@ -25,7 +23,6 @@ from datetime import timedelta
 from itertools import groupby
 
 from numpy import array_split
-from six.moves import filter
 from traits.api import Instance
 
 from pychron.core.helpers.datetime_tools import get_datetime
@@ -246,14 +243,10 @@ class IsoDBTransfer(Loggable):
 
         return oruns
 
-    def bulk_import_project(
-        self, project, principal_investigator, source_name=None, dry=True
-    ):
+    def bulk_import_project(self, project, principal_investigator, source_name=None, dry=True):
         src = self.processor.db
         tol_hrs = 6
-        self.debug(
-            "bulk import project={}, pi={}".format(project, principal_investigator)
-        )
+        self.debug("bulk import project={}, pi={}".format(project, principal_investigator))
         oruns = []
 
         repository_identifier = project
@@ -359,14 +352,10 @@ class IsoDBTransfer(Loggable):
                     if ai in oruns:
                         print(p, o, ai)
 
-    def import_date_range(
-        self, low, high, spectrometer, repository_identifier, creator
-    ):
+    def import_date_range(self, low, high, spectrometer, repository_identifier, creator):
         src = self.processor.db
         with src.session_ctx():
-            runs = src.get_analyses_date_range(
-                low, high, mass_spectrometers=spectrometer
-            )
+            runs = src.get_analyses_date_range(low, high, mass_spectrometers=spectrometer)
 
             ais = [ai.record_id for ai in runs]
         self.do_export(ais, repository_identifier, creator)
@@ -419,9 +408,7 @@ class IsoDBTransfer(Loggable):
 
             runs = sorted(runs, key=key)
             with dest.session_ctx():
-                repo = self._add_repository(
-                    dest, repository_identifier, creator, create_repo
-                )
+                repo = self._add_repository(dest, repository_identifier, creator, create_repo)
 
             self.persister.active_repository = repo
             self.dvc.current_repository = repo
@@ -443,9 +430,7 @@ class IsoDBTransfer(Loggable):
                             ):
                                 j += 1
                                 self.debug(
-                                    "{}/{} transfer time {:0.3f}".format(
-                                        j, total, time.time() - st
-                                    )
+                                    "{}/{} transfer time {:0.3f}".format(j, total, time.time() - st)
                                 )
                         except BaseException as e:
                             import traceback
@@ -619,11 +604,7 @@ class IsoDBTransfer(Loggable):
 
         # save db irradiation position
         if not dest.get_irradiation_position(irradname, levelname, pos):
-            self.debug(
-                "Add position irrad:{} level:{} pos:{}".format(
-                    irradname, levelname, pos
-                )
-            )
+            self.debug("Add position irrad:{} level:{} pos:{}".format(irradname, levelname, pos))
             p = meta_repo.get_level_path(irradname, levelname)
             with open(p, "r") as rfile:
                 yd = json.load(rfile)
@@ -697,9 +678,7 @@ class IsoDBTransfer(Loggable):
         iv = IsotopeRecordView()
         iv.uuid = dban.uuid
 
-        self.debug(
-            "make analysis idn:{}, aliquot:{} step:{}".format(idn, aliquot, step)
-        )
+        self.debug("make analysis idn:{}, aliquot:{} step:{}".format(idn, aliquot, step))
         # try:
         an = proc.make_analysis(iv, unpack=True, use_cache=False, use_progress=False)
         # except BaseException as e:

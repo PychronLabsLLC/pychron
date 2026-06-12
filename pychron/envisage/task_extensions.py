@@ -14,8 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import hashlib
 import os
@@ -99,12 +97,7 @@ class ViewModel(HasTraits):
             # enable specified ids
             for ei in enables:
                 te = next(
-                    (
-                        a
-                        for t in self.task_extensions
-                        for a in t.additions
-                        if a.model.id == ei
-                    ),
+                    (a for t in self.task_extensions for a in t.additions if a.model.id == ei),
                     None,
                 )
                 if not te:
@@ -122,9 +115,7 @@ class ViewModel(HasTraits):
                 if yd:
                     for ai in yd["actions"]:
                         action, enabled = ai.split(",")
-                        tt = next(
-                            (ta for ta in te.additions if ta.model.id == action), None
-                        )
+                        tt = next((ta for ta in te.additions if ta.model.id == action), None)
                         if tt:
                             tt.enabled = to_bool(enabled)
 
@@ -323,9 +314,7 @@ def edit_task_extensions(ts):
                     action="set_enabled",
                     visible_when="not object.enabled",
                 ),
-                Action(
-                    name="Disable", visible_when="object.enabled", action="set_disabled"
-                ),
+                Action(name="Disable", visible_when="object.enabled", action="set_disabled"),
             ),
         ),
     ]

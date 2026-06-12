@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 import os
 import re
 
@@ -169,9 +168,7 @@ class ExtractionLineScriptWriter(Loggable):
         if self.record_valve_actions and mode == "normal":
             cmd = "open" if state else "close"
             cvalve = self.canvas.scene.get_item(valve)
-            self.actions.append(
-                ValveAction(value=valve, name=cmd, description=cvalve.description)
-            )
+            self.actions.append(ValveAction(value=valve, name=cmd, description=cvalve.description))
         self._update_network(valve, state)
         return True, True
 
@@ -201,9 +198,7 @@ class ExtractionLineScriptWriter(Loggable):
             has__docstring = False
             ds = []
             for li in fileiter(rfile):
-                if not has__docstring and (
-                    li.startswith('"""') or li.startswith("'''")
-                ):
+                if not has__docstring and (li.startswith('"""') or li.startswith("'''")):
                     if _docstring_started:
                         has__docstring = True
                         _docstring_started = False

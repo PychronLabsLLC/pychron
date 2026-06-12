@@ -13,14 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 
 import os
 
 import yaml
 from numpy import array
-from six.moves import map
-from six.moves import zip
 from traits.api import Float, Button, Property, List, Instance, Bool, Event
 from traitsui.api import View, UItem, Item, HGroup, VGroup
 from uncertainties import nominal_value, std_dev
@@ -142,9 +139,7 @@ class YieldEditor(BaseTraitsEditor):
 
     def dump(self):
         with open(self.yield_path, "w") as wfile:
-            yaml.dump(
-                {"{}_yield".format(self.options.ratio_str): self.new_yield}, wfile
-            )
+            yaml.dump({"{}_yield".format(self.options.ratio_str): self.new_yield}, wfile)
 
     def load(self):
         p = self.yield_path

@@ -15,10 +15,8 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from numpy import argmax, array
-from six.moves import range
 from traits.api import HasTraits, List, Array
 
 from pychron.core.stats.core import validate_mswd, calculate_mswd

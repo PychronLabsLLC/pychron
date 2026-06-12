@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import os
 import unittest
 
@@ -24,16 +23,12 @@ class Argon2CDDMFTableTestCase(unittest.TestCase):
         self.mftable.load_table(path=p)
 
     def test_update(self):
-        self.mftable.update_field_table(
-            "L2(CDD)", "Ar36", 3.76439824048, report=True, save=False
-        )
+        self.mftable.update_field_table("L2(CDD)", "Ar36", 3.76439824048, report=True, save=False)
         dac = self.mftable.get_dac("L2(CDD)", 36)
         self.assertEqual(dac, 3.76439824048)
 
     def test_update2(self):
-        self.mftable.update_field_table(
-            "H2", "Ar40", 3.76439824048, report=True, save=False
-        )
+        self.mftable.update_field_table("H2", "Ar40", 3.76439824048, report=True, save=False)
         dac = self.mftable.get_dac("AX(CDD)", 38)
         self.assertEqual(dac, 3.79185704008)
 

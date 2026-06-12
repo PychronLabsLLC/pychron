@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.abstract_overlay import AbstractOverlay
 from traits.has_traits import on_trait_change
 from traits.trait_types import List
@@ -47,7 +46,7 @@ class MarkerOverlay(AbstractOverlay):
             y=y,
             text=text,
             vertical=vertical_marker,
-            **kw
+            **kw,
         )
         self.labels.append(m)
         self._layout_needed = True
@@ -60,11 +59,7 @@ class MarkerOverlay(AbstractOverlay):
             h = other_component.height + self.indicator_height
             y = other_component.y - self.indicator_height / 2.0
             if self.use_vertical_markers:
-                h = (
-                    other_component.height
-                    + self.indicator_height
-                    + other_component.padding_bottom
-                )
+                h = other_component.height + self.indicator_height + other_component.padding_bottom
                 y = other_component.y - other_component.padding_bottom
 
             gc.clip_to_rect(other_component.x, y, other_component.width, h)

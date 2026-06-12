@@ -20,7 +20,6 @@ import hashlib
 import os
 import shutil
 
-import six
 from numpy import asarray, array, nonzero, polyval
 from scipy.optimize import leastsq, brentq
 from traits.api import HasTraits, List, Str, Dict, Bool, Property, CFloat
@@ -33,7 +32,7 @@ from pychron.spectrometer import set_mftable_name, get_mftable_name
 
 
 def get_detector_name(det):
-    if not isinstance(det, (str, six.text_type)):
+    if not isinstance(det, str):
         det = det.name
     return det
 
@@ -102,9 +101,7 @@ class FieldTable(Loggable):
         from apptools.preferences.preference_binding import bind_preference
 
         prefid = "pychron.spectrometer"
-        bind_preference(
-            self, "use_local_archive", "{}.use_local_mftable_archive".format(prefid)
-        )
+        bind_preference(self, "use_local_archive", "{}.use_local_mftable_archive".format(prefid))
         # bind_preference(self, 'use_db_archive',
         #                 '{}.use_db_mftable_archive'.format(prefid))
 
@@ -129,9 +126,7 @@ class FieldTable(Loggable):
                 return mass
             except ValueError as e:
                 self.debug(
-                    "DAC does not map to an isotope. DAC={}, Detector={}".format(
-                        dac, detname
-                    )
+                    "DAC does not map to an isotope. DAC={}, Detector={}".format(dac, detname)
                 )
         else:
             try:
@@ -139,9 +134,7 @@ class FieldTable(Loggable):
                 return xs[idx]
             except IndexError:
                 self.debug(
-                    "DAC does not map to an isotope. DAC={}, Detector={}".format(
-                        dac, detname
-                    )
+                    "DAC does not map to an isotope. DAC={}, Detector={}".format(dac, detname)
                 )
 
     def map_mass_to_dac(self, mass, detname):
@@ -192,9 +185,7 @@ class FieldTable(Loggable):
         """
         det = get_detector_name(det)
 
-        self.info(
-            "update mftable {} {} {} message={}".format(det, isotope, dac, message)
-        )
+        self.info("update mftable {} {} {} message={}".format(det, isotope, dac, message))
         d = self._get_mftable()
 
         # isos, xs, ys = map(array, d[det][:3])
@@ -394,9 +385,7 @@ class FieldTable(Loggable):
                 initial_guess = self._get_initial_guess(dacs, xs)
                 if initial_guess:
                     try:
-                        c = least_squares(
-                            polyval, xs, dacs, initial_guess=initial_guess
-                        )
+                        c = least_squares(polyval, xs, dacs, initial_guess=initial_guess)
                     except TypeError as e:
                         self.warning("load mftable {}".format(e))
                         c = (0, 0, ys[0])
@@ -434,9 +423,7 @@ class FieldTable(Loggable):
     def _report_mftable(self, detectors, items):
         self.debug("============ MFtable ===========")
         self.debug(
-            "{:<8s} {}".format(
-                "Isotope", "".join(["{:<7s}".format(di) for di in detectors])
-            )
+            "{:<8s} {}".format("Isotope", "".join(["{:<7s}".format(di) for di in detectors]))
         )
         for it in items:
             dd = [getattr(it, di) for di in detectors]
@@ -480,9 +467,7 @@ class FieldTable(Loggable):
             try:
                 from pychron.git_archive.git_archive import GitArchive
             except ImportError:
-                self.warning(
-                    "GitPython >=0.3.2RC1 required for local MFTable Archiving"
-                )
+                self.warning("GitPython >=0.3.2RC1 required for local MFTable Archiving")
                 return
 
             archive = GitArchive(self.mftable_archive_path)

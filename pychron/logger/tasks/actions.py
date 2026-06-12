@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import os
 
 from pyface.constant import OK
@@ -43,9 +42,7 @@ class LogViewerAction(TaskAction):
             except ImportError:
                 wildcard = "*.log"
 
-            dlg = FileDialog(
-                action="open", wildcard=wildcard, default_directory=paths.log_dir
-            )
+            dlg = FileDialog(action="open", wildcard=wildcard, default_directory=paths.log_dir)
             if dlg.open() == OK:
                 path = dlg.path
 

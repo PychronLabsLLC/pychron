@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Button, Instance, String, Property
 from traitsui.api import View, HGroup, Item, Handler
 
@@ -32,7 +31,6 @@ from pychron.config_loadable import ConfigLoadable
 from pychron.globals import globalv
 from pychron.core.ui.led_editor import LED, LEDEditor
 from pychron.tx.errors import PychronCommErrorCode
-from six.moves import range
 
 
 class CRHandler(Handler):

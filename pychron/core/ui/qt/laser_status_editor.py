@@ -16,7 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import math
 from traits.api import HasTraits, Property, Int, Callable, Any, Str, Dict
 from traitsui.basic_editor_factory import BasicEditorFactory
@@ -48,7 +47,6 @@ from pyface.qt.QtCore import (
     Qt,
     QSequentialAnimationGroup,
 )
-from six.moves import range
 
 # ============= local library imports  ==========================
 # ============= views ===================================
@@ -126,14 +124,10 @@ class _LaserStatusEditor(Editor):
                 x = l * math.cos(theta)
                 y = l * math.sin(theta)
 
-                fragment = scene.addEllipse(
-                    ex - ed / 2, ey - ed / 2, ed, ed, pen=pen, brush=brush
-                )
+                fragment = scene.addEllipse(ex - ed / 2, ey - ed / 2, ed, ed, pen=pen, brush=brush)
                 fragment.setParentItem(bounding_rect)
 
-                self.animation_objects["fragment{}{}".format(l, i)] = w = Wrapper(
-                    fragment
-                )
+                self.animation_objects["fragment{}{}".format(l, i)] = w = Wrapper(fragment)
                 gg = QSequentialAnimationGroup()
                 anim = QPropertyAnimation(w, "position")
                 anim.setDuration(750)
@@ -152,9 +146,7 @@ class _LaserStatusEditor(Editor):
                 ganim.addAnimation(gg)
 
         r = 15
-        center = scene.addEllipse(
-            ex - r / 2.0, ey - r / 2.0, r, r, pen=pen, brush=brush
-        )
+        center = scene.addEllipse(ex - r / 2.0, ey - r / 2.0, r, r, pen=pen, brush=brush)
         center.setParentItem(bounding_rect)
         center.setBrush(Qt.black)
         self.animation_objects["center"] = w = Wrapper(

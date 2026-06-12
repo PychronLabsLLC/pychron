@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from apptools.preferences.preference_binding import bind_preference
 from traits.api import HasTraits, Str, CInt
 
@@ -38,9 +37,7 @@ class RsyncMixin(HasTraits):
             bind_preference(self, r, "{}.{}".format(prefid, r))
 
     def push(self):
-        rsync_push(
-            self.lpath, self.rpath, True, remote=self.rsync_remote, user=self.rsync_user
-        )
+        rsync_push(self.lpath, self.rpath, True, remote=self.rsync_remote, user=self.rsync_user)
 
     def pull(self):
         rsync_pull(
@@ -82,9 +79,7 @@ def _rsync(lpath, rpath, push_pull, **kw):
     return not r
 
 
-def _get_rsync_command(
-    lpath, rpath, push, remote=None, port=None, user=None, options=None
-):
+def _get_rsync_command(lpath, rpath, push, remote=None, port=None, user=None, options=None):
     if remote:
         if port:
             rpath = "{}@{}:{}".format(user, remote, rpath)

@@ -134,7 +134,7 @@ class DeviceConfigurer(Loggable):
     def _load_configuration(self, path):
         self.config_path = path
         self.config_name = os.path.relpath(path, paths.device_dir)
-        # self._config = cfg = six.moves.configparser.ConfigParser()
+        # self._config = cfg = configparser.ConfigParser()
         self._config = cfg = ParserWrapper()
         cfg.read(path)
 

@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from traits.api import (
     Button,
     Event,
@@ -46,7 +44,6 @@ from pychron.lasers.points.maker import (
     TransectMaker,
     GridMaker,
 )
-import six
 
 # from pychron.canvas.scene_viewer import LaserMineViewer
 # from pychron.regex import TRANSECT_REGEX
@@ -216,9 +213,7 @@ class PointsProgrammer(Manager):
     @cached_property
     def _get_maker(self):
         if self.mode in maker_dict:
-            maker = maker_dict[self.mode](
-                canvas=self.canvas, stage_manager=self.stage_manager
-            )
+            maker = maker_dict[self.mode](canvas=self.canvas, stage_manager=self.stage_manager)
             return maker
 
     def _load_lines(self, lines, ptargs):
@@ -243,7 +238,7 @@ class PointsProgrammer(Manager):
                     point_color=point_color,
                     line_color=point_color,
                     velocity=si["velocity"],
-                    **ptargs
+                    **ptargs,
                 )
 
     def _load_points(self, points, ptargs):
@@ -261,18 +256,13 @@ class PointsProgrammer(Manager):
             self._set_offset(pi, ptargs)
 
             canvas.new_point(
-                xy=pi["xy"],
-                z=pi["z"],
-                mask=mi,
-                attenuator=ai,
-                default_color=point_color,
-                **ptargs
+                xy=pi["xy"], z=pi["z"], mask=mi, attenuator=ai, default_color=point_color, **ptargs
             )
 
     def _load_polygons(self, polygons, ptargs):
         point_color = self.maker.point_color
         canvas = self.canvas
-        for k, po in six.iteritems(polygons):
+        for k, po in polygons.items():
             canvas._new_polygon = True
             v = po["velocity"]
             use_convex_hull = po["use_convex_hull"]
@@ -292,7 +282,7 @@ class PointsProgrammer(Manager):
                     attenuator=ai,
                     scan_size=scan_size,
                     use_convex_hull=use_convex_hull,
-                    **ptargs
+                    **ptargs,
                 )
 
     def _set_offset(self, item, ptargs):
@@ -349,9 +339,7 @@ class PointsProgrammer(Manager):
                     editor=ButtonEditor(label_value="program_points_label"),
                 ),
             ),
-            Item(
-                "maker", style="custom", enabled_when="is_programming", show_label=False
-            ),
+            Item("maker", style="custom", enabled_when="is_programming", show_label=False),
             HGroup(
                 Item("load_points", show_label=False),
                 Item("save_points", show_label=False),

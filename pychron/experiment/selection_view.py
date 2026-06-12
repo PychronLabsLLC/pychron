@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.abstract_overlay import AbstractOverlay
 from chaco.api import DataLabel
 from chaco.tools.scatter_inspector import ScatterInspector
@@ -31,8 +30,6 @@ import numpy as np
 from pychron.viewable import Viewable
 from pychron.database.selectors.isotope_selector import IsotopeAnalysisSelector
 from pychron.graph.stacked_graph import StackedGraph
-from six.moves import range
-from six.moves import zip
 
 
 class LegendOverlay(AbstractOverlay):
@@ -141,9 +138,7 @@ class SelectionView(Viewable):
         for mach in machines:
             for i, at in enumerate(ats):
                 dd = [
-                    (ri.shortname, ri.timestamp)
-                    for ri in self.table.records
-                    if test(ri, at, mach)
+                    (ri.shortname, ri.timestamp) for ri in self.table.records if test(ri, at, mach)
                 ]
                 if dd:
                     ni, xi = list(zip(*dd))
@@ -258,9 +253,7 @@ class SelectionView(Viewable):
             xs = scatter.index.get_data()
 
             ts = xs[hover] + xmi
-            result = next(
-                (ri for ri in self.table.records if abs(ri.timestamp - ts) < 1), None
-            )
+            result = next((ri for ri in self.table.records if abs(ri.timestamp - ts) < 1), None)
 
             self.table.selected = [result]
 

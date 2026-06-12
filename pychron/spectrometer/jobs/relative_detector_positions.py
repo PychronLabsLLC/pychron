@@ -15,8 +15,7 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-import six.moves.configparser
+import configparser
 import os
 
 from traits.api import Any
@@ -80,14 +79,12 @@ class RelativeDetectorPositions(SpectrometerTask):
                 rp = ion.peak_center_result / axial_dac
                 d.relative_position = rp
                 rps.append((d.name, rp))
-                self.info(
-                    "calculated relative position {} to AX = {}".format(d.name, rp)
-                )
+                self.info("calculated relative position {} to AX = {}".format(d.name, rp))
 
             else:
                 self.info("finished calculating relative detector positions")
 
-                config = six.moves.configparser.ConfigParser()
+                config = configparser.ConfigParser()
                 p = os.path.join(paths.spectrometer_dir, "detectors.cfg")
                 config.read(p)
                 for name, rp in rps:

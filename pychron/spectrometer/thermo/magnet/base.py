@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import time
 
 from traits.api import List, Float, Bool
@@ -24,7 +23,6 @@ from pychron.core.helpers.strtools import to_bool
 from pychron.globals import globalv
 from pychron.hardware import get_float
 from pychron.spectrometer.base_magnet import BaseMagnet
-from six.moves import range
 
 
 class ThermoMagnet(BaseMagnet):
@@ -76,9 +74,7 @@ class ThermoMagnet(BaseMagnet):
                 if verbose:
                     self.debug(
                         'Checking detector "{}". '
-                        "Protection Threshold: {} (V)".format(
-                            pd, det.protection_threshold
-                        )
+                        "Protection Threshold: {} (V)".format(pd, det.protection_threshold)
                     )
                 if det is None:
                     self.warning("Invalid detector to protect: {}".format(pd))
@@ -106,9 +102,7 @@ class ThermoMagnet(BaseMagnet):
                     )
                 self.ask("BlankBeam True", verbose=verbose)
                 unblank = True
-                self._do_af_demagnetization(
-                    v, lambda dd: self.ask("SetMagnetDAC {}".format(dd))
-                )
+                self._do_af_demagnetization(v, lambda dd: self.ask("SetMagnetDAC {}".format(dd)))
         else:
             if verbose:
                 self.debug(

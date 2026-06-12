@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from traits.api import List, Str, HasTraits, Float, Int
 
 # =============standard library imports ========================
@@ -31,9 +30,7 @@ class BaseMicroIonController(BaseGaugeController):
 
     def load_additional_args(self, config, *args, **kw):
         self.address = self.config_get(config, "General", "address", optional=False)
-        self.display_name = self.config_get(
-            config, "General", "display_name", default=self.name
-        )
+        self.display_name = self.config_get(config, "General", "display_name", default=self.name)
         self.mode = self.config_get(config, "Communications", "mode", default="rs485")
         self._load_gauges(config)
         return True

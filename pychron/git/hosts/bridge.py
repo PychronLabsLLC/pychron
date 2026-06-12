@@ -28,7 +28,6 @@ and dogfooding on NMGRL passes — see
 ``docs/architecture/forgejo-cloud-onboarding.md``. Do not extend.
 """
 
-from __future__ import absolute_import
 
 from apptools.preferences.api import bind_preference
 from traits.api import Bool, Str

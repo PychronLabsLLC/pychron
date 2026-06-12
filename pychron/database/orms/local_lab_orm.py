@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from sqlalchemy import Column, Integer, DateTime, String, Float, TEXT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.expression import func

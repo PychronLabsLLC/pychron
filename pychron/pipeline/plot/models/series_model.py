@@ -19,7 +19,6 @@
 # ============= standard library imports ========================
 
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from traits.api import on_trait_change, Dict
 
 from pychron.pipeline.plot.models.figure_model import FigureModel

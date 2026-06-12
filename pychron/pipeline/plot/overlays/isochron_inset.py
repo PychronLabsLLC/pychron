@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.api import LinePlot
 from chaco.api import ScatterPlot
 from traits.api import Float
@@ -67,9 +66,7 @@ class InverseIsochronPointsInset(BaseInset, ScatterPlot):
     def _draw_atm(self, gc):
         with gc:
             xl = self.index_range.low
-            pts = self.map_screen(
-                [(xl, self.nominal_intercept), (0, self.nominal_intercept)]
-            )
+            pts = self.map_screen([(xl, self.nominal_intercept), (0, self.nominal_intercept)])
 
             # print x,y
             # gc.move_to(0,y)

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import Str, List, Enum
 from traitsui.api import Item, VGroup, CheckListEditor
@@ -86,9 +85,7 @@ class UserEntry(BaseEntry):
         if info.result:
             if self.user == self.original_user:
                 dbuser.email = self.email
-                dbuser.category = make_categories(
-                    self.categories, self.available_categories
-                )
+                dbuser.category = make_categories(self.categories, self.available_categories)
                 dbuser.affiliation = self.affiliation
             else:
                 self._add_item(db)
@@ -97,9 +94,7 @@ class UserEntry(BaseEntry):
         with db.session_ctx():
             if not db.get_user(name):
                 c = make_categories(self.categories, self.available_categories)
-                db.add_user(
-                    name, email=self.email, category=c, affiliation=self.affiliation
-                )
+                db.add_user(name, email=self.email, category=c, affiliation=self.affiliation)
                 return True
 
     def traits_view(self):

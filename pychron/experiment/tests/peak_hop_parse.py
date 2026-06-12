@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from pychron.core.yaml import yload
 
 __author__ = "ross"

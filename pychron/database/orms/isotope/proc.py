@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 
 from sqlalchemy import (
     Column,
@@ -82,9 +81,7 @@ class proc_AnalysisGroupSetTable(Base, BaseMixin):
 
 
 class proc_SensitivityHistoryTable(Base, HistoryMixin):
-    sensitivity = relationship(
-        "proc_SensitivityTable", backref="history", uselist=False
-    )
+    sensitivity = relationship("proc_SensitivityTable", backref="history", uselist=False)
     selected = relationship(
         "proc_SelectedHistoriesTable", backref="selected_sensitivity", uselist=False
     )
@@ -118,9 +115,7 @@ class proc_TagTable(Base):
 
 class proc_ArArHistoryTable(Base, HistoryMixin):
     arar_result = relationship("proc_ArArTable", backref="history", uselist=False)
-    selected = relationship(
-        "proc_SelectedHistoriesTable", backref="selected_arar", uselist=False
-    )
+    selected = relationship("proc_SelectedHistoriesTable", backref="selected_arar", uselist=False)
 
 
 class proc_ArArTable(Base, BaseMixin):
@@ -176,13 +171,9 @@ class proc_InterpretedAgeHistoryTable(Base, BaseMixin):
     create_date = Column(DateTime, default=func.now())
     user = stringcolumn()
 
-    interpreted_age = relationship(
-        "proc_InterpretedAgeTable", backref="history", uselist=False
-    )
+    interpreted_age = relationship("proc_InterpretedAgeTable", backref="history", uselist=False)
     identifier = stringcolumn(80)
-    selected = relationship(
-        "gen_LabTable", backref="selected_interpreted_age", uselist=False
-    )
+    selected = relationship("gen_LabTable", backref="selected_interpreted_age", uselist=False)
 
     group_sets = relationship("proc_InterpretedAgeGroupSetTable", backref="history")
 
@@ -241,9 +232,7 @@ class proc_BlanksSetTable(Base, BaseMixin):
 class proc_BlanksHistoryTable(Base, HistoryMixin):
     action_id = foreignkey("proc_ActionTable")
     blanks = relationship("proc_BlanksTable", backref="history")
-    selected = relationship(
-        "proc_SelectedHistoriesTable", backref="selected_blanks", uselist=False
-    )
+    selected = relationship("proc_SelectedHistoriesTable", backref="selected_blanks", uselist=False)
 
 
 class proc_BlanksTable(Base, BaseMixin):
@@ -349,9 +338,7 @@ class proc_DetectorIntercalibrationTable(Base, BaseMixin):
     fit = stringcolumn()
     error_type = stringcolumn(default="SD")
     # set_id = Column(Integer)
-    set_id = Column(
-        String(40), ForeignKey("proc_DetectorIntercalibrationSetTable.set_id")
-    )
+    set_id = Column(String(40), ForeignKey("proc_DetectorIntercalibrationSetTable.set_id"))
 
 
 class proc_DetectorParamHistoryTable(Base, HistoryMixin):
@@ -413,9 +400,7 @@ class proc_FitHistoryTable(Base, HistoryMixin):
     action_id = foreignkey("proc_ActionTable")
     fits = relationship("proc_FitTable", backref="history")
     results = relationship("proc_IsotopeResultsTable", backref="history")
-    selected = relationship(
-        "proc_SelectedHistoriesTable", backref="selected_fits", uselist=False
-    )
+    selected = relationship("proc_SelectedHistoriesTable", backref="selected_fits", uselist=False)
 
 
 class proc_FitTable(Base, BaseMixin):
@@ -456,9 +441,7 @@ class proc_SelectedHistoriesTable(Base, BaseMixin):
     selected_det_param_id = foreignkey("proc_DetectorParamHistoryTable")
     selected_sensitivity_id = foreignkey("proc_SensitivityHistoryTable")
 
-    dr_sets = relationship(
-        "proc_DataReductionTagSetTable", backref="selected_histories"
-    )
+    dr_sets = relationship("proc_DataReductionTagSetTable", backref="selected_histories")
 
 
 class proc_IsotopeResultsTable(Base, BaseMixin):

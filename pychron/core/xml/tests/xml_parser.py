@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from pychron.core.xml.xml_parser import pprint_xml
 
 __author__ = "ross"

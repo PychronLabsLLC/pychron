@@ -19,11 +19,10 @@ import os
 # ============= standard library imports ========================
 import time
 
-import six.moves.configparser
+import configparser
 
 # ============= enthought library imports =======================
 from pyface.timer.do_later import do_after
-from six.moves import zip
 from traits.api import (
     HasTraits,
     Str,
@@ -133,10 +132,7 @@ class BaseReadout(HasTraits):
             try:
                 self.display_tolerance = "{:0.2f}%".format(tolerance * 100)
                 try:
-                    if (
-                        abs(self.value - self.config_value) / self.config_value
-                        > tolerance
-                    ):
+                    if abs(self.value - self.config_value) / self.config_value > tolerance:
                         return self.name, self.value, self.config_value
                 except TypeError:
                     pass
@@ -183,10 +179,7 @@ class Readout(BaseReadout):
 
     @property
     def query_needed(self):
-        return (
-            not self._last_query
-            or (time.time() - self._last_query) > self.query_timeout
-        )
+        return not self._last_query or (time.time() - self._last_query) > self.query_timeout
 
 
 class DeflectionReadout(BaseReadout):
@@ -241,7 +234,7 @@ class ReadoutView(PersistenceLoggable):
         self.warning_dialog(
             "Using readout.cfg is deprecated. Please consider migrating to readout.yaml"
         )
-        config = six.moves.configparser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read(path)
         for section in config.sections():
             rd = Readout(name=section, spectrometer=self.spectrometer)
@@ -372,9 +365,7 @@ class ReadoutView(PersistenceLoggable):
         cols = [
             ObjectColumn(name="name", label="Name"),
             ObjectColumn(name="value", format_func=ff, label="Value", width=50),
-            ObjectColumn(
-                name="config_value", format="%0.3f", label="Config. Value", width=50
-            ),
+            ObjectColumn(name="config_value", format="%0.3f", label="Config. Value", width=50),
             ObjectColumn(name="dev", format_func=ff, label="Dev.", width=50),
             ObjectColumn(name="percent_dev", format_func=ff, label="%Dev.", width=50),
             ObjectColumn(name="display_tolerance", label="Tol."),

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import json
 
@@ -45,9 +44,7 @@ class FirmwareClient(HasTraits):
     def __init__(self, *args, **kw):
         super(FirmwareClient, self).__init__(*args, **kw)
 
-        c = EthernetCommunicator(
-            host=self.host, port=self.port, use_end=True, kind="TCP"
-        )
+        c = EthernetCommunicator(host=self.host, port=self.port, use_end=True, kind="TCP")
         self._comm = c
 
     def test_connection(self):

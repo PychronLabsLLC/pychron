@@ -18,14 +18,10 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
-from __future__ import print_function
 import time
 
 
-def timethis(
-    func, msg=None, log=None, args=None, kwargs=None, decorate="$", rettime=False
-):
+def timethis(func, msg=None, log=None, args=None, kwargs=None, decorate="$", rettime=False):
     if args is None:
         args = tuple()
     if kwargs is None:

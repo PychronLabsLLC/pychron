@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pyface.message_dialog import information
 from traits.api import HasTraits, List, Button, Int
@@ -45,9 +44,7 @@ class DetectorICView(HasTraits):
     def __init__(self, an):
         self.tabular_adapter = DetectorICTabularAdapter()
         self.record_id = an.record_id
-        isotopes = [
-            an.isotopes[k] for k in an.isotope_keys if k.startswith(self._isotope_key)
-        ]
+        isotopes = [an.isotopes[k] for k in an.isotope_keys if k.startswith(self._isotope_key)]
 
         detcols = get_columns(isotopes)
 
@@ -72,13 +69,9 @@ class DetectorICView(HasTraits):
                 HGroup(spring, UItem("export_button")),
                 UItem(
                     "items",
-                    editor=TabularEditor(
-                        adapter=self.tabular_adapter, stretch_last_section=False
-                    ),
+                    editor=TabularEditor(adapter=self.tabular_adapter, stretch_last_section=False),
                 ),
-                VGroup(
-                    UItem("helpstr", style="readonly"), show_border=True, label="Info."
-                ),
+                VGroup(UItem("helpstr", style="readonly"), show_border=True, label="Info."),
             ),
             width=700,
         )

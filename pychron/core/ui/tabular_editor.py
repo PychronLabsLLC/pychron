@@ -18,7 +18,6 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from .factory import toolkit_factory
 
 myTabularEditor = toolkit_factory("tabular_editor", "myTabularEditor")

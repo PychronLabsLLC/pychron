@@ -1,10 +1,10 @@
-from __future__ import absolute_import
 import math
 import os
 import unittest
 
 from pychron.core.geometry.affine import transform_point, itransform_point
 from pychron.stage.maps.laser_stage_map import LaserStageMap
+
 
 class NewStageMapTestCase(unittest.TestCase):
     def setUp(self) -> None:

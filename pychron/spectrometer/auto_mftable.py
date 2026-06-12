@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from contextlib import contextmanager
 
 from traits.api import Instance
@@ -32,12 +31,8 @@ from pychron.paths import paths
 
 
 class AutoMFTable(Loggable):
-    ion_optics_manager = Instance(
-        "pychron.spectrometer.ion_optics_manager.IonOpticsManager"
-    )
-    el_manager = Instance(
-        "pychron.extraction_line.extraction_line_manager.ExtractionLineManager"
-    )
+    ion_optics_manager = Instance("pychron.spectrometer.ion_optics_manager.IonOpticsManager")
+    el_manager = Instance("pychron.extraction_line.extraction_line_manager.ExtractionLineManager")
     pyscript_task = Instance("pychron.pyscript.tasks.pyscript_task.PyScriptTask")
     spectrometer_manager = Instance(
         "pychron.spectrometer.base_spectrometer_manager.BaseSpectrometerManager"
@@ -69,9 +64,7 @@ class AutoMFTable(Loggable):
         ion = self.ion_optics_manager
 
         pc = ion.setup_peak_center(detector=[detector], isotope=isotope, new=True)
-        ion.do_peak_center(
-            new_thread=False, save=save, message="automated run peakcenter"
-        )
+        ion.do_peak_center(new_thread=False, save=save, message="automated run peakcenter")
         pcr = ion.peak_center_result
         if pcr:
             pc.close_graph()
@@ -93,9 +86,7 @@ class AutoMFTable(Loggable):
                     self.info("Deflection=0. Using mftable value for {}".format(di))
                 else:
                     self.info(
-                        "calculating peak center for {} on {}. deflection={}".format(
-                            refiso, di, de
-                        )
+                        "calculating peak center for {} on {}. deflection={}".format(refiso, di, de)
                     )
                     self._set_deflection(di, de)
                     pc = self._do_peak_center(di, refiso, save=False)
@@ -191,9 +182,7 @@ class AutoMFTable(Loggable):
         ctx = {"analysis_type": "blank" if "blank" in name else "unknown"}
         ret = task.execute_script(name, root, new_thread=False, context=ctx)
         self.info(
-            "Extraction script {} {}".format(
-                name, "completed successfully" if ret else "failed"
-            )
+            "Extraction script {} {}".format(name, "completed successfully" if ret else "failed")
         )
         return ret
 

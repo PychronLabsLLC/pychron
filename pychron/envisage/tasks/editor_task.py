@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 # ============= standard library imports ========================
 import os
@@ -49,9 +48,7 @@ class BaseEditorTask(BaseManagerTask):
         self.information_dialog("Changes saved to the database")
 
     def get_editor(self, name, key="name"):
-        return next(
-            (e for e in self.editor_area.editors if getattr(e, key) == name), None
-        )
+        return next((e for e in self.editor_area.editors if getattr(e, key) == name), None)
 
     def get_editor_names(self):
         return [e.name for e in self.editor_area.editors]
@@ -65,9 +62,7 @@ class BaseEditorTask(BaseManagerTask):
         elif klass:
             if not isinstance(self.active_editor, klass):
                 name = str(klass).split(".")[-1][:-2].replace("Editor", "")
-                self.information_dialog(
-                    'No active tab. Please open a "{}" tab'.format(name)
-                )
+                self.information_dialog('No active tab. Please open a "{}" tab'.format(name))
                 return
 
         return self.active_editor
@@ -189,11 +184,7 @@ class BaseEditorTask(BaseManagerTask):
             return True
 
         dirty_editors = dict(
-            [
-                (editor.name, editor)
-                for editor in self.editor_area.editors
-                if editor.dirty
-            ]
+            [(editor.name, editor) for editor in self.editor_area.editors if editor.dirty]
         )
         if not dirty_editors:
             return True

@@ -20,7 +20,6 @@
 # ============= local library imports  ==========================
 
 
-from __future__ import absolute_import
 from traits.trait_types import Range
 
 from pychron.core.ui.qt.dial_editor import DialEditor
@@ -36,7 +35,7 @@ class Dial(Range):
         height=-1,
         display_value=True,
         value_format=None,
-        **metadata
+        **metadata,
     ):
         super(Dial, self).__init__(low=low, high=high, **metadata)
         self.editor = DialEditor(

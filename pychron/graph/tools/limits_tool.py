@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.abstract_overlay import AbstractOverlay
 from enable.base_tool import BaseTool
 from enable.colors import ColorTrait
@@ -77,15 +76,9 @@ class LimitsTool(BaseTool):
     def is_draggable(self, event):
         tol = 5
         if self.orientation == "x":
-            return (
-                abs(event.x - self.component.x) < tol
-                or abs(event.x - self.component.x2) < tol
-            )
+            return abs(event.x - self.component.x) < tol or abs(event.x - self.component.x2) < tol
         else:
-            return (
-                abs(event.y - self.component.y) < tol
-                or abs(event.y - self.component.y2) < tol
-            )
+            return abs(event.y - self.component.y) < tol or abs(event.y - self.component.y2) < tol
 
     def normal_left_down(self, event):
         if self.is_draggable(event):

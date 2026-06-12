@@ -16,8 +16,6 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
-from __future__ import print_function
 from chaco.abstract_overlay import AbstractOverlay
 from chaco.ticks import auto_ticks
 from traits.api import Float, Int, Bool, Enum, Any
@@ -59,9 +57,7 @@ class MinorTicksOverlay(AbstractOverlay):
             s = r.low
             e = r.high
 
-            ts = auto_ticks(
-                s, e, s, e, (nt + 2) * -self.interval, use_endpoints=self.use_endpoints
-            )
+            ts = auto_ticks(s, e, s, e, (nt + 2) * -self.interval, use_endpoints=self.use_endpoints)
             for ti in ts:
                 if self.orientation == "v":
                     ti = round(c.map_screen([[ti, 0]])[0][0])

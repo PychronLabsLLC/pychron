@@ -15,16 +15,14 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from traits.api import Any, Str
 
 # =============standard library imports ========================
-import six.moves.configparser
+import configparser
 import time
 
 # =============local library imports  ==========================
 from pychron.config_loadable import ConfigLoadable
-from six.moves import range
 
 
 class KerrDevice(ConfigLoadable):
@@ -48,7 +46,7 @@ class KerrDevice(ConfigLoadable):
     def load(self, path):
         """ """
 
-        config = six.moves.configparser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read(path)
 
         self.set_attribute(config, "address", "General", "address")
@@ -98,9 +96,7 @@ class KerrDevice(ConfigLoadable):
         data_bits = cmd[4:]
         cb = high_nibble == len(data_bits) / 2
         if not cb:
-            self.warning(
-                "{} != len({})/2, {}".format(high_nibble, data_bits, len(data_bits) / 2)
-            )
+            self.warning("{} != len({})/2, {}".format(high_nibble, data_bits, len(data_bits) / 2))
         return cb
 
     def _calc_checksum(self, cmd):

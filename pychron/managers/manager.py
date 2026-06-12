@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 # =============standard library imports ========================
 import os
@@ -129,9 +127,7 @@ class Manager(Viewable, ConfigLoadable):
     def ui_opened(self, ui):
         def _loop():
             start = time.time()
-            self.info(
-                "Window set to close after {} min".format(self.close_after_minutes)
-            )
+            self.info("Window set to close after {} min".format(self.close_after_minutes))
 
             now = time.time()
             while now - start < (self.close_after_minutes * 60) and not self._killed:
@@ -209,9 +205,7 @@ class Manager(Viewable, ConfigLoadable):
                     break
 
             if self.application:
-                dev = self.application.get_service(
-                    ICoreDevice, 'name=="{}"'.format(device_name)
-                )
+                dev = self.application.get_service(ICoreDevice, 'name=="{}"'.format(device_name))
 
             if dev is None:
                 self.warning("Invalid device {}".format(device_name))
@@ -247,9 +241,7 @@ class Manager(Viewable, ConfigLoadable):
         ff = Flag(f)
         self.flags.append(ff)
         if self.application:
-            fm = self.application.get_service(
-                "pychron.hardware.flag_manager.FlagManager"
-            )
+            fm = self.application.get_service("pychron.hardware.flag_manager.FlagManager")
             if fm is not None:
                 fm.add_flag(ff)
 
@@ -260,9 +252,7 @@ class Manager(Viewable, ConfigLoadable):
         ff = ValveFlag(f, valves=v, manager=self)
         self.flags.append(ff)
         if self.application:
-            fm = self.application.get_service(
-                "pychron.hardware.flag_manager.FlagManager"
-            )
+            fm = self.application.get_service("pychron.hardware.flag_manager.FlagManager")
             if fm is not None:
                 fm.add_valve_flag(ff)
 
@@ -272,9 +262,7 @@ class Manager(Viewable, ConfigLoadable):
         ff = TimedFlag(f)
         self.flags.append(ff)
         if self.application:
-            fm = self.application.get_service(
-                "pychron.hardware.flag_manager.FlagManager"
-            )
+            fm = self.application.get_service("pychron.hardware.flag_manager.FlagManager")
             if fm is not None:
                 fm.add_timed_flag(ff)
 
@@ -310,9 +298,7 @@ class Manager(Viewable, ConfigLoadable):
 
         return self._create_manager(klass, manager, params, **kw)
 
-    def create_device(
-        self, device_name, gdict=None, dev_class=None, prefix=None, obj=None
-    ):
+    def create_device(self, device_name, gdict=None, dev_class=None, prefix=None, obj=None):
         """ """
         device = None
 
@@ -364,9 +350,7 @@ class Manager(Viewable, ConfigLoadable):
     def _kill_hook(self):
         pass
 
-    def _create_manager(
-        self, klass, manager, params, port=None, host=None, remote=False
-    ):
+    def _create_manager(self, klass, manager, params, port=None, host=None, remote=False):
         raise NotImplementedError
         # from pychron.managers import manager_package_dict
         #
@@ -420,9 +404,7 @@ class Manager(Viewable, ConfigLoadable):
         vg = VGroup() if orientation == "v" else HGroup()
 
         for name, label, enabled in buttons:
-            vg.content.append(
-                HGroup(self._button_factory(name, label, enabled), springy=False)
-            )
+            vg.content.append(HGroup(self._button_factory(name, label, enabled), springy=False))
         return vg
 
 

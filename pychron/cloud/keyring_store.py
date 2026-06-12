@@ -22,7 +22,6 @@ clobbering the prior credential atomically — re-onboarding is a separate
 destructive flow that calls :func:`delete_token` explicitly.
 """
 
-from __future__ import absolute_import
 
 import logging
 

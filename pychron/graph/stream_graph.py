@@ -14,10 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
-
-from six.moves import range
-from six.moves import zip
 
 import time
 from numpy import inf
@@ -171,9 +167,7 @@ class StreamGraph(Graph):
         dl = self.data_limits[plotid]
         yd = data.get_data(yn)
 
-        if self.force_track_x_flag or (
-            track_x and (self.track_x_min or self.track_x_max)
-        ):
+        if self.force_track_x_flag or (track_x and (self.track_x_min or self.track_x_max)):
             self._set_xlimits(nx, plotid)
         new_xd = self._append_data(data.get_data(xn), nx, limit=dl)
         new_yd = self._append_data(yd, float(y), limit=dl)

@@ -16,9 +16,7 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 from traits.etsconfig.etsconfig import ETSConfig
-from six.moves import range
 
 ETSConfig.toolkit = "qt4"
 

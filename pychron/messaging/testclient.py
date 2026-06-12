@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import json
 
 from traits.api import (
@@ -50,17 +48,13 @@ import time
 # from datetime import timedelta
 from threading import Thread
 import random
-from six.moves import range
-from six.moves import input
 
 
 # import struct
 
 
 class Client(HasTraits):
-    command = Property(
-        String("GetData", enter_set=True, auto_set=False), depends_on="_command"
-    )
+    command = Property(String("GetData", enter_set=True, auto_set=False), depends_on="_command")
     _command = Str
     resend = Button
     receive_data_stream = Button

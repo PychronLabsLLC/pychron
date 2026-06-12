@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from envisage.ui.tasks.task_extension import TaskExtension
 from envisage.ui.tasks.task_factory import TaskFactory
 from pyface.tasks.action.schema_addition import SchemaAddition
@@ -40,9 +39,7 @@ class LoggerPlugin(BaseTaskPlugin):
             TaskExtension(
                 actions=[
                     SchemaAddition(factory=LogViewerAction, path="MenuBar/help.menu"),
-                    SchemaAddition(
-                        factory=CurrentLogViewerAction, path="MenuBar/help.menu"
-                    ),
+                    SchemaAddition(factory=CurrentLogViewerAction, path="MenuBar/help.menu"),
                 ]
             )
         ]

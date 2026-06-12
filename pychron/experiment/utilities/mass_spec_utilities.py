@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import os
 
 # ============= standard library imports ========================
@@ -51,9 +49,7 @@ def fix_reference_detector(rd, aid):
 
     for r in q.all():
         if r.Label == rd:
-            print(
-                "setting refid current={}  new={}".format(record.RefDetID, r.DetectorID)
-            )
+            print("setting refid current={}  new={}".format(record.RefDetID, r.DetectorID))
             record.RefDetID = r.DetectorID
     db.commit()
 

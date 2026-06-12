@@ -21,8 +21,6 @@
 # from pychron.entry.dvc_import.view import DVCImporterView
 
 
-from __future__ import absolute_import
-
 import os
 
 from pychron.data_mapper.sources.wiscar_source import WiscArNuSource
@@ -72,9 +70,7 @@ def do_import_analyses(dvc, sources):
             root = os.path.dirname(__file__)
             k.directory = os.path.join(root, "tests", "data", "wiscar")
             k.nice_path = os.path.join(root, "tests", "data", "wiscar.nice")
-            k.metadata_path = os.path.join(
-                root, "tests", "data", "WISCAR_test_metadata.txt"
-            )
+            k.metadata_path = os.path.join(root, "tests", "data", "WISCAR_test_metadata.txt")
             break
 
     view = DVCAnalysisImporterView(model=model)

@@ -16,7 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Bool, Float, Int, Str
 
 # ============= standard library imports ========================
@@ -112,9 +111,7 @@ class FusionsDiodeLaserMonitor(FusionsLaserMonitor):
     def load_additional_args(self, config):
         """ """
         super(FusionsDiodeLaserMonitor, self).load_additional_args(config)
-        self.set_attribute(
-            config, "max_temp", "General", "max_temp", cast="float", optional=True
-        )
+        self.set_attribute(config, "max_temp", "General", "max_temp", cast="float", optional=True)
 
     #    def _get_update_max_temp(self):
     #        '''

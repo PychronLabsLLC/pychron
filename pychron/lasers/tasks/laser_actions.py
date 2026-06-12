@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # from traits.api import HasTraits
 # from traitsui.api import View, Item
-from __future__ import absolute_import
 
 from pyface.action.action import Action
 from pyface.tasks.action.task_action import TaskAction
@@ -39,9 +38,7 @@ class BaseLaserAction(Action):
             if app is None:
                 app = event.task.window.application
 
-            manager = app.get_service(
-                ILaserManager, 'name=="{}"'.format(self.manager_name)
-            )
+            manager = app.get_service(ILaserManager, 'name=="{}"'.format(self.manager_name))
         return manager
 
 
@@ -119,9 +116,7 @@ class LaserTaskAction(TaskAction):
                 enabled = True
                 if self.enabled_name:
                     if self.object:
-                        enabled = bool(
-                            self._get_attr(self.object, self.enabled_name, False)
-                        )
+                        enabled = bool(self._get_attr(self.object, self.enabled_name, False))
                 if enabled:
                     self._enabled = True
             else:
@@ -133,9 +128,7 @@ class LaserTaskAction(TaskAction):
         """
         if self.enabled_name:
             if self.object:
-                self.enabled = bool(
-                    self._get_attr(self.object, self.enabled_name, False)
-                )
+                self.enabled = bool(self._get_attr(self.object, self.enabled_name, False))
             else:
                 self.enabled = False
         elif self._enabled is not None:

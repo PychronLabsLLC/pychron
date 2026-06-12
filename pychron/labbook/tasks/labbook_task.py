@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import os
 
 from pyface.tasks.action.schema import SToolBar
@@ -103,9 +101,7 @@ class LabBookTask(BaseEditorTask):
         root = paths.labbook_dir
 
         dirs, files = self._make_paths(root, lpost, hpost)
-        self.hierarchy = Hierarchy(
-            name="LabBook", root_path=root, children=dirs + files
-        )
+        self.hierarchy = Hierarchy(name="LabBook", root_path=root, children=dirs + files)
         for di in dirs:
             self._load_hierarchy(di, levels=3)
 
@@ -179,9 +175,7 @@ class LabBookTask(BaseEditorTask):
             # offset = max_path_cnt(root, 'Note ', delimiter=' ', extension='')
             # name = 'Note {:03n}'.format(len(names) + offset)
             # name = os.path.join(os.path.relpath(root, paths.labbook_dir), name)
-            nfunc = lambda name: os.path.join(
-                os.path.relpath(root, paths.labbook_dir), name
-            )
+            nfunc = lambda name: os.path.join(os.path.relpath(root, paths.labbook_dir), name)
         else:
             root = paths.labbook_dir
             nfunc = lambda name: name
@@ -215,9 +209,7 @@ class LabBookTask(BaseEditorTask):
                 print("exception", e)
                 self.debug("failed loading file history for {}".format(new.path))
 
-            labels = self.labeler.load_labels_for_path(
-                os.path.relpath(new.path, paths.labbook_dir)
-            )
+            labels = self.labeler.load_labels_for_path(os.path.relpath(new.path, paths.labbook_dir))
 
             new.labels = labels
 
@@ -297,9 +289,7 @@ class LabBookTask(BaseEditorTask):
             except AttributeError:
                 pass
             files = (
-                ci
-                for ci in files
-                if func(os.path.join(root, ci), strformat=None).date() >= lpost
+                ci for ci in files if func(os.path.join(root, ci), strformat=None).date() >= lpost
             )
 
         if hpost:
@@ -309,9 +299,7 @@ class LabBookTask(BaseEditorTask):
                 pass
 
             files = (
-                ci
-                for ci in files
-                if func(os.path.join(root, ci), strformat=None).date() <= hpost
+                ci for ci in files if func(os.path.join(root, ci), strformat=None).date() <= hpost
             )
 
         files = [self._child_factory(ci) for ci in files]

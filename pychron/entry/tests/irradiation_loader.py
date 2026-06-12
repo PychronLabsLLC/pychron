@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from pychron.core.test_helpers import get_data_dir as mget_data_dir, dvc_db_factory
 
 __author__ = "ross"

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import on_trait_change, List
 
 from pychron.envisage.tasks.base_task_plugin import BaseTaskPlugin
@@ -45,9 +44,7 @@ class LabspyClientPlugin(BaseTaskPlugin):
         return [e1, e2]
 
     def _add_run(self, ctx):
-        enabled = self.application.get_boolean_preference(
-            "pychron.labspy.experiment.enabled"
-        )
+        enabled = self.application.get_boolean_preference("pychron.labspy.experiment.enabled")
         self.debug("add run enabled={}".format(enabled))
         if enabled:
             run = ctx["run"]
@@ -57,9 +54,7 @@ class LabspyClientPlugin(BaseTaskPlugin):
                 client.add_run(ctx["run"], ctx["experiment"])
 
     def _add_experiment(self, ctx):
-        enabled = self.application.get_boolean_preference(
-            "pychron.labspy.experiment.enabled"
-        )
+        enabled = self.application.get_boolean_preference("pychron.labspy.experiment.enabled")
         self.debug("add experiment enabled={}".format(enabled))
         if enabled:
             client = self.application.get_service(LabspyClient)
@@ -69,9 +64,7 @@ class LabspyClientPlugin(BaseTaskPlugin):
         return LabspyClient(application=self.application)
 
     def _service_offers_default(self):
-        so = self.service_offer_factory(
-            protocol=LabspyClient, factory=self._labspy_client_factory
-        )
+        so = self.service_offer_factory(protocol=LabspyClient, factory=self._labspy_client_factory)
         return [so]
 
     def _preferences_panes_default(self):

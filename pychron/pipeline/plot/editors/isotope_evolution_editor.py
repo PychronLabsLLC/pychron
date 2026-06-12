@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Event
 
 # ============= standard library imports ========================
@@ -88,13 +87,9 @@ class IsoEvoGraph(Graph):
             self._eq_only_dict = {sid: False}
 
         if v:
-            b = self.action_factory(
-                "Hide Equilibration Only", "_hide_equilibration_only"
-            )
+            b = self.action_factory("Hide Equilibration Only", "_hide_equilibration_only")
         else:
-            b = self.action_factory(
-                "Show Equilibration Only", "_show_equilibration_only"
-            )
+            b = self.action_factory("Show Equilibration Only", "_show_equilibration_only")
 
         return [a, b]
 

@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 
 # ============= enthought library imports =======================
 from numpy import array, linspace
@@ -75,18 +74,14 @@ class PeakCenterView(HasTraits):
 
             if an.peak_center_use_interpolation:
                 fxs = linspace(ref_xs.min(), ref_xs.max(), 1000)
-                f = interpolate.interp1d(
-                    ref_xs, ref_ys, kind=an.peak_center_interpolation_kind
-                )
+                f = interpolate.interp1d(ref_xs, ref_ys, kind=an.peak_center_interpolation_kind)
                 ys = f(fxs)
                 xs = fxs
             else:
                 xs, ys = ref_xs, ref_ys
 
             g.new_series(xs, ys, color=s.color)
-            g.set_series_label(
-                "*{}({})".format(ref_k, an.peak_center_reference_isotope)
-            )
+            g.set_series_label("*{}({})".format(ref_k, an.peak_center_reference_isotope))
 
             # t = CursorTool(s,
             #                drag_button="left",
@@ -101,9 +96,7 @@ class PeakCenterView(HasTraits):
             label_text = None
             if v is not None:
                 g.add_vertical_rule(v)
-                txt, rdata, lrpdata, hrpdata = calculate_peak_statistics(
-                    xs, ys, ref_k, v
-                )
+                txt, rdata, lrpdata, hrpdata = calculate_peak_statistics(xs, ys, ref_k, v)
                 label_text = [txt]
                 # g.new_series(rdata[0], rdata[1], type='scatter', marker_size=4, edge_color='black', color=s.color)
                 # g.new_series(lrpdata[0], lrpdata[1], type='scatter', marker_size=4, edge_color='green')

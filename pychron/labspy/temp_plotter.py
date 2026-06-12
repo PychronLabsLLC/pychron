@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
-from __future__ import print_function
 import os
 import time
 
@@ -23,7 +21,6 @@ from numpy import array, gradient
 
 from pychron.labspy.database_adapter import LabspyDatabaseAdapter
 import pandas as pd
-from six.moves import zip
 
 
 def get_all_temp_data(low="2017-06-14 12:00"):
@@ -46,12 +43,7 @@ def get_all_temp_data(low="2017-06-14 12:00"):
             records = db.get_measurements(device, process, low=low)
             print(device, process)
             ts, xs, ys = list(
-                zip(
-                    *[
-                        (r.pub_date, time.mktime(r.pub_date.timetuple()), r.value)
-                        for r in records
-                    ]
-                )
+                zip(*[(r.pub_date, time.mktime(r.pub_date.timetuple()), r.value) for r in records])
             )
 
             tk = "{}_t".format(name)
@@ -77,9 +69,7 @@ def get_data():
     db.name = os.getenv("Labspy_NAME")
     if db.connect():
         db.create_session()
-        records = db.get_measurements(
-            "EnvironmentalMonitor", "Lab Temp.", low="2017-06-14 12:00"
-        )
+        records = db.get_measurements("EnvironmentalMonitor", "Lab Temp.", low="2017-06-14 12:00")
         xs, ys = list(zip(*[(r.pub_date, r.value) for r in records]))
         return xs, ys
 

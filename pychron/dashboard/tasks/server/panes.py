@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.tasks.traits_dock_pane import TraitsDockPane
 from pyface.tasks.traits_task_pane import TraitsTaskPane
 from traitsui.api import View, UItem, VGroup, HGroup, Group, VSplit
@@ -85,9 +84,7 @@ class DashboardDevicePane(TraitsDockPane):
 
         veditor = TableEditor(columns=cols, editable=False)
 
-        v = View(
-            VSplit(UItem("devices", editor=editor), UItem("values", editor=veditor))
-        )
+        v = View(VSplit(UItem("devices", editor=editor), UItem("values", editor=veditor)))
         return v
 
         # ============= EOF =============================================

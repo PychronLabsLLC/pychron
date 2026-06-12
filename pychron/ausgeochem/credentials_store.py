@@ -36,7 +36,6 @@ Profile metadata (name, base_url, username) lives in pychron preferences as
 JSON. Only the password ever touches this module.
 """
 
-from __future__ import absolute_import
 
 import json
 import logging
@@ -47,16 +46,16 @@ import sys
 KEYRING_SERVICE = "pychron.earthbank"
 
 _logger = logging.getLogger(__name__)
-_fallback_store = {}
+_fallback_store: dict[str, str] = {}
 
 # -- backend probes ----------------------------------------------------------
 
-_keyring = None
-_keyring_errors = None
 try:
     import keyring as _keyring
     import keyring.errors as _keyring_errors
 except ImportError:
+    _keyring = None  # type: ignore[assignment]
+    _keyring_errors = None  # type: ignore[assignment]
     _logger.warning("'keyring' not installed; falling back to encrypted file")
 
 
@@ -92,11 +91,9 @@ try:
 
     _have_crypto = True
 except ImportError:
-    Fernet = None
-    InvalidToken = Exception
-    _logger.warning(
-        "'cryptography' not installed; cannot encrypt credentials at rest"
-    )
+    Fernet = None  # type: ignore[assignment, misc]
+    InvalidToken = Exception  # type: ignore[assignment, misc]
+    _logger.warning("'cryptography' not installed; cannot encrypt credentials at rest")
 
 
 def _store_dir():
@@ -124,9 +121,7 @@ def _store_dir():
     elif sys.platform == "darwin":
         base = os.path.expanduser("~/Library/Application Support")
     else:
-        base = os.environ.get("XDG_DATA_HOME") or os.path.expanduser(
-            "~/.local/share"
-        )
+        base = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
     path = os.path.join(base, "pychron", ".appdata")
     os.makedirs(path, exist_ok=True)
     return path

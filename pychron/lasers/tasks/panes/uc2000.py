@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 from pychron.lasers.tasks.laser_panes import (
     BaseLaserPane,
     ClientPane,

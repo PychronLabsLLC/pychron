@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from datetime import datetime
 
@@ -143,9 +142,7 @@ class SensitivityEntry(DVCAble):
         specs = self.dvc.get_sensitivities()
         print("asdf", specs)
         self.records = [
-            SensitivityRecord.from_dict(sens)
-            for spec in specs.values()
-            for sens in spec
+            SensitivityRecord.from_dict(sens) for spec in specs.values() for sens in spec
         ]
 
     # @database_enabled()

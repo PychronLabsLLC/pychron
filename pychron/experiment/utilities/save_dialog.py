@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 
@@ -57,9 +56,7 @@ class IncrementalHeatTemplateSaveDialog(BaseSaveDialog):
             )
         )
         dgrp = HGroup(Item("root", label="Directory"))
-        v = okcancel_view(
-            VGroup(ngrp, dgrp), width=400, title="Save Step Heat Template"
-        )
+        v = okcancel_view(VGroup(ngrp, dgrp), width=400, title="Save Step Heat Template")
         return v
 
 
@@ -68,9 +65,7 @@ class ExperimentSaveDialog(BaseSaveDialog):
     name = ExperimentStr
     use_current_exp = Bool
 
-    help_str = Str(
-        "<b>Name must be in PascalCase. NoSpaces and only AlphaNumeric characters</b>"
-    )
+    help_str = Str("<b>Name must be in PascalCase. NoSpaces and only AlphaNumeric characters</b>")
 
     def _use_current_exp_changed(self, new):
         if new:

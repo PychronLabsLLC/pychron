@@ -18,7 +18,6 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from pychron.experiment.automated_run.data_collector import DataCollector
 
 

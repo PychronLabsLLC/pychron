@@ -16,8 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 from numpy import linspace
 from scipy.optimize import leastsq
 from scipy.stats import norm

@@ -19,7 +19,6 @@
 
 # ============= standard library imports ========================
 
-from __future__ import absolute_import
 from pychron.managers.motion_controller_managers.motion_controller_manager import (
     MotionControllerManager,
 )

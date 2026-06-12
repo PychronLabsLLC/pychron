@@ -16,7 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from .data_manager import DataManager
 
 # ============= standard library imports ========================
@@ -26,8 +25,6 @@ from numpy import loadtxt
 # import time
 # from matplotlib.dates import num2date
 import os
-from six.moves import map
-from six.moves import zip
 
 
 # ============= local library imports  ==========================

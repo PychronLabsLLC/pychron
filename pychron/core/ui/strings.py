@@ -17,11 +17,9 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 import re
 
 from traits.trait_types import BaseStr
-import six
 
 pascalcase_regex = re.compile(r"^[A-Z](([a-z0-9]+[A-Z]?)*)$")
 reponame_regex = re.compile(r"^[\w_-]+$")
@@ -38,7 +36,7 @@ class PascalCase(BaseStr):
 
 class SpacelessStr(BaseStr):
     def validate(self, obj, name, value):
-        if isinstance(value, six.string_types) and " " not in value:
+        if isinstance(value, str) and " " not in value:
             return value
 
         self.error(obj, name, value)

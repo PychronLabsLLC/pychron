@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
-from __future__ import print_function
 from pychron.core.regression.ols_regressor import PolynomialRegressor
 from pychron.core.regression.wls_regressor import WeightedPolynomialRegressor
 from numpy import linspace

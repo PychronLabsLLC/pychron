@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.pdf_graphics_context import PdfPlotGraphicsContext
 from reportlab.platypus.flowables import Flowable
 

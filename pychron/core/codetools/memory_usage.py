@@ -13,15 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
-from __future__ import print_function
-import six.moves.cPickle
+import pickle
 import gc
 import os
 import sys
 from itertools import groupby
-from six.moves import filter
-from six.moves import map
 
 try:
     import psutil
@@ -90,9 +86,7 @@ def mem_dump(path):
             size = sys.getsizeof(obj, 0)
             if size > 1000:
                 #    referrers = [id(o) for o in gc.get_referrers(obj) if hasattr(o, '__class__')]
-                referents = [
-                    id(o) for o in gc.get_referents(obj) if hasattr(o, "__class__")
-                ]
+                referents = [id(o) for o in gc.get_referents(obj) if hasattr(o, "__class__")]
                 if hasattr(obj, "__class__"):
                     cls = str(obj.__class__)
 
@@ -124,7 +118,7 @@ def mem_sort():
     i = 0
     while dump:
         try:
-            obj = six.moves.cPickle.load(dump)
+            obj = pickle.load(dump)
             objs.append(obj)
         except EOFError:
             pass
@@ -228,9 +222,7 @@ def measure_type(cls=None, group=None, before=None):
 
 
 # gp, _ = unique_path(root, 'growth')
-def calc_growth(
-    before, cls=None, group=None, count=None, write=False, print_objs=False
-):
+def calc_growth(before, cls=None, group=None, count=None, write=False, print_objs=False):
     gc.collect()
 
     after = measure_type(cls, group)
@@ -335,23 +327,23 @@ def calc_growth(
 def show_refs(cls):
     obj = next((o for o in gc.get_objects() if type(o) == cls), None)
     if obj:
-        print("================= {} referrers ================".format(cls))
+        print(f"================= {cls} referrers ================")
         #         print '{} referrers'.format(obj)
         for ri in gc.get_referrers(obj):
             keys = ""
             if isinstance(ri, dict):
                 keys = ",".join(list(ri.keys()))
 
-            print("{:<30s} {} {}".format(str(id(ri)), type(ri), ri, keys))
+            print(f"{id(ri)!s:<30} {type(ri)} {ri} {keys}")
 
-        print("================== {} referents ================".format(cls))
+        print(f"================== {cls} referents ================")
         #         print '{} referents'.format(obj)
         for ri in gc.get_referents(obj):
             keys = ""
             if isinstance(ri, dict):
                 keys = ",".join(list(ri.keys()))
 
-            print("{:<30s} {} {}".format(str(id(ri)), type(ri), ri, keys))
+            print(f"{id(ri)!s:<30} {type(ri)} {ri} {keys}")
 
 
 def get_type(cls):

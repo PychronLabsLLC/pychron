@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import math
 
 import numpy as np
@@ -78,15 +77,7 @@ class Index(HasTraits):
 
     def _calculate(self, w, age, sensitivity, k2o, c):
         moles_40k = (
-            w
-            / 1000.0
-            * k2o
-            / 100.0
-            * 1
-            / c.mK
-            * (2 * c.mK)
-            / (2 * c.mK + c.mO)
-            * c.abundance_40K
+            w / 1000.0 * k2o / 100.0 * 1 / c.mK * (2 * c.mK) / (2 * c.mK + c.mO) * c.abundance_40K
         )
         moles_40Ar = (
             moles_40k
@@ -240,9 +231,7 @@ class SignalCalculator(HasTraits):
         graph_grp = VGroup(
             Item("graph", width=800, height=500, show_label=False, style="custom"),
         )
-        v = View(
-            VGroup(cntrl_grp, graph_grp), resizable=True, title="Signal Calculator"
-        )
+        v = View(VGroup(cntrl_grp, graph_grp), resizable=True, title="Signal Calculator")
         return v
 
     def _graph_default(self):
@@ -255,9 +244,7 @@ class SignalCalculator(HasTraits):
         )
 
         g.new_series()
-        g.new_plot(
-            xtitle="40Ar* (fA)", ytitle="%Error in Age", padding=[30, 30, 60, 60]
-        )
+        g.new_plot(xtitle="40Ar* (fA)", ytitle="%Error in Age", padding=[30, 30, 60, 60])
         g.new_series()
         #        fp = create_line_plot(([], []), color='red')
         #        left, bottom = add_default_axes(fp)

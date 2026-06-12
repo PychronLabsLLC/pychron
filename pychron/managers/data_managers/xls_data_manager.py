@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import xlrd
 from datetime import datetime
 from xlrd.biffh import XLRDError
@@ -23,8 +22,6 @@ from xlrd.biffh import XLRDError
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 from pychron.managers.data_managers.data_manager import DataManager
-from six.moves import map
-from six.moves import range
 
 
 def camel_case(a):

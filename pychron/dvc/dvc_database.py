@@ -2186,7 +2186,7 @@ class DVCDatabase(DatabaseAdapter):
         return self._retrieve_item(IrradiationTbl, name)
 
     def get_material(self, name, grainsize=None):
-        # if not isinstance(name, str) and not isinstance(name, six.text_type):
+        # if not isinstance(name, str) and not isinstance(name, str):
         if isinstance(name, MaterialTbl):
             if grainsize is None or name.grainsize == grainsize:
                 return name

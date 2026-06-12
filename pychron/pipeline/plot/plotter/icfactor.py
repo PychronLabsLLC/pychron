@@ -16,12 +16,10 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 
 from logging import warning
 
 from numpy import array
-from six.moves import zip
 
 # ============= local library imports  ==========================
 from uncertainties import std_dev, nominal_value, ufloat, umath
@@ -131,17 +129,13 @@ class ICFactor(ReferencesSeries):
                 nys = [ri.get_value(n) for ri in self.sorted_references]
             else:
                 nys = [ri.get_isotope(detector=n) for ri in self.sorted_references]
-                nys = array(
-                    [ni.get_decay_corrected_value() for ni in nys if ni is not None]
-                )
+                nys = array([ni.get_decay_corrected_value() for ni in nys if ni is not None])
 
             if d in ("rad40",):
                 dys = [ri.get_value(d) for ri in self.sorted_references]
             else:
                 dys = [ri.get_isotope(detector=d) for ri in self.sorted_references]
-                dys = array(
-                    [di.get_decay_corrected_value() for di in dys if di is not None]
-                )
+                dys = array([di.get_decay_corrected_value() for di in dys if di is not None])
 
             try:
                 rys = nys / dys

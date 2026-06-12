@@ -16,12 +16,10 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 import socket
 
 # ============= local library imports  ==========================
-from six.moves.socketserver import BaseRequestHandler
+from socketserver import BaseRequestHandler
 
 
 class MessagingHandler(BaseRequestHandler):

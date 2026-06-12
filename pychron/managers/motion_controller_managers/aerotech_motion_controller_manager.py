@@ -20,7 +20,6 @@
 # ============= standard library imports ========================
 
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from pychron.globals import globalv
 from pychron.hardware.aerotech.aerotech_motion_controller import (
     AerotechMotionController,

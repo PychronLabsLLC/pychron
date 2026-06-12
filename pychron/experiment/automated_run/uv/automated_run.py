@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pychron.experiment.automated_run.automated_run import AutomatedRun
 
 # ============= standard library imports ========================
@@ -89,9 +88,7 @@ class UVAutomatedRun(AutomatedRun):
     #        return g
 
     def _extraction_script_factory(self):
-        obj = super(UVAutomatedRun, self)._extraction_script_factory(
-            klass=UVExtractionPyScript
-        )
+        obj = super(UVAutomatedRun, self)._extraction_script_factory(klass=UVExtractionPyScript)
         # obj.setup_context(reprate=self.reprate,
         #                  mask=self.mask,
         #                  attenuator=self.attenuator)

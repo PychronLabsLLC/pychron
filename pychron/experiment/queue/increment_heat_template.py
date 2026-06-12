@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import csv
 import os
@@ -343,9 +342,7 @@ class BaseIncrementalHeatTemplate(Viewable):
         steps = [s for s in self.steps if s.is_valid]
         n = len(steps)
 
-        dlg = IncrementalHeatTemplateSaveDialog(
-            n=n, root=paths.incremental_heat_template_dir
-        )
+        dlg = IncrementalHeatTemplateSaveDialog(n=n, root=paths.incremental_heat_template_dir)
         path = dlg.get_path()
         if path:
             self.dump(path)
@@ -384,9 +381,7 @@ class BaseIncrementalHeatTemplate(Viewable):
                     Item("units"),
                 ),
                 UItem("steps", style="custom", editor=editor),
-                HGroup(
-                    UItem("save_button", enabled_when="path"), UItem("save_as_button")
-                ),
+                HGroup(UItem("save_button", enabled_when="path"), UItem("save_as_button")),
             ),
             height=500,
             width=900,

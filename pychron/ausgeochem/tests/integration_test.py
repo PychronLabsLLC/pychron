@@ -17,8 +17,6 @@ Smoke mode (no credentials, hits public lookup endpoints only):
 The script will skip if EARTHBANK_USER / EARTHBANK_PASS are unset.
 """
 
-from __future__ import absolute_import, print_function
-
 import os
 import sys
 import time
@@ -166,9 +164,9 @@ def main():
             }
             _step("create_core_data_point (link)", lambda: svc.create_core_data_point(link))
 
-    print("\nintegration test complete; created sample={}, leave or delete via UI".format(
-        sample_name
-    ))
+    print(
+        "\nintegration test complete; created sample={}, leave or delete via UI".format(sample_name)
+    )
 
 
 if __name__ == "__main__":

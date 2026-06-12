@@ -18,9 +18,8 @@
 # ============= enthought library imports =======================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import socket
-from six.moves.socketserver import ThreadingUDPServer
+from socketserver import ThreadingUDPServer
 
 # ============= local library imports  ==========================
 from .messaging_server import MessagingServer

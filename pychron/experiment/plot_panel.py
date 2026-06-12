@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pyface.ui_traits import PyfaceColor
 from traits.api import (
@@ -89,9 +88,7 @@ class GraphContainer(TraitsContainer):
     def traits_view(self):
         v = View(
             VGroup(
-                HGroup(
-                    spring, CustomLabel("plot_title", weight="bold", size=14), spring
-                ),
+                HGroup(spring, CustomLabel("plot_title", weight="bold", size=14), spring),
                 UItem(
                     "graphs",
                     editor=ListEditor(
@@ -292,12 +289,7 @@ class PlotPanel(Loggable):
             ("baseline", self.baseline_graph, not isotope_only),
         ):
             if e:
-                plot = g.new_plot(
-                    xtitle="time (s)",
-                    padding_left=70,
-                    padding_right=10,
-                    **kw
-                )
+                plot = g.new_plot(xtitle="time (s)", padding_left=70, padding_right=10, **kw)
 
                 plot.y_axis.title_spacing = 50
                 g.add_axis_tool(plot, plot.x_axis)
@@ -334,10 +326,7 @@ class PlotPanel(Loggable):
         if self.hops:
             # update ncounts
             integration_time = self.integration_time
-            counts = (
-                sum([h["counts"] * integration_time + h["settle"] for h in self.hops])
-                * v
-            )
+            counts = sum([h["counts"] * integration_time + h["settle"] for h in self.hops]) * v
             # counts = sum([ci * integration_time + s for _h, ci, s in self.hops]) * v
             self._ncounts = counts
 
@@ -346,9 +335,7 @@ class PlotPanel(Loggable):
 
     def _graph_factory(self) -> StackedRegressionGraph:
         return StackedRegressionGraph(
-            container_dict=dict(
-                padding=5, bgcolor="gray", stack_order=self.stack_order, spacing=5
-            ),
+            container_dict=dict(padding=5, bgcolor="gray", stack_order=self.stack_order, spacing=5),
             bind_index=False,
             use_data_tool=False,
             padding_bottom=35,
@@ -384,9 +371,7 @@ class PlotPanel(Loggable):
     def _plot_title_changed(self, new):
         self.graph_container.label = new
 
-    @on_trait_change(
-        "isotope_graph:regression_results, baseline_graph:regression_results"
-    )
+    @on_trait_change("isotope_graph:regression_results, baseline_graph:regression_results")
     def _update_display(self, obj, name, old, new):
         if new and self.analysis_view:
             self.analysis_view.load_computed(self.isotope_group, new_list=False)
@@ -407,9 +392,7 @@ class PlotPanel(Loggable):
 
     def _sniff_graph_default(self) -> StackedGraph:
         g = StackedGraph(
-            container_dict=dict(
-                padding=5, bgcolor="gray", stack_order=self.stack_order, spacing=5
-            ),
+            container_dict=dict(padding=5, bgcolor="gray", stack_order=self.stack_order, spacing=5),
             bind_index=False,
             use_data_tool=False,
             padding_bottom=35,

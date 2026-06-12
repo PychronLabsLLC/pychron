@@ -31,7 +31,6 @@ Anything else (already alias-formed, https://, file://, ...) is
 returned unchanged.
 """
 
-from __future__ import absolute_import
 
 import re
 

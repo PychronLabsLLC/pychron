@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.tasks.traits_dock_pane import TraitsDockPane
 from traitsui.api import View, Item, UItem, HGroup, VGroup, TreeEditor, TreeNode
 
@@ -106,9 +105,7 @@ class FileHistoryPane(TraitsDockPane):
                 ),
                 HGroup(
                     spring,
-                    icon_button_editor(
-                        "diff_button", "edit_diff", enabled_when="diffable"
-                    ),
+                    icon_button_editor("diff_button", "edit_diff", enabled_when="diffable"),
                     UItem("checkout_button", enabled_when="checkoutable"),
                 ),
             )

@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import unittest
 
 from pychron.experiment.utilities.frequency_generator import (
@@ -6,7 +5,6 @@ from pychron.experiment.utilities.frequency_generator import (
     parse_frequency_template,
     validate_frequency_template,
 )
-from six.moves import range
 
 
 class FrequencyTemplateTestCase(unittest.TestCase):
@@ -102,9 +100,7 @@ class FrequencyTemplateTestCase(unittest.TestCase):
         self._test_template("s,2", ["blank", "unknown", "unknown", "blank", "unknown"])
 
     def test_template_start_end_idx(self):
-        self._test_template(
-            "s,2,e", ["blank", "unknown", "unknown", "blank", "unknown", "blank"]
-        )
+        self._test_template("s,2,e", ["blank", "unknown", "unknown", "blank", "unknown", "blank"])
 
     def test_template_start_idx2(self):
         self._test_template(
@@ -145,9 +141,7 @@ class FrequencyTemplateTestCase(unittest.TestCase):
         )
 
     def test_template_start_idx3(self):
-        self._test_template(
-            "s,2,10", ["blank", "unknown", "unknown", "blank", "unknown", "blank"]
-        )
+        self._test_template("s,2,10", ["blank", "unknown", "unknown", "blank", "unknown", "blank"])
 
     def test_template_start2(self):
         self._test_template(
@@ -362,9 +356,7 @@ class FrequencyTemplateTestCase(unittest.TestCase):
         if runs is None:
             runs = [Run() for i in range(3)]
 
-        for i in reversed(
-            list(frequency_index_gen(runs, temp, ("unknown",), False, False))
-        ):
+        for i in reversed(list(frequency_index_gen(runs, temp, ("unknown",), False, False))):
             r = Run()
             r.analysis_type = "blank"
             runs.insert(i, r)
@@ -390,9 +382,7 @@ class FrequencyTestCase(unittest.TestCase):
 
     def test_before(self):
         runs = self.runs
-        for i in reversed(
-            list(frequency_index_gen(runs, 2, ("unknown",), True, False))
-        ):
+        for i in reversed(list(frequency_index_gen(runs, 2, ("unknown",), True, False))):
             r = Run()
             r.analysis_type = "blank"
             runs.insert(i, r)
@@ -421,9 +411,7 @@ class FrequencyTestCase(unittest.TestCase):
 
     def test_after(self):
         runs = self.runs
-        for i in reversed(
-            list(frequency_index_gen(runs, 2, ("unknown",), False, True))
-        ):
+        for i in reversed(list(frequency_index_gen(runs, 2, ("unknown",), False, True))):
             r = Run()
             r.analysis_type = "blank"
             runs.insert(i, r)
@@ -482,9 +470,7 @@ class FrequencyTestCase(unittest.TestCase):
 
     def test_not_before_or_after(self):
         runs = self.runs
-        for i in reversed(
-            list(frequency_index_gen(runs, 2, ("unknown",), False, False))
-        ):
+        for i in reversed(list(frequency_index_gen(runs, 2, ("unknown",), False, False))):
             r = Run()
             r.analysis_type = "blank"
             runs.insert(i, r)
@@ -512,9 +498,7 @@ class FrequencyTestCase(unittest.TestCase):
 
     def test_not_before_or_after3(self):
         runs = self.runs
-        for i in reversed(
-            list(frequency_index_gen(runs, 3, ("unknown",), False, False))
-        ):
+        for i in reversed(list(frequency_index_gen(runs, 3, ("unknown",), False, False))):
             r = Run()
             r.analysis_type = "blank"
             runs.insert(i, r)
@@ -542,9 +526,7 @@ class FrequencyTestCase(unittest.TestCase):
     def test_after_subset1(self):
         runs = self.runs
 
-        for i in reversed(
-            list(frequency_index_gen(runs[:7], 3, ("unknown",), False, False))
-        ):
+        for i in reversed(list(frequency_index_gen(runs[:7], 3, ("unknown",), False, False))):
             r = Run()
             r.analysis_type = "blank"
             runs.insert(i, r)
@@ -572,11 +554,7 @@ class FrequencyTestCase(unittest.TestCase):
         runs = self.runs
         sidx = 3
         for i in reversed(
-            list(
-                frequency_index_gen(
-                    runs[sidx:], 3, ("unknown",), False, True, sidx=sidx
-                )
-            )
+            list(frequency_index_gen(runs[sidx:], 3, ("unknown",), False, True, sidx=sidx))
         ):
             r = Run()
             r.analysis_type = "blank"
@@ -604,11 +582,7 @@ class FrequencyTestCase(unittest.TestCase):
         runs = self.runs
         sidx = 3
         for i in reversed(
-            list(
-                frequency_index_gen(
-                    runs[sidx:], 3, ("unknown",), False, False, sidx=sidx
-                )
-            )
+            list(frequency_index_gen(runs[sidx:], 3, ("unknown",), False, False, sidx=sidx))
         ):
             r = Run()
             r.analysis_type = "blank"

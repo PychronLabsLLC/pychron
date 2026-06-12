@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import Instance
 from traitsui.api import Item, UItem, VGroup, HGroup
@@ -50,9 +49,7 @@ class SelectDataReductionTagView(Controller):
 
     def traits_view(self):
         v = okcancel_view(
-            HGroup(
-                Item("name_filter", label="Name"), Item("user_filter", label="User")
-            ),
+            HGroup(Item("name_filter", label="Name"), Item("user_filter", label="User")),
             UItem(
                 "tags",
                 editor=TabularEditor(
@@ -78,9 +75,7 @@ class DataReductionTagView(Controller):
     def traits_view(self):
         table = UItem(
             "items",
-            editor=TabularEditor(
-                adapter=ItemAdapter(), multi_select=True, operations=["delete"]
-            ),
+            editor=TabularEditor(adapter=ItemAdapter(), multi_select=True, operations=["delete"]),
         )
         tag = HGroup(Item("tagname", label="Tag"), UItem("edit_comment_button"))
 

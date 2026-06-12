@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 
-from __future__ import absolute_import
 
 from datetime import datetime
 
@@ -49,9 +48,7 @@ class irrad_LevelTable(Base, NameMixin):
 
 
 class irrad_PositionTable(Base, BaseMixin):
-    labnumber = relationship(
-        "gen_LabTable", backref="irradiation_position", uselist=False
-    )
+    labnumber = relationship("gen_LabTable", backref="irradiation_position", uselist=False)
     flux_histories = relationship("flux_HistoryTable", backref="position")
 
     level_id = foreignkey("irrad_LevelTable")
@@ -152,9 +149,7 @@ class irrad_ChronologyTable(Base, BaseMixin):
             #         pwr,x = x.split('|')
             #
             #     return pwr, datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
-            convert = lambda x: datetime.strptime(
-                x.decode("utf-8"), "%Y-%m-%d %H:%M:%S"
-            )
+            convert = lambda x: datetime.strptime(x.decode("utf-8"), "%Y-%m-%d %H:%M:%S")
             dd = [(p, convert(s), convert(e)) for p, s, e in dd]
 
         return dd

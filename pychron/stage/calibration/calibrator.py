@@ -15,11 +15,10 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Str, Float, Event, Bool
 
 # ============= standard library imports ========================
-import six.moves.cPickle as pickle
+import pickle
 import os
 
 # ============= local library imports  ==========================
@@ -110,9 +109,7 @@ class TrayCalibrator(BaseCalibrator):
         elif step == "Locate Right":
             canvas.calibration_item.set_right(x, y)
             self.save(canvas.calibration_item)
-            return dict(
-                calibration_step="Calibrate", rotation=canvas.calibration_item.rotation
-            )
+            return dict(calibration_step="Calibrate", rotation=canvas.calibration_item.rotation)
 
 
 # ============= EOF =============================================

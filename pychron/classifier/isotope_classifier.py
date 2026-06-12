@@ -16,8 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 from numpy import ones, vstack, zeros, hstack, arange, digitize
 from numpy.random import random
 
@@ -79,9 +77,7 @@ class IsotopeClassifier(BaseClassifier):
 
     def classifier_factory(self, klass=None, *args, **kw):
         kw["n_neighbors"] = 3
-        return super(IsotopeClassifier, self).classifier_factory(
-            klass=klass, *args, **kw
-        )
+        return super(IsotopeClassifier, self).classifier_factory(klass=klass, *args, **kw)
 
     def classify_isotope(self, iso):
         return self.predict(make_sample(iso))

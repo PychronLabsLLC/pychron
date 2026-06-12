@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pyface.message_dialog import warning
 from traits.api import HasTraits, List

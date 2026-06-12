@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 import os
 
 from pychron.core.ui import set_qt
@@ -193,9 +192,7 @@ class ReplicationTask(BaseTask):
 
     def _skip_button_fired(self):
         self.execute_sql(
-            "stop slave; SET GLOBAL sql_slave_skip_counter = {};".format(
-                self.skip_count
-            )
+            "stop slave; SET GLOBAL sql_slave_skip_counter = {};".format(self.skip_count)
         )
         self._start_slave()
 

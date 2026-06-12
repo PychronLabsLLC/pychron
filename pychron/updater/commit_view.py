@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import Int, Property, List, Instance
 from traitsui.api import VGroup, UItem, HGroup, Group, Tabbed
@@ -43,9 +42,7 @@ class UpdateGitHistory(BaseGitHistory):
             obj.name = t.name
             return obj
 
-        self.tags = sorted(
-            [factory(ti) for ti in tags], key=lambda x: x.date, reverse=True
-        )
+        self.tags = sorted([factory(ti) for ti in tags], key=lambda x: x.date, reverse=True)
 
 
 class CommitAdapter(TabularAdapter):
@@ -93,9 +90,7 @@ class BaseCommitsView(Controller):
     def _items_grp(self):
         return UItem(
             "items",
-            editor=TabularEditor(
-                adapter=CommitAdapter(), editable=False, selected="selected"
-            ),
+            editor=TabularEditor(adapter=CommitAdapter(), editable=False, selected="selected"),
         )
 
     def _info_grp(self):
@@ -112,9 +107,7 @@ class ManageCommitsView(BaseCommitsView):
         tgrp = VGroup(
             UItem(
                 "tags",
-                editor=TabularEditor(
-                    adapter=TagAdapter(), editable=False, selected="selected"
-                ),
+                editor=TabularEditor(adapter=TagAdapter(), editable=False, selected="selected"),
             ),
             label="Tags",
         )

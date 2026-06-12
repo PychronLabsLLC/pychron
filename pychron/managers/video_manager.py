@@ -16,7 +16,6 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from traits.api import Instance, Float, Button, Int, Property, Event, Bool
 from traitsui.api import View, Item, HGroup
 

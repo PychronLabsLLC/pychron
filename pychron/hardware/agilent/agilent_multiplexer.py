@@ -15,14 +15,12 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Str, List, Float, Property, Tuple, Bool, Instance
 from traitsui.api import View, Item, HGroup, ListEditor, InstanceEditor
 
 # =============standard library imports ========================
 from numpy import polyval
 from pychron.hardware.agilent.agilent_unit import AgilentUnit
-from six.moves import map
 
 
 # =============local library imports  ==========================
@@ -115,9 +113,7 @@ class AgilentMultiplexer(AgilentUnit):
                     try:
                         cs = list(map(float, cs.split(",")))
                     except ValueError:
-                        self.warning(
-                            "invalid coefficients for {}. {}".format(section, cs)
-                        )
+                        self.warning("invalid coefficients for {}. {}".format(section, cs))
                         cs = 1, 0
                     eq = Polynomial(coefficients=cs)
 
@@ -216,9 +212,7 @@ class AgilentMultiplexer(AgilentUnit):
                 "channels",
                 show_label=False,
                 height=400,
-                editor=ListEditor(
-                    mutable=False, editor=InstanceEditor(), style="custom"
-                ),
+                editor=ListEditor(mutable=False, editor=InstanceEditor(), style="custom"),
             )
         )
         return v
@@ -234,11 +228,7 @@ class AgilentMultiplexer(AgilentUnit):
 
     def _get_channel(self, name):
         return next(
-            (
-                chan
-                for chan in self.channels
-                if chan.name == name or chan.address[1:] == name
-            ),
+            (chan for chan in self.channels if chan.name == name or chan.address[1:] == name),
             None,
         )
 

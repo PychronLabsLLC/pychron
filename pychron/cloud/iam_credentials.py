@@ -42,7 +42,6 @@ Pure-function helpers exposed for unit testing without spinning up
 the full Traits / Envisage stack.
 """
 
-from __future__ import absolute_import
 
 import ast
 import json

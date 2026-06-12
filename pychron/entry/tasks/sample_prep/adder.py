@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import HasTraits, Str
 from traits.trait_types import BaseStr
@@ -54,9 +53,7 @@ class AddWorker(HasTraits):
                 Item("fullname"),
                 Item("phone"),
                 Item("email"),
-                VGroup(
-                    UItem("comment", style="custom"), show_border=True, label="Comment"
-                ),
+                VGroup(UItem("comment", style="custom"), show_border=True, label="Comment"),
             ),
             title="Add New Worker",
         )
@@ -72,9 +69,7 @@ class AddSession(HasTraits):
         v = okcancel_view(
             VGroup(
                 Item("name", label="SessionName"),
-                VGroup(
-                    UItem("comment", style="custom"), show_border=True, label="Comment"
-                ),
+                VGroup(UItem("comment", style="custom"), show_border=True, label="Comment"),
             ),
             title=self.title,
         )

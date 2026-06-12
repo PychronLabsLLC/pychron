@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 import pickle
@@ -77,9 +76,7 @@ class LaserStageMap(BaseStageMap):
     def correction_affine_path(self):
         p = ""
         if paths.hidden_dir:
-            p = os.path.join(
-                paths.hidden_dir, "{}_correction_affine_file.yaml".format(self.name)
-            )
+            p = os.path.join(paths.hidden_dir, "{}_correction_affine_file.yaml".format(self.name))
         return p
 
     @property
@@ -94,9 +91,7 @@ class LaserStageMap(BaseStageMap):
         p = self.center_guess_path
         if os.path.isfile(p):
             with open(p, "rb") as rfile:
-                previous = [
-                    l if l[0] == "#" else "#{}".format(l) for l in rfile.readlines()
-                ]
+                previous = [l if l[0] == "#" else "#{}".format(l) for l in rfile.readlines()]
 
         previous.append("{},{}\n".format(x, y))
         with open(p, "wb") as wfile:
@@ -187,17 +182,13 @@ class LaserStageMap(BaseStageMap):
         self.debug("generate row interpolated corrections")
         rowdict = self.row_dict()
         for i, h in enumerate(self.sample_holes):
-            self.debug(
-                "{:03n} {} has correction ={}".format(i, h.id, h.has_correction())
-            )
+            self.debug("{:03n} {} has correction ={}".format(i, h.id, h.has_correction()))
             if not h.has_correction():
                 row = rowdict[h.y]
                 args = get_interpolation_holes(row.index(h), row)
                 if args:
                     a, b, p = args
-                    self.debug(
-                        "interpolation holes a={}, b={}, p={}".format(a.id, b.id, p)
-                    )
+                    self.debug("interpolation holes a={}, b={}, p={}".format(a.id, b.id, p))
 
                     dx = b.x_cor - a.x_cor
                     dy = b.y_cor - a.y_cor

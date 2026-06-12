@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 from sqlalchemy import Column, Float, DateTime, BLOB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import func
@@ -45,9 +44,7 @@ class flux_HistoryTable(Base, BaseMixin):
     note = Column(BLOB)
     create_date = Column(DateTime, default=func.now())
     source = stringcolumn(140)
-    selected = relationship(
-        "gen_LabTable", backref="selected_flux_history", uselist=False
-    )
+    selected = relationship("gen_LabTable", backref="selected_flux_history", uselist=False)
     flux = relationship("flux_FluxTable", backref="history", uselist=False)
 
 

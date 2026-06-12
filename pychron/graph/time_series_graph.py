@@ -16,7 +16,6 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from chaco.api import PlotAxis as ScalesPlotAxis
 from chaco.scales.api import CalendarScaleSystem, TimeScale
 from chaco.scales_tick_generator import ScalesTickGenerator
@@ -124,13 +123,11 @@ class TimeSeriesGraph(Graph):
         downsample=None,
         use_smooth=False,
         scale=None,
-        **kw
+        **kw,
     ):
         """ """
         if not time_series:
-            return super(TimeSeriesGraph, self).new_series(
-                x=x, y=y, plotid=plotid, **kw
-            )
+            return super(TimeSeriesGraph, self).new_series(x=x, y=y, plotid=plotid, **kw)
 
         xd = x
         if x is not None:
@@ -144,8 +141,7 @@ class TimeSeriesGraph(Graph):
 
                 if len(args) > 1:
                     xd = [
-                        timefunc(xi.split(" +")[0], fmt)
-                        + float(xi.split(" +")[1]) / 1000.0
+                        timefunc(xi.split(" +")[0], fmt) + float(xi.split(" +")[1]) / 1000.0
                         for xi in x
                     ]
                 else:

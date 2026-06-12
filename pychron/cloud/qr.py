@@ -26,7 +26,6 @@ output). The output path is a regular file the caller is responsible
 for cleaning up.
 """
 
-from __future__ import absolute_import
 
 import os
 

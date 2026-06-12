@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import ast
 import os
@@ -102,9 +101,7 @@ class MeasurementFitsSelector(FilterFitSelector):
         self.name = h
 
     def _load_available_names(self):
-        ps = glob_list_directory(
-            paths.fits_dir, extension=".yaml", remove_extension=True
-        )
+        ps = glob_list_directory(paths.fits_dir, extension=".yaml", remove_extension=True)
         self.available_names = ps
 
     def _extract_default_fits_file(self, path):
@@ -136,9 +133,7 @@ class MeasurementFitsSelectorView(Controller):
 
     def _duplicate_button_fired(self):
         info = self.model.edit_traits(
-            view=okcancel_view(
-                Item("name"), title="Enter a new name", width=300, kind="modal"
-            )
+            view=okcancel_view(Item("name"), title="Enter a new name", width=300, kind="modal")
         )
         if info.result:
             self.model.duplicate()

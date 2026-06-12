@@ -23,7 +23,6 @@ from enable.enable_traits import LineStyle
 from kiva import FILL
 from kiva.trait_defs.kiva_font_trait import KivaFont
 from numpy import linspace, pi
-from six.moves import zip
 from traits.api import Float, Str, Instance
 from uncertainties import std_dev, nominal_value
 
@@ -77,9 +76,7 @@ class MLTextLabel(Label):
 
                 for line in text.split("\n")[::-1]:
                     if line != "":
-                        (width, height, descent, leading) = gc.get_full_text_extent(
-                            line
-                        )
+                        (width, height, descent, leading) = gc.get_full_text_extent(line)
                         ascent = height - abs(descent)
                         if width > max_width:
                             max_width = width
@@ -104,9 +101,7 @@ class MLTextLabel(Label):
             border_width = self.border_width if self.border_visible else 0
 
             self._bounding_box[0] = max_width + 2 * margin + 2 * border_width
-            self._bounding_box[1] = (
-                prev_y_pos + prev_y_height + margin + 2 * border_width
-            )
+            self._bounding_box[1] = prev_y_pos + prev_y_height + margin + 2 * border_width
             self._position_cache_valid = True
         return
 
@@ -244,9 +239,7 @@ class AtmInterceptOverlay(AbstractOverlay):
             gc.set_font(self.font)
             w, h = gc.get_full_text_extent(txt)[:2]
 
-            gc.clip_to_rect(
-                component.x - w - 5, component.y, component.width, component.height
-            )
+            gc.clip_to_rect(component.x - w - 5, component.y, component.width, component.height)
 
             gc.set_line_width(self.line_width)
             gc.set_line_dash(self.line_style_)
@@ -382,9 +375,7 @@ class InverseIsochron(Isochron):
 
         if opt.include_error_envelope:
             lci, uci = reg.calculate_error_envelope(l.index.get_data())
-            ee = ErrorEnvelopeOverlay(
-                component=l, upper=uci, lower=lci, line_color=color
-            )
+            ee = ErrorEnvelopeOverlay(component=l, upper=uci, lower=lci, line_color=color)
             l.underlays.append(ee)
             l.error_envelope = ee
 
@@ -436,9 +427,7 @@ class InverseIsochron(Isochron):
             m = self.options.regressor_kind
             s = self.options.nsigma
             es = self.options.ellipse_kind
-            ts.append(
-                "{} {}{}{} Data: {}{}".format(m, PLUSMINUS, s, SIGMA, PLUSMINUS, es)
-            )
+            ts.append("{} {}{}{} Data: {}{}".format(m, PLUSMINUS, s, SIGMA, PLUSMINUS, es))
 
         if self.options.show_error_type_info:
             ts.append("Error Type: {}".format(self.options.error_calc_method))
@@ -505,9 +494,7 @@ class InverseIsochron(Isochron):
             hy = max(1.1 * opt.inominal_intercept_value, yintercept * 1.1)
 
         for inset in plot.overlays:
-            if isinstance(
-                inset, (InverseIsochronPointsInset, InverseIsochronLineInset)
-            ):
+            if isinstance(inset, (InverseIsochronPointsInset, InverseIsochronLineInset)):
                 inset.location = opt.inset_location
                 inset.width = opt.inset_width
                 inset.height = opt.inset_height
@@ -696,9 +683,7 @@ class InverseIsochron(Isochron):
             if not hasattr(fit, "error_envelope"):
                 group = self.options.get_group(self.group_id)
                 color = group.color
-                ee = ErrorEnvelopeOverlay(
-                    component=fit, upper=uci, lower=lci, line_color=color
-                )
+                ee = ErrorEnvelopeOverlay(component=fit, upper=uci, lower=lci, line_color=color)
                 fit.underlays.append(ee)
                 fit.error_envelope = ee
             else:

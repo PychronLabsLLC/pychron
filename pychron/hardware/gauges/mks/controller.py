@@ -16,7 +16,6 @@
 
 import re
 
-import six
 from traitsui.api import View, Item, HGroup
 
 from pychron.core.ui.color_map_bar_editor import BarGaugeEditor
@@ -40,9 +39,7 @@ class Gauge(BaseGauge):
                     style="readonly",
                     width=-50,
                 ),
-                Item(
-                    "pressure", format_str="%0.2e", show_label=False, style="readonly"
-                ),
+                Item("pressure", format_str="%0.2e", show_label=False, style="readonly"),
                 Item(
                     "pressure",
                     show_label=False,
@@ -81,7 +78,7 @@ class MKSController(BaseGaugeController, CoreDevice):
     def _read_pressure(self, name=None, verbose=False):
         if name is not None:
             gauge = name
-            if isinstance(gauge, (str, six.text_type)):
+            if isinstance(gauge, str):
                 gauge = self.get_gauge(name)
             channel = gauge.channel
         else:
@@ -113,9 +110,7 @@ class MKSController(BaseGaugeController, CoreDevice):
 
     def load_additional_args(self, config, *args, **kw):
         self.address = self.config_get(config, "General", "address", optional=False)
-        self.display_name = self.config_get(
-            config, "General", "display_name", default=self.name
-        )
+        self.display_name = self.config_get(config, "General", "display_name", default=self.name)
         # self.mode = self.config_get(config, 'Communications', 'mode', default='rs485')
         self._load_gauges(config)
         return True

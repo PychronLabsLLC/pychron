@@ -17,8 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
-from __future__ import print_function
 from pychron.hardware.core.headless.core_device import HeadlessCoreDevice
 from pychron.hardware.eurotherm.base import BaseEurotherm
 

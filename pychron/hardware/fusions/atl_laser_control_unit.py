@@ -16,8 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import time
 from threading import Lock
 
@@ -27,8 +25,6 @@ from traits.api import Float, Int, Str, Bool, Property, Array
 from pychron.hardware.core.checksum_helper import computeBCC
 from pychron.hardware.core.core_device import CoreDevice
 from pychron.hardware.core.data_helper import make_bitarray
-from six.moves import map
-from six.moves import range
 
 STX = chr(2)
 ETX = chr(3)
@@ -191,9 +187,7 @@ class ATLLaserControlUnit(CoreDevice):
 
     def set_nburst(self, n, save=True):
         if int(n) != int(self._burst_shot):
-            self.debug(
-                "setting nburst n={} current_value={}".format(n, self._burst_shot)
-            )
+            self.debug("setting nburst n={} current_value={}".format(n, self._burst_shot))
             lh = self._make_integer_pair(n)
             if lh:
                 with self._lock:
@@ -392,9 +386,7 @@ class ATLLaserControlUnit(CoreDevice):
             self.burst_readback = b
             if self.firing:
                 self.debug(
-                    "readback={} burst={} fired={}".format(
-                        b, self.burst_shot, self._was_fired
-                    )
+                    "readback={} burst={} fired={}".format(b, self.burst_shot, self._was_fired)
                 )
                 if not b or (self._was_fired and b == self.burst_shot):
                     self.debug("AUTO STOP LASER")
@@ -554,9 +546,7 @@ if __name__ == "__main__":
     from pychron.core.helpers.logger_setup import logging_setup
 
     logging_setup("atl")
-    a = ATLLaserControlUnit(
-        name="ATLLaserControlUnit", configuration_dir_name="fusions_uv"
-    )
+    a = ATLLaserControlUnit(name="ATLLaserControlUnit", configuration_dir_name="fusions_uv")
     a.bootstrap()
     a.laser_off()
 # ============= EOF ====================================

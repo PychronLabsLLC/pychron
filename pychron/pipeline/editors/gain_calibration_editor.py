@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import HasTraits, Str, Float, Property, List, Instance, Dict
 from traitsui.api import UItem, Item, HGroup, VGroup, EnumEditor, TabularEditor
@@ -102,9 +101,7 @@ class GainCalibrationEditor(BaseTraitsEditor):
         self.lhs_items = make_items(lhs_an.isotopes)
 
         isotopes = [
-            lhs_an.isotopes[k]
-            for k in lhs_an.isotope_keys
-            if k.startswith(self._isotope_key)
+            lhs_an.isotopes[k] for k in lhs_an.isotope_keys if k.startswith(self._isotope_key)
         ]
 
         detcols = get_columns(isotopes)
@@ -173,9 +170,7 @@ class GainCalibrationEditor(BaseTraitsEditor):
 
     def _get_runids(self, ms):
         db = self.dvc.db
-        ans = db.get_analyses(
-            analysis_type=DETECTOR_IC, mass_spectrometer=ms, reverse_order=True
-        )
+        ans = db.get_analyses(analysis_type=DETECTOR_IC, mass_spectrometer=ms, reverse_order=True)
         return [ai.record_id for ai in ans]
 
     def traits_view(self):

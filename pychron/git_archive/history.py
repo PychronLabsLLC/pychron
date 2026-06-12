@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 # ============= standard library imports ========================
 from datetime import datetime
@@ -103,9 +102,7 @@ class GitArchiveHistory(BaseGitHistory):
 
         if p:
             self._path = p
-            hx = self.repo_man.commits_iter(
-                p, keys=["message", "committed_date"], limit=self.limit
-            )
+            hx = self.repo_man.commits_iter(p, keys=["message", "committed_date"], limit=self.limit)
             self.items = [
                 GitSha(hexsha=a, message=b, date=datetime.utcfromtimestamp(c), name=p)
                 for a, b, c in hx
@@ -207,9 +204,7 @@ class GitArchiveHistoryView(Controller):
                 ),
                 HGroup(
                     spring,
-                    icon_button_editor(
-                        "diff_button", "edit_diff", enabled_when="diffable"
-                    ),
+                    icon_button_editor("diff_button", "edit_diff", enabled_when="diffable"),
                     UItem("checkout_button", enabled_when="checkoutable"),
                 ),
             ),

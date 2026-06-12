@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 from datetime import datetime
@@ -152,9 +150,7 @@ class IGSNSampleModel(HasTraits):
         except AttributeError:
             if required:
                 self.warning_dialog(
-                    'Required attribute "{}" not supplied. Contact developer'.format(
-                        attr
-                    )
+                    'Required attribute "{}" not supplied. Contact developer'.format(attr)
                 )
 
         return val
@@ -165,9 +161,7 @@ class IGSNSampleModel(HasTraits):
     @property
     def collection_start_date(self):
         if self._collection_start_date and self._collection_start_time:
-            dt = datetime.combine(
-                self._collection_start_date, self._collection_start_time
-            )
+            dt = datetime.combine(self._collection_start_date, self._collection_start_time)
             local = pytz.timezone(self.timezone)
             local_dt = local.localize(dt)
             utc_dt = local_dt.astimezone(pytz.utc)
@@ -264,9 +258,7 @@ class IGSNSampleModel(HasTraits):
                     label="New Sample",
                 ),
                 VGroup(
-                    UItem(
-                        "xml_content", style="custom", editor=TextEditor(read_only=True)
-                    ),
+                    UItem("xml_content", style="custom", editor=TextEditor(read_only=True)),
                     label="XML",
                 ),
             ),
@@ -300,9 +292,7 @@ class IGSNService(Loggable):
             eigsns = self.get_existing_igsn(sample)
             if eigsns:
                 self.information_dialog(
-                    "Existing IGSN for sample: {} igsn: {}".format(
-                        sample, ",".join(eigsns)
-                    )
+                    "Existing IGSN for sample: {} igsn: {}".format(sample, ",".join(eigsns))
                 )
                 return
 
@@ -404,9 +394,7 @@ class IGSNService(Loggable):
         else:
             error = tree.find("error")
             print(error.text)
-            self.warning_dialog(
-                "Failed Getting a new IGSN.\nError={}".format(error.text)
-            )
+            self.warning_dialog("Failed Getting a new IGSN.\nError={}".format(error.text))
 
         return igsns
 

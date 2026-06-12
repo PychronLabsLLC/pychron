@@ -15,12 +15,9 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 
-import six
 from traits.api import HasTraits, Button, String, List, Any, Instance
 from traitsui.api import (
     View,
@@ -59,7 +56,7 @@ class RunBlock(Loggable):
             return self._load_runs(line_gen)
 
     def _get_line_generator(self, txt):
-        if isinstance(txt, (str, six.text_type)):
+        if isinstance(txt, str):
             return (l for l in txt.split("\n"))
         else:
             return txt
@@ -126,9 +123,7 @@ class RunBlock(Loggable):
 
                 print(traceback.print_exc())
                 self.warning_dialog(
-                    "Invalid Experiment file {}\nlinenum= {}\nline= {}".format(
-                        e, linenum, line
-                    )
+                    "Invalid Experiment file {}\nlinenum= {}\nline= {}".format(e, linenum, line)
                 )
 
                 break
@@ -173,9 +168,7 @@ class RunBlockEditView(HasTraits):
         v = View(
             HSplit(
                 VGroup(
-                    UItem(
-                        "blocks", width=0.25, editor=ListStrEditor(selected="selected")
-                    ),
+                    UItem("blocks", width=0.25, editor=ListStrEditor(selected="selected")),
                     HGroup(icon_button_editor("delete_run", "delete")),
                 ),
                 UItem(

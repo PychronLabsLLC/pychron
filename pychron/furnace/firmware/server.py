@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import Instance
 
@@ -130,9 +129,7 @@ class FirmwareServer(HeadlessLoggable):
         self.add_endpoint(port, FirmwareFactory(self.manager))
 
     def add_endpoint(self, port, factory):
-        self.debug(
-            "add endbpoint port={} factory={}".format(port, factory.__class__.__name__)
-        )
+        self.debug("add endbpoint port={} factory={}".format(port, factory.__class__.__name__))
         endpoint = TCP4ServerEndpoint(reactor, port)
         endpoint.listen(factory)
 

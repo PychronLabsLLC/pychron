@@ -17,7 +17,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 
 from dataclasses import dataclass
 
@@ -37,12 +36,7 @@ class BootstrapResult:
 
     @property
     def success(self):
-        return (
-            self.loaded
-            and self.opened
-            and self.initialized is True
-            and self.post_initialized
-        )
+        return self.loaded and self.opened and self.initialized is True and self.post_initialized
 
     @property
     def compatible_success(self):

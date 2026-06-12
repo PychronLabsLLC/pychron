@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from envisage.ui.tasks.task_factory import TaskFactory
 
 # ============= standard library imports ========================
@@ -35,11 +34,7 @@ class LabBookPlugin(BaseTaskPlugin):
         return t
 
     def _tasks_default(self):
-        tasks = [
-            TaskFactory(
-                id="pychron.labbook", factory=self._labbook_factory, name="LabBook"
-            )
-        ]
+        tasks = [TaskFactory(id="pychron.labbook", factory=self._labbook_factory, name="LabBook")]
         return tasks
 
     def _preferences_panes_default(self):

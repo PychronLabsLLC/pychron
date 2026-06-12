@@ -770,7 +770,7 @@ class ExtractionLineCanvas2D(SceneCanvas):
 
     def iter_valves(self):
         return self.scene.valves.values()
-        # return (i for i in six.itervalues(self.scene.valves))
+        # return (i for i in self.scene.valves.values())
 
     # private
     def _force_actuate(self, func, state):

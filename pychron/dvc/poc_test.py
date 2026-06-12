@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import os
 import random
 import subprocess
@@ -24,7 +22,6 @@ import subprocess
 import matplotlib.pyplot as plt
 
 from pychron.core.ui import set_qt
-from six.moves import range
 
 set_qt()
 
@@ -54,9 +51,7 @@ def report_irrad_stats(wfile, nirrads, nlevels, npositions):
                 "irrad", "level", "pos", "sizedb", "sizegit"
             )
         )
-        wfile.write(
-            "{}\n".format(",".join(("irrad", "level", "pos", "sizedb", "sizegit")))
-        )
+        wfile.write("{}\n".format(",".join(("irrad", "level", "pos", "sizedb", "sizegit"))))
 
     size = os.path.getsize(DP)
     size2 = get_dir_size(os.path.join(dvc.meta_repo.path, ".git"))
@@ -145,9 +140,7 @@ def do(wfile):
                 else:
                     project = ps[0]
 
-                sample = "{:04d}.{:032X}".format(
-                    scount, hash("{}{}".format(project, scount))
-                )
+                sample = "{:04d}.{:032X}".format(scount, hash("{}{}".format(project, scount)))
                 add_sample(sample, project, random.choice(materials))
                 scount += 1
                 add_position(irrad, level, pp)

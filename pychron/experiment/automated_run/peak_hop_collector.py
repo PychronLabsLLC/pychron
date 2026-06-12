@@ -15,13 +15,11 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import List, Int, Instance
 
 from pychron.core.helpers.color_generators import colornames
 from pychron.experiment.automated_run.data_collector import DataCollector
 from pychron.experiment.automated_run.hop_util import generate_hops
-from six.moves import zip
 
 
 class PeakHopCollector(DataCollector):
@@ -124,9 +122,7 @@ class PeakHopCollector(DataCollector):
                 remove_non_active=False,
             )
             if change:
-                msg = "delaying {} for detectors to settle after peak hop".format(
-                    settle
-                )
+                msg = "delaying {} for detectors to settle after peak hop".format(settle)
                 arun.wait(settle, msg)
                 self.debug(msg)
             self._protect_detectors(pdets, False)
@@ -168,9 +164,7 @@ class PeakHopCollector(DataCollector):
                             arun.set_deflection(det, defl)
 
                 self._protect_detectors(pdets)
-                self.debug(
-                    "----------------------- HOP {} {}".format(isotope, detector)
-                )
+                self.debug("----------------------- HOP {} {}".format(isotope, detector))
                 change = arun.set_magnet_position(
                     isotope,
                     detector,
@@ -190,33 +184,23 @@ class PeakHopCollector(DataCollector):
                         for d in active_dets:
                             det = arun.get_detector(d)
 
-                            plot = g.get_plot_by_ytitle(
-                                "{}{}".format(det.isotope, det.name)
-                            )
+                            plot = g.get_plot_by_ytitle("{}{}".format(det.isotope, det.name))
                             if not plot:
                                 plot = g.get_plot_by_ytitle(det.isotope)
 
                             if plot:
-                                scatter = plot.plots[
-                                    "data{}".format(self.fit_series_idx)
-                                ][0]
+                                scatter = plot.plots["data{}".format(self.fit_series_idx)][0]
                                 scatter.color = current_color
                                 scatter.outline_color = current_color
                             else:
-                                self.debug(
-                                    "could not locate det={} iso={}".format(
-                                        d, det.isotope
-                                    )
-                                )
+                                self.debug("could not locate det={} iso={}".format(d, det.isotope))
 
                     try:
                         arun.plot_panel.counts += int(settle)
                     except AttributeError:
                         pass
 
-                    msg = "delaying {} for detectors to settle after peak hop".format(
-                        settle
-                    )
+                    msg = "delaying {} for detectors to settle after peak hop".format(settle)
                     arun.wait(settle, msg)
                     self.debug(msg)
 

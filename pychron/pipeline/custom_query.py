@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import logging
 
 from traits.api import HasTraits
@@ -32,7 +30,6 @@ from pychron.dvc.dvc_orm import (
     SampleTbl,
     IrradiationPositionTbl,
 )
-from six.moves import map
 
 TABLES = {"project": ProjectTbl, "sample": SampleTbl}
 logger = logging.getLogger(__name__)

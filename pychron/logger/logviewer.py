@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Str, Bool, List, Event, Int
 from traitsui.api import View, UItem, Item, HGroup, VGroup, TabularEditor, Controller
 
@@ -28,8 +27,6 @@ from traitsui.editors.check_list_editor import CheckListEditor
 from traitsui.tabular_adapter import TabularAdapter
 from pychron.core.helpers.datetime_tools import get_datetime
 from pychron.pychron_constants import LIGHT_GREEN
-from six.moves import map
-import six
 
 
 class LogAdapter(TabularAdapter):
@@ -92,9 +89,7 @@ class LogModel(HasTraits):
         self.path = path
         with open(path, "r") as rfile:
             # print rfile.read()
-            self.items = self.oitems = [
-                self._factory(line) for line in self._file(rfile)
-            ]
+            self.items = self.oitems = [self._factory(line) for line in self._file(rfile)]
 
     def _file(self, r):
         return r
@@ -102,7 +97,7 @@ class LogModel(HasTraits):
 
 def tostr(vv):
     if isinstance(vv, (list, tuple)):
-        vv = [str(vi) if isinstance(vi, six.text_type) else vi for vi in vv]
+        vv = [str(vi) if isinstance(vi, str) else vi for vi in vv]
     else:
         vv = str(vv)
     return vv

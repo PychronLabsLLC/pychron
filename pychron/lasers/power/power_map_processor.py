@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from traits.api import Bool, HasTraits, Instance
 
 # from traitsui.api import View, Item, Group, HGroup, VGroup, HSplit, VSplit
@@ -135,9 +133,7 @@ class PowerMapProcessor(HasTraits):
         #         z = self._plot_properties(z, metadata, cg)
         #         cg.plots[0].data.set_data('z0', z)
 
-        gridcontainer = container_factory(
-            kind="g", padding=40, shape=(2, 2), spacing=(12, 12)
-        )
+        gridcontainer = container_factory(kind="g", padding=40, shape=(2, 2), spacing=(12, 12))
 
         gridcontainer.add(center_plot)
         gridcontainer.add(right_plot)

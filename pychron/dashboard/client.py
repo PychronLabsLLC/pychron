@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import time
 
 from traits.api import HasTraits, List, Float, Property, Str, Bool, Dict

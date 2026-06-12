@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import time
 
 from traits.api import Property, provides
@@ -65,12 +64,8 @@ class ApisController(CoreDevice):
         self.isolation_delay = self.config_get(
             config, "Isolation", "delay", optional=False, cast="int", default=25
         )
-        self.isolation_info = self.config_get(
-            config, "Isolation", "info", optional=True
-        )
-        self.isolation_gosub = self.config_get(
-            config, "Isolation", "gosub", optional=True
-        )
+        self.isolation_info = self.config_get(config, "Isolation", "info", optional=True)
+        self.isolation_gosub = self.config_get(config, "Isolation", "gosub", optional=True)
 
         self.isolation_valve = v.replace('"', "").replace("'", "")
 

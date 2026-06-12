@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 
 from pyface.message_dialog import warning
 from traits.api import Str, HasTraits, Dict, Any
@@ -45,9 +44,7 @@ class AddAnalysisGroupView(HasTraits):
         if gdb:
             gdb = gdb[-1]
             if db.confirmation_dialog(
-                '"{}" already exists? Would you like to append your selection'.format(
-                    gdb.name
-                )
+                '"{}" already exists? Would you like to append your selection'.format(gdb.name)
             ):
                 append = True
             else:

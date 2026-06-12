@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from numpy import ma
 
 from pychron.core.filtering import filter_items, filter_ufloats, sigma_filter

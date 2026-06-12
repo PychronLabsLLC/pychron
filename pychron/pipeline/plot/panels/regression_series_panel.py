@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from pychron.pipeline.plot.panels.figure_panel import FigurePanel
 from pychron.pipeline.plot.plotter.regression_series import RegressionSeries
 from pychron.processing.analysis_graph import AnalysisStackedRegressionGraph

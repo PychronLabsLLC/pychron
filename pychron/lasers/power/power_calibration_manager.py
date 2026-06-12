@@ -13,11 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from traits.etsconfig.etsconfig import ETSConfig
-from six.moves import map
-from six.moves import range
-from six.moves import zip
 
 ETSConfig.toolkit = "qt4"
 
@@ -37,7 +33,7 @@ from traits.api import (
     List,
 )
 from traitsui.api import View, Item, VGroup, Group
-import six.moves.cPickle as pickle
+import pickle
 from pyface.timer.do_later import do_later
 
 # ============= standard library imports ========================
@@ -178,9 +174,7 @@ class PowerCalibrationManager(Manager):
 
         self.data_manager = dm = H5DataManager()
         if self.parameters.use_db:
-            dw = DataWarehouse(
-                root=os.path.join(self.parent.db_root, "power_calibration")
-            )
+            dw = DataWarehouse(root=os.path.join(self.parent.db_root, "power_calibration"))
             dw.build_warehouse()
             directory = dw.get_current_dir()
         else:
@@ -579,9 +573,7 @@ class PowerCalibrationManager(Manager):
 
     def _get_calibration_path(self, cp):
         if cp is None:
-            cp = os.path.join(
-                paths.hidden_dir, "{}_power_calibration".format(self.parent.name)
-            )
+            cp = os.path.join(paths.hidden_dir, "{}_power_calibration".format(self.parent.name))
         return cp
 
     # ===============================================================================
@@ -618,9 +610,7 @@ class PowerCalibrationManager(Manager):
             if not config.has_section(section):
                 config.add_section(section)
 
-            config.set(
-                section, "coefficients", ",".join(map("{:0.3e}".format, coefficients))
-            )
+            config.set(section, "coefficients", ",".join(map("{:0.3e}".format, coefficients)))
             lb.write_configuration(config)
 
     def load_power_calibration(self, calibration_path=None, verbose=True, warn=True):
@@ -739,9 +729,7 @@ class FusionsCO2PowerCalibrationManager(PowerCalibrationManager):
         g.redraw()
 
     def _set_graph_limits(self, pstart, pstop):
-        sign, dev = super(FusionsCO2PowerCalibrationManager, self)._set_graph_limits(
-            pstart, pstop
-        )
+        sign, dev = super(FusionsCO2PowerCalibrationManager, self)._set_graph_limits(pstart, pstop)
 
         p = self.graph.plots[0].plots["aux001"][0]
         s = pstart

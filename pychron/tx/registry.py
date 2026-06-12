@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from traits.has_traits import MetaHasTraits
 
 from pychron.core.helpers.logger_setup import new_logger
@@ -108,9 +107,7 @@ def tx_register_functions(obj):
                 func = getattr(obj, fname)
                 if func is not None:
                     FUNC_REGISTRY[k] = (func, p)
-                    logger.debug(
-                        "Function register {} {}:{}".format(obj.name, k, fname)
-                    )
+                    logger.debug("Function register {} {}:{}".format(obj.name, k, fname))
 
 
 # if __name__ == '__main__':

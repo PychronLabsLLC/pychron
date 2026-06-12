@@ -15,11 +15,11 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import unittest
 
 from pychron.pyscripts.extraction_line_pyscript import ExtractionPyScript
 from pychron.pyscripts.measurement_pyscript import MeasurementPyScript
+
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
@@ -28,8 +28,8 @@ class PyscriptDurationTest(unittest.TestCase):
         self._script = MeasurementPyScript()
 
     def testDuration(self):
-        self._script.root = './data'
-        self._script.name = 'measurement_script.py'
+        self._script.root = "./data"
+        self._script.name = "measurement_script.py"
         self._script.bootstrap()
 
         self._script.test()
@@ -41,14 +41,16 @@ class PyscriptDurationTest(unittest.TestCase):
         td = mc + bs + eq + st
         self.assertEqual(etd, td)
 
+
 class PyscriptMeasurementTest(unittest.TestCase):
     def setUp(self):
         from pychron.pyscripts.parameter_editor import MeasurementParameterEditor
+
         self.editor = MeasurementParameterEditor()
 
     @classmethod
     def setUpClass(cls):
-        p = './data/measurement_script.py'
+        p = "./data/measurement_script.py"
         cls.txt = open(p).read()
 
     def testExtractFits(self):
@@ -57,7 +59,8 @@ class PyscriptMeasurementTest(unittest.TestCase):
 
         afit = editor.fit_blocks[0]
 
-        self.assertEqual(afit, (None, ('linear', 'linear')))
+        self.assertEqual(afit, (None, ("linear", "linear")))
+
 
 #         self.assertEqual(afit, ((0, 5), ('linear', 'linear')))
 #         afit = editor.fit_blocks[1]
@@ -67,10 +70,10 @@ class PyscriptMeasurementTest(unittest.TestCase):
 class RampTest(unittest.TestCase):
     def testRamp(self):
         ps = ExtractionPyScript()
-        ps.setup_context(extract_device='a')
-#         rm = Ramp()
+        ps.setup_context(extract_device="a")
+        #         rm = Ramp()
         r = ps.ramp(start=0, end=10, duration=10, period=0.5)
-#         r = rm.ramp(start=0, end=10, rate=2)
+        #         r = rm.ramp(start=0, end=10, rate=2)
         self.assertGreater(r, 10)
 
 

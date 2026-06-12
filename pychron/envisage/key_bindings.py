@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 
 from pyface.message_dialog import information
 from traits.trait_types import List
@@ -118,10 +117,7 @@ class mKeyBindings(HasTraits):
 def edit_key_bindings():
     from pychron.core.ui.qt.keybinding_editor import KeyBindingsEditor
 
-    ks = [
-        mKeyBinding(id=k, binding=v[0], description=v[1])
-        for k, v in user_key_map.items()
-    ]
+    ks = [mKeyBinding(id=k, binding=v[0], description=v[1]) for k, v in user_key_map.items()]
     kb = mKeyBindings(bindings=ks)
     # kb.handle()
 

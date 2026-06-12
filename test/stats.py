@@ -16,34 +16,44 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 from numpy import array
+
 # ============= local library imports  ==========================
 from unittest import TestCase
 
 from pychron.core.regression.regressors.polynomial import PolynomialRegressor
+
+
 class StatsTests(TestCase):
     def setUp(self):
-#        self.m = 10
-#        self.b = -90
-#        self.berr = 0
+        #        self.m = 10
+        #        self.b = -90
+        #        self.berr = 0
 
-#        self.xs = xs = linspace(0, 100)
-#        self.ys = ys = xs * xs + 2
+        #        self.xs = xs = linspace(0, 100)
+        #        self.ys = ys = xs * xs + 2
 
-#        self.ys = ys = self.m * xs + self.b
-        xs = [1.34817935e09, 1.34818086e09, 1.34818107e09, 1.34818129e09, 1.34818150e09, 1.34818171e09]
+        #        self.ys = ys = self.m * xs + self.b
+        xs = [
+            1.34817935e09,
+            1.34818086e09,
+            1.34818107e09,
+            1.34818129e09,
+            1.34818150e09,
+            1.34818171e09,
+        ]
 
         xs = array(xs)
         xs = xs - xs[-1]
-        ys = [ 12.69424305, 15.67507165, 15.9631792, 16.28923218, 16.60528924, 16.86075035]
+        ys = [12.69424305, 15.67507165, 15.9631792, 16.28923218, 16.60528924, 16.86075035]
         self.regressor = PolynomialRegressor(xs=xs, ys=ys, degree=1)
         self.regressor.calculate()
         print(self.regressor.coefficients)
 
     def testLinearIntercept(self):
         print(self.regressor.coefficients)
+
+
 #        b = self.regressor.calculate_y(0)
 #        self.assertAlmostEqual(b, self.b, places=10)
 #

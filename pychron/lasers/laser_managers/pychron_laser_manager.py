@@ -15,15 +15,12 @@
 # ===============================================================================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 import time
 from threading import Thread
 
-import six
-import six.moves.cPickle as pickle
+import pickle
 
 # ============= enthought library imports =======================
 from traits.api import (
@@ -83,9 +80,7 @@ class PychronLaserManager(EthernetLaserManager):
 
     mode = "client"
     optics_client = Instance("pychron.lasers.laser_managers.client.LaserOpticsClient")
-    controls_client = Instance(
-        "pychron.lasers.laser_managers.client.LaserControlsClient"
-    )
+    controls_client = Instance("pychron.lasers.laser_managers.client.LaserControlsClient")
 
     # def shutdown(self):
     #     if self.communicator:
@@ -477,9 +472,7 @@ class PychronLaserManager(EthernetLaserManager):
 
 class PychronUVLaserManager(PychronLaserManager):
     optics_client = Instance("pychron.lasers.laser_managers.client.UVLaserOpticsClient")
-    controls_client = Instance(
-        "pychron.lasers.laser_managers.client.UVLaserOpticsClient"
-    )
+    controls_client = Instance("pychron.lasers.laser_managers.client.UVLaserOpticsClient")
     fire = Event
     stop = Event
     fire_mode = Enum("Burst", "Continuous")
@@ -568,7 +561,7 @@ class PychronUVLaserManager(PychronLaserManager):
         #    if not TRANSECT_REGEX[0].match(pos):
         #        cmd = None
 
-        if isinstance(pos, (str, six.text_type)):
+        if isinstance(pos, str):
             if not pos:
                 return
 

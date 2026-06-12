@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from envisage.ui.tasks.task_extension import TaskExtension
 
 from pychron.lasers.tasks.laser_preferences import FusionsUVPreferencesPane

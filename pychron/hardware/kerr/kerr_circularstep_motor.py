@@ -15,7 +15,6 @@
 # ==============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import CInt
 
 # ============= standard library imports ========================
@@ -23,7 +22,6 @@ from traits.api import CInt
 from pychron.hardware.kerr.kerr_step_motor import KerrStepMotor
 import time
 from pychron.hardware.core.data_helper import make_bitarray
-from six.moves import range
 
 """
     status byte
@@ -93,9 +91,7 @@ class KerrCircularStepMotor(KerrStepMotor):
         # ======================================================================
         self.reset_position(motor_off=False)
         #         signal.set()
-        progress.change_message(
-            "{} homing complete".format(self.name), auto_increment=False
-        )
+        progress.change_message("{} homing complete".format(self.name), auto_increment=False)
 
     def _proximity_move(self, onoff, n=2, progress=None):
         addr = self.address
@@ -113,9 +109,7 @@ class KerrCircularStepMotor(KerrStepMotor):
                 cnt += 1
 
             if cnt % 10 == 0 and prog:
-                prog.change_message(
-                    "Limit={}, cnt={}".format(lim, tc), auto_increment=False
-                )
+                prog.change_message("Limit={}, cnt={}".format(lim, tc), auto_increment=False)
 
             tc += 1
 

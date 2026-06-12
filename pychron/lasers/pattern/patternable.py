@@ -15,11 +15,10 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Instance, DelegatesTo, List, Str
 
 # import apptools.sweet_pickle as pickle
-import six.moves.cPickle as pickle
+import pickle
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================

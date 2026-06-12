@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import unittest
 
 from uncertainties import ufloat
@@ -25,15 +24,17 @@ from pychron.experiment.queue.experiment_queue import ExperimentQueue
 
 # ============= local library imports  ==========================
 
+
 class MockRun(object):
-    analysis_type = 'blank_unknown'
+    analysis_type = "blank_unknown"
     Ar40 = ufloat(0, 0)
+
 
 class QueueTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        p = './data/experiment.txt'
+        p = "./data/experiment.txt"
         cls.txt = open(p).read()
 
     def setUp(self):
@@ -47,7 +48,7 @@ class QueueTest(unittest.TestCase):
     def testActions(self):
         q = self._queue
         act = q.queue_actions[0]
-        self.assertEqual(act.analysis_type, 'blank_unknown')
+        self.assertEqual(act.analysis_type, "blank_unknown")
         self.assertEqual(act.nrepeat, 3)
 
         act = q.queue_actions[1]
@@ -61,8 +62,9 @@ class QueueTest(unittest.TestCase):
         run.Ar40 = ufloat(100, 0)
         self.assertTrue(act.check_run(run))
 
-
         run.Ar40 = ufloat(10, 0)
         self.assertFalse(act.check_run(run))
+
+
 #         self.assertEqual(len(q.queue_actions), 2)
 # ============= EOF =============================================

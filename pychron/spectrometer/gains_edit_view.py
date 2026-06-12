@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.message_dialog import information
 from traits.api import HasTraits, Button, Str, Int, Float, List, Any, Date
 from traitsui.api import (
@@ -72,9 +71,7 @@ class GainsModel(HasTraits):
 
     def _apply_history_button_fired(self):
         if self.spectrometer:
-            self.spectrometer.set_gains(
-                gains=self.selected.gains, history=self.selected
-            )
+            self.spectrometer.set_gains(gains=self.selected.gains, history=self.selected)
         db = self.db
         hist = db.get_gain_history(self.selected.hashkey)
         hist.applied_date = datetime.now()
@@ -131,9 +128,7 @@ class GainsEditView(Controller):
     def traits_view(self):
         a = UItem(
             "histories",
-            editor=TabularEditor(
-                adapter=GainHistoryAdapter(), editable=False, selected="selected"
-            ),
+            editor=TabularEditor(adapter=GainHistoryAdapter(), editable=False, selected="selected"),
         )
         b = UItem(
             "selected",
@@ -153,9 +148,7 @@ class GainsEditView(Controller):
             HGroup(icon_button_editor("apply_button", "apply")),
             UItem(
                 "object.spectrometer.detectors",
-                editor=ListEditor(
-                    mutable=False, style="custom", editor=InstanceEditor(view=dview)
-                ),
+                editor=ListEditor(mutable=False, style="custom", editor=InstanceEditor(view=dview)),
             ),
             show_border=True,
             label="Edit Detector Gains",

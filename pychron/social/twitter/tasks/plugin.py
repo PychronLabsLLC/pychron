@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import List, Instance
 
 from pychron.envisage.tasks.base_task_plugin import BaseTaskPlugin
@@ -55,9 +54,7 @@ class TwitterPlugin(BaseTaskPlugin):
 
     def _end_run_event(self, ctx):
         self.debug("end run event")
-        enabled = self.application.get_boolean_preference(
-            "pychron.twitter.experiment.enabled"
-        )
+        enabled = self.application.get_boolean_preference("pychron.twitter.experiment.enabled")
         if enabled:
             run = ctx["run"]
             self.client.twit("End Run {}".format(run.runid))
@@ -68,18 +65,14 @@ class TwitterPlugin(BaseTaskPlugin):
         #      'summary': 'Experiment: {} {}'.format(ctx['experiment_name'],
         #                                            ctx['err_message'])}
         #
-        enabled = self.application.get_boolean_preference(
-            "pychron.twitter.experiment.enabled"
-        )
+        enabled = self.application.get_boolean_preference("pychron.twitter.experiment.enabled")
         if enabled:
             self.client.twit("End Experiment {}".format(ctx["experiment_name"]))
 
     def _start_experiment_event(self, ctx):
         self.debug("start experiment event")
 
-        enabled = self.application.get_boolean_preference(
-            "pychron.twitter.experiment.enabled"
-        )
+        enabled = self.application.get_boolean_preference("pychron.twitter.experiment.enabled")
         if enabled:
             self.client.twit("Start Experiment {}".format(ctx["experiment_name"]))
 

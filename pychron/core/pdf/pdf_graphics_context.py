@@ -21,7 +21,6 @@
 # adapted from Chaco PdfPlotGraphicsContext
 
 # Major library imports
-from __future__ import absolute_import
 import warnings
 
 try:
@@ -58,7 +57,7 @@ UNITS_MAP = {
 
 if Canvas is not None:
 
-    class PdfPlotGraphicsContext(GraphicsContext):
+    class PdfPlotGraphicsContext(GraphicsContext):  # type: ignore[no-redef]
         """A convenience class for rendering PlotComponents onto PDF"""
 
         # The name of the file that this graphics context will use when

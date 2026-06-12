@@ -14,15 +14,12 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 
 from pyface.message_dialog import information
 from pyface.tasks.action.task_action import TaskAction
 
 
-SERVICE_PROTOCOL = (
-    "pychron.ausgeochem.earthbank_service.AusGeochemEarthBankService"
-)
+SERVICE_PROTOCOL = "pychron.ausgeochem.earthbank_service.AusGeochemEarthBankService"
 
 
 def _get_service(event):

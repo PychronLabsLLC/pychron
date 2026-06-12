@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Instance, DelegatesTo, Button, List, Any, Float
 from traitsui.api import View, Item, VGroup, HGroup, Group, spring, TabularEditor
 
@@ -139,9 +138,7 @@ class CompositeCalibrationManager(Manager):
             pickle.dump(pc, f)
 
     def _get_calibration_path(self):
-        p = os.path.join(
-            paths.hidden_dir, "{}_power_calibration".format(self.parent_name)
-        )
+        p = os.path.join(paths.hidden_dir, "{}_power_calibration".format(self.parent_name))
         return p
 
     def _load_graph_fired(self):

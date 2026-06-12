@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from pychron.core.ui import set_qt
 
 set_qt()
@@ -7,7 +6,7 @@ from pychron.processing.isotope import Isotope
 import numpy as np
 from pychron.core.regression.ols_regressor import OLSRegressor
 
-__author__ = 'ross'
+__author__ = "ross"
 
 
 class IsotopeTestCase(TestCase):
@@ -24,17 +23,15 @@ class IsotopeTestCase(TestCase):
 
         cls.iso = Isotope(xs=xs, ys=ys)
 
-
         # cls.iso.filter_outliers_dict=fod
         cls.intercept = b
         cls.slope = m
 
-        cls.reg = OLSRegressor(xs=xs, ys=ys, fit='linear')
+        cls.reg = OLSRegressor(xs=xs, ys=ys, fit="linear")
         # cls.reg.filter_outliers_dict=fod
 
     def setUp(self):
-        fod = dict(filter_outliers=True,
-                   iterations=1, std_devs=2)
+        fod = dict(filter_outliers=True, iterations=1, std_devs=2)
         self.iso.set_filtering(fod)
         self.reg.filter_outliers_dict = fod
 
@@ -46,7 +43,6 @@ class IsotopeTestCase(TestCase):
         self.assertAlmostEqual(self.iso.uvalue.nominal_value, self.intercept)
 
     def test_fail_iso_intercept(self):
-        self.iso.set_filtering(dict(filter_outliers=False,
-                                    iterations=1, std_devs=2))
+        self.iso.set_filtering(dict(filter_outliers=False, iterations=1, std_devs=2))
 
         self.assertNotAlmostEqual(self.iso.uvalue.nominal_value, self.intercept)

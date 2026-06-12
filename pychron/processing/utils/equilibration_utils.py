@@ -16,8 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 from numpy import asarray, convolve, exp, linspace, where
 from pylab import (
     plot,
@@ -32,7 +30,6 @@ from pylab import (
     xlim,
     array,
 )
-from six.moves import range
 
 
 # ============= local library imports  ==========================

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
 from traits.api import List, Str, Dict, Button, Int, String, Event
 
 from pychron.core.fuzzyfinder import fuzzyfinder
@@ -56,9 +55,7 @@ class ProjectManager(Loggable):
 
     def activated(self):
         with self.dvc.session_ctx(use_parent_session=False):
-            self.items = self.oitems = [
-                ProjectRecordView(pr) for pr in self.dvc.get_projects()
-            ]
+            self.items = self.oitems = [ProjectRecordView(pr) for pr in self.dvc.get_projects()]
 
             # self._filter()
 

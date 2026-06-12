@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from difflib import ndiff
 
 from pyface.qt import QtCore, QtGui

@@ -16,8 +16,6 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 
@@ -72,9 +70,7 @@ class GeochronService(Loggable):
         #     if val is not None:
         #         preferred_age_elem.attrib[attr] = val
 
-        experiments_included_elem = etree.SubElement(
-            preferred_age_elem, "ExperimentsIncluded"
-        )
+        experiments_included_elem = etree.SubElement(preferred_age_elem, "ExperimentsIncluded")
         for analysis in analysis_group.analyses:
             experiments_elem = etree.SubElement(experiments_included_elem, "Experiment")
             experiments_elem.attrib["experimentIdentifier"] = analysis.record_id
@@ -114,9 +110,7 @@ class GeochronService(Loggable):
         param_elem.attrib["decayConstant40ArTotal"] = str(
             nominal_value(ref.arar_constants.lambda_k)
         )
-        param_elem.attrib["decayConstant40ArTotalSigma"] = str(
-            std_dev(ref.arar_constants.lambda_k)
-        )
+        param_elem.attrib["decayConstant40ArTotalSigma"] = str(std_dev(ref.arar_constants.lambda_k))
         param_elem.attrib["jValue"] = str(nominal_value(ref.j))
         param_elem.attrib["jValueSigma"] = str(std_dev(ref.j))
 
@@ -169,9 +163,7 @@ class GeochronService(Loggable):
         irradiation_elem = etree.SubElement(experiment_elem, "Irradiation")
 
         irradiation_elem.attrib["irradiationName"] = analysis.irradiation
-        irradiation_elem.attrib["irradiationReactorName"] = (
-            analysis.production_obj.reactor
-        )
+        irradiation_elem.attrib["irradiationReactorName"] = analysis.production_obj.reactor
 
         production = analysis.production_obj
         constants = analysis.arar_constants
@@ -193,9 +185,7 @@ class GeochronService(Loggable):
         for i, (pwr, dur, dt, start, end) in enumerate(segments):
             seg_elem = etree.SubElement(irradiation_elem, "Segment")
             seg_elem.attrib["segmentNumber"] = str(i)
-            seg_elem.attrib["segmentDuration"] = str(
-                (end - start).total_seconds() / 3600.0
-            )
+            seg_elem.attrib["segmentDuration"] = str((end - start).total_seconds() / 3600.0)
             seg_elem.attrib["segmentDate"] = start.strftime("%Y:%m:%d")
             seg_elem.attrib["segmentEndTime"] = end.strftime("%H:%M")
             seg_elem.attrib["segmentPowerSetting"] = str(pwr)
@@ -210,9 +200,7 @@ class GeochronService(Loggable):
         except AttributeError as e:
             if required:
                 self.warning_dialog(
-                    'Required attribute "{}" not supplied. Contact developer'.format(
-                        attr
-                    )
+                    'Required attribute "{}" not supplied. Contact developer'.format(attr)
                 )
         self.debug("get value {:<38s} {:<38s}={}".format(attr, iattr, val))
         return val

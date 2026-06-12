@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 
 import os
 import subprocess
@@ -110,9 +109,7 @@ class GroupOverride(HasTraits):
 
 
 class AusGeochemNode(BaseNode):
-    service = Instance(
-        "pychron.ausgeochem.earthbank_service.AusGeochemEarthBankService", ()
-    )
+    service = Instance("pychron.ausgeochem.earthbank_service.AusGeochemEarthBankService", ())
     name = "AusGeochem EarthBank"
     skip_configure = False
 
@@ -234,8 +231,10 @@ class AusGeochemNode(BaseNode):
             columns=[
                 ObjectColumn(name="sample", label="Sample", editable=False),
                 ObjectColumn(
-                    name="n_analyses", label="# Analyses",
-                    editable=False, width=70,
+                    name="n_analyses",
+                    label="# Analyses",
+                    editable=False,
+                    width=70,
                 ),
                 ObjectColumn(name="datapoint_key", label="Datapoint Key"),
                 ObjectColumn(
@@ -306,9 +305,7 @@ class AusGeochemNode(BaseNode):
     def _run_upload(self, groups):
         for ag, meta, sample in groups:
             self.service.info(
-                "Uploading {} ({} analyses) to EarthBank".format(
-                    sample, len(ag.analyses)
-                )
+                "Uploading {} ({} analyses) to EarthBank".format(sample, len(ag.analyses))
             )
             # interpretation + flux monitor reach the AgeSummary/AgeCalc
             # payloads via attributes on the AnalysisGroup, not the
@@ -322,13 +319,9 @@ class AusGeochemNode(BaseNode):
                     ag.eb_funding = meta.funding
                 if meta.literature:
                     ag.eb_literature = meta.literature
-            dp_id = self.service.upload_analysis_group(
-                ag, confirm=self.confirm_upload
-            )
+            dp_id = self.service.upload_analysis_group(ag, confirm=self.confirm_upload)
             if dp_id is not None:
-                self.service.info(
-                    "EarthBank ArArDataPoint id={} ({})".format(dp_id, sample)
-                )
+                self.service.info("EarthBank ArArDataPoint id={} ({})".format(dp_id, sample))
 
     def _run_preflight(self, groups):
         total = 0
@@ -353,9 +346,7 @@ class AusGeochemNode(BaseNode):
                 self.service.warning(
                     "  {}: {} = {!r} (vs {})".format(sheet, field, value, endpoint)
                 )
-        self.service.info(
-            "preflight: {} group(s), {} total miss(es)".format(len(groups), total)
-        )
+        self.service.info("preflight: {} group(s), {} total miss(es)".format(len(groups), total))
 
     def _run_export(self, groups):
         out_dir = self.output_dir
@@ -366,9 +357,7 @@ class AusGeochemNode(BaseNode):
             try:
                 os.makedirs(out_dir, exist_ok=True)
             except OSError as exc:
-                self.service.warning(
-                    "could not create output dir {}: {}".format(out_dir, exc)
-                )
+                self.service.warning("could not create output dir {}: {}".format(out_dir, exc))
                 return
 
         from pychron.ausgeochem.xlsx_exporter import EarthBankXlsxExporter
@@ -397,7 +386,7 @@ class AusGeochemNode(BaseNode):
         if self.one_workbook_per_sample:
             for ag, meta, sample in groups:
                 _apply_meta(ag, meta)
-                key = (meta.datapoint_key if meta and meta.datapoint_key else sample)
+                key = meta.datapoint_key if meta and meta.datapoint_key else sample
                 arar_path = os.path.join(
                     out_dir,
                     "{}_ArArDataPoint_{}_{}.xlsx".format(prefix, key, stamp),
@@ -417,7 +406,7 @@ class AusGeochemNode(BaseNode):
             items = []
             for ag, meta, sample in groups:
                 _apply_meta(ag, meta)
-                key = (meta.datapoint_key if meta and meta.datapoint_key else sample)
+                key = meta.datapoint_key if meta and meta.datapoint_key else sample
                 items.append((ag, key))
             arar_path = os.path.join(
                 out_dir,
@@ -426,9 +415,7 @@ class AusGeochemNode(BaseNode):
             exporter.export_analysis_groups(items, arar_path)
             produced.append(arar_path)
             self.service.info(
-                "EarthBank batch xlsx ({} groups) -> {}".format(
-                    len(groups), arar_path
-                )
+                "EarthBank batch xlsx ({} groups) -> {}".format(len(groups), arar_path)
             )
             if self.include_sample_xlsx:
                 sp = os.path.join(
@@ -438,9 +425,7 @@ class AusGeochemNode(BaseNode):
                 exporter.export_samples([ag for ag, _, _ in groups], sp)
                 produced.append(sp)
                 self.service.info(
-                    "EarthBank Samples batch ({} samples) -> {}".format(
-                        len(groups), sp
-                    )
+                    "EarthBank Samples batch ({} samples) -> {}".format(len(groups), sp)
                 )
 
         if self.open_after_export:

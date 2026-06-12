@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from traits.api import Instance, Button, Str
 from traitsui.api import View, Item
 
@@ -25,7 +23,6 @@ from pychron.hardware.kerr.kerr_motor import KerrMotor
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 from pychron.loggable import Loggable
-from six.moves import zip
 
 
 class KerrManager(Loggable):

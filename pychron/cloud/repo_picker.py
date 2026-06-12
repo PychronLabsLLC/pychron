@@ -21,7 +21,6 @@ alias. Wired to a Traits view in a follow-up; the logic is kept here so
 it can be unit-tested without a UI.
 """
 
-from __future__ import absolute_import
 
 import json
 import logging

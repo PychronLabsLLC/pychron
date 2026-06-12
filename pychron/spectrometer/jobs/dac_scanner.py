@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 from chaco.abstract_overlay import AbstractOverlay
 from enable.tools.drag_tool import DragTool
 from kiva.trait_defs.kiva_font_trait import KivaFont
@@ -27,7 +26,6 @@ from traits.api import Float, List, Button, Enum
 # ============= local library imports  ==========================
 from pychron.graph.tools.limits_tool import LimitsTool, LimitOverlay
 from pychron.spectrometer.jobs.base_scanner import BaseScanner
-from six.moves import zip
 
 
 class ScannerBoundsTool(DragTool):
@@ -278,9 +276,7 @@ class DACScanner(BaseScanner):
         try:
             isos, mws, dacs, coeffs = mft[self.spectrometer.reference_detector]
         except KeyError:
-            self.warning(
-                "{} not in mftable".format(self.spectrometer.reference_detector)
-            )
+            self.warning("{} not in mftable".format(self.spectrometer.reference_detector))
             return
 
         mi = min(dacs)

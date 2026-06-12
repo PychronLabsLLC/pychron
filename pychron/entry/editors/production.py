@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import HasTraits, Instance, Str, Float, Unicode, Bool, on_trait_change
 from traitsui.api import View, Item, HGroup, VGroup, UCustom, Tabbed, UItem, Group
@@ -163,21 +162,15 @@ Ca_K:[value,error],Cl_K:[value,error],note"""
         # self.note = dbrecord.note or ''
 
     def traits_view(self):
-        kgrp = BorderVGroup(
-            EUCustom("k4039"), EUCustom("k3839"), EUCustom("k3739"), label="K"
-        )
-        cagrp = BorderVGroup(
-            EUCustom("ca3937"), EUCustom("ca3837"), EUCustom("ca3637"), label="Ca"
-        )
+        kgrp = BorderVGroup(EUCustom("k4039"), EUCustom("k3839"), EUCustom("k3739"), label="K")
+        cagrp = BorderVGroup(EUCustom("ca3937"), EUCustom("ca3837"), EUCustom("ca3637"), label="Ca")
         clgrp = BorderVGroup(EUCustom("cl3638"), label="Cl")
         elem_grp = BorderVGroup(EUCustom("Ca_K"), EUCustom("Cl_K"), label="Elemental")
 
         v = View(
             Tabbed(
                 VGroup(HGroup(kgrp, cagrp), clgrp, elem_grp, label="Ratios"),
-                Group(
-                    UItem("note", enabled_when="editable", style="custom"), label="Note"
-                ),
+                Group(UItem("note", enabled_when="editable", style="custom"), label="Note"),
             ),
             width=300,
         )

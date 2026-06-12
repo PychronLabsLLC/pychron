@@ -1,8 +1,7 @@
-from __future__ import absolute_import
-from __future__ import print_function
+import os
+
 from pylab import *
-from six.moves import map
-from six.moves import range
+from matplotlib.pyplot import show, tight_layout
 
 
 def plot_mem(p, use_histogram=True):
@@ -155,16 +154,10 @@ if __name__ == "__main__":
         const=bool,
         default=False,
     )
-    parser.add_argument(
-        "-m,", dest="memory", action="store_const", const=bool, default=False
-    )
-    parser.add_argument(
-        "-u,", dest="usize", action="store_const", const=bool, default=False
-    )
+    parser.add_argument("-m,", dest="memory", action="store_const", const=bool, default=False)
+    parser.add_argument("-u,", dest="usize", action="store_const", const=bool, default=False)
 
-    parser.add_argument(
-        "-U,", dest="uhist", action="store_const", const=bool, default=False
-    )
+    parser.add_argument("-U,", dest="uhist", action="store_const", const=bool, default=False)
 
     parser.add_argument("paths", metavar="p", nargs="+")
     args = parser.parse_args()

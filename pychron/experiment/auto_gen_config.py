@@ -15,7 +15,6 @@
 # # ===============================================================================
 #
 # # ============= enthought library imports =======================
-# from __future__ import absolute_import
 # import os
 #
 # from traits.api import Str, Int, Bool, List

@@ -18,7 +18,6 @@
 
 from pickle import dumps
 
-import six
 
 from pyface.qt import QtCore, QtGui
 from pyface.qt.QtGui import QHeaderView, QApplication
@@ -346,10 +345,7 @@ class _TableView(TableView):
             except IndexError:
                 pass
 
-            if (
-                self._editor.factory is not None
-                and not self._editor.factory.auto_resize
-            ):
+            if self._editor.factory is not None and not self._editor.factory.auto_resize:
                 self.resizeColumnsToContents()
 
     def keyPressEvent(self, event):
@@ -416,7 +412,7 @@ class _TableView(TableView):
 
         qmd = PyMimeData()
         qmd.MIME_TYPE = mt
-        qmd.setData(six.text_type(mt), dumps(copy_object.__class__) + pdata)
+        qmd.setData(str(mt), dumps(copy_object.__class__) + pdata)
 
         clipboard = QApplication.clipboard()
         clipboard.setMimeData(qmd)
@@ -550,6 +546,7 @@ class _TabularModel(TabularModel):
                 return QtGui.QColor(rgba)
             comps = list(rgba)
         elif all(hasattr(color, attr) for attr in ("red", "green", "blue")):
+
             def _component(value):
                 return value() if callable(value) else value
 
@@ -667,9 +664,7 @@ class _TabularEditor(qtTabularEditor):
         # Set up the selection listener
         if factory.multi_select:
             self.sync_value(factory.selected, "multi_selected", "both", is_list=True)
-            self.sync_value(
-                factory.selected_row, "multi_selected_rows", "both", is_list=True
-            )
+            self.sync_value(factory.selected_row, "multi_selected_rows", "both", is_list=True)
         else:
             self.sync_value(factory.selected, "selected", "both")
             self.sync_value(factory.selected_row, "selected_row", "both")
@@ -698,15 +693,9 @@ class _TabularEditor(qtTabularEditor):
         self.sync_value(factory.column_clicked, "column_clicked", "to")
         self.sync_value(factory.column_right_clicked, "column_right_clicked", "to")
         try:
-            self.sync_value(
-                factory.scroll_to_row, "scroll_to_row", "from", is_event=True
-            )
-            self.sync_value(
-                factory.scroll_to_bottom, "scroll_to_bottom", "from", is_event=True
-            )
-            self.sync_value(
-                factory.scroll_to_top, "scroll_to_top", "from", is_event=True
-            )
+            self.sync_value(factory.scroll_to_row, "scroll_to_row", "from", is_event=True)
+            self.sync_value(factory.scroll_to_bottom, "scroll_to_bottom", "from", is_event=True)
+            self.sync_value(factory.scroll_to_top, "scroll_to_top", "from", is_event=True)
         except TypeError:
             self.sync_value(factory.scroll_to_row, "scroll_to_row", "from")
             self.sync_value(factory.scroll_to_bottom, "scroll_to_bottom", "from")

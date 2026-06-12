@@ -17,13 +17,9 @@
 import matplotlib.pyplot as plt
 
 # ============= enthought library imports =======================
-# from __future__ import absolute_import
-# from __future__ import print_function
 # import csv
 #
 # import numpy as np
-# from six.moves import range
-# from six.moves import zip
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 from numpy import exp, pi, sqrt, hstack, arange

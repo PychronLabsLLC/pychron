@@ -21,7 +21,6 @@
 
 # ============= local library imports  ==========================
 # from canvas.canvas3D.elements.components import Valve, Shaft
-from __future__ import print_function
 
 from logging import getLogger
 

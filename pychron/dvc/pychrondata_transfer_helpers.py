@@ -17,8 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 
-from __future__ import absolute_import
-from __future__ import print_function
 import os
 from datetime import timedelta
 from itertools import groupby
@@ -140,9 +138,7 @@ def fix_meta(dest, repo_identifier, root):
             p = analysis_path(an.record_id, repo_identifier)
             obj = dvc_load(p)
             if not obj:
-                print(
-                    "********************** {} not found in repo".format(an.record_id)
-                )
+                print("********************** {} not found in repo".format(an.record_id))
                 continue
 
             print(an.record_id, p)
@@ -242,9 +238,7 @@ def fix_a_steps(dest, repo_identifier, root):
                         "peakcenter",
                         ".data",
                     ):
-                        npath = analysis_path(
-                            an.record_id, repo_identifier, modifier=modifier
-                        )
+                        npath = analysis_path(an.record_id, repo_identifier, modifier=modifier)
                         opath = analysis_path(
                             original_record_id, repo_identifier, modifier=modifier
                         )
@@ -309,15 +303,11 @@ def set_spectrometer_file(dban, root):
     gain_history = dban.gain_history
     gains = {}
     if gain_history:
-        gains = {
-            d.detector.name: d.value for d in gain_history.gains if d.value is not None
-        }
+        gains = {d.detector.name: d.value for d in gain_history.gains if d.value is not None}
 
     # deflections
     deflections = {
-        d.detector.name: d.deflection
-        for d in meas.deflections
-        if d.deflection is not None
+        d.detector.name: d.deflection for d in meas.deflections if d.deflection is not None
     }
 
     # source
