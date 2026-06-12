@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import HasTraits, Str, Float, Bool, List
 
@@ -55,12 +54,8 @@ class SystemMonitor(Monitor):
 
                 ds = self.config_get(config, section, "disable_valves", default="")
                 ds = ds.split(",")
-                p = self.config_get(
-                    config, section, "pressure_trip", cast="float", default=10
-                )
-                r = self.config_get(
-                    config, section, "pressure_reset", cast="float", default=1e-10
-                )
+                p = self.config_get(config, section, "pressure_trip", cast="float", default=10)
+                r = self.config_get(config, section, "pressure_reset", cast="float", default=1e-10)
                 if r > p:
                     self.warning_dialog(
                         "Invalid pressure_reset {}. Pressure_reset must be less than pressure_trip {}".format(

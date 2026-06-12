@@ -16,14 +16,12 @@
 
 
 # ========== future imports ====================
-from __future__ import with_statement
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, List, Property, Str, Int, Float, Button, Enum
 from traitsui.api import View, Item, Group, TableEditor
 from traitsui.table_column import ObjectColumn
-import six.moves.cPickle as pickle
+import pickle
 
 # ============= standard library imports ========================
 import os

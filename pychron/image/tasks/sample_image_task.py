@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.tasks.action.schema import SToolBar
 from pyface.tasks.task_layout import TaskLayout, PaneItem
 from traits.api import Event, List, Instance
@@ -83,9 +82,7 @@ class SampleImageTask(BaseEditorTask, BaseBrowserModel):
     # actions
     def upload_image_from_file(self):
         if not self.selected_samples:
-            self.information_dialog(
-                "Please select a sample to associate with the image"
-            )
+            self.information_dialog("Please select a sample to associate with the image")
             return
 
         path = self.open_file_dialog(
@@ -111,9 +108,7 @@ class SampleImageTask(BaseEditorTask, BaseBrowserModel):
 
         sample = self.selected_samples[0]
         self.info(
-            "adding image to sample. name={}, identifier={}".format(
-                sample.name, sample.identifier
-            )
+            "adding image to sample. name={}, identifier={}".format(sample.name, sample.identifier)
         )
 
         name = self._prev_name
@@ -139,9 +134,7 @@ class SampleImageTask(BaseEditorTask, BaseBrowserModel):
             if blob is None:
                 blob = self.camera.get_jpeg_data(quality=75)
 
-            db.add_sample_image(
-                sample.name, v.name, blob, v.note, identifier=sample.identifier
-            )
+            db.add_sample_image(sample.name, v.name, blob, v.note, identifier=sample.identifier)
 
     # task interface
     def activated(self):
@@ -187,9 +180,7 @@ class SampleImageTask(BaseEditorTask, BaseBrowserModel):
                     note=dbim.note or "",
                 )
 
-                editor = ImageTabEditor(
-                    record_id=selected.record_id, model=model, name=dbim.name
-                )
+                editor = ImageTabEditor(record_id=selected.record_id, model=model, name=dbim.name)
                 self._open_editor(editor)
             else:
                 self.activate_editor(editor)
@@ -217,10 +208,7 @@ class SampleImageTask(BaseEditorTask, BaseBrowserModel):
                 prog.change_message("Loading Sample {}".format(li.name))
 
             if li.labnumbers:
-                return [
-                    SampleRecordView(li, identifier=ll.identifier)
-                    for ll in li.labnumbers
-                ]
+                return [SampleRecordView(li, identifier=ll.identifier) for ll in li.labnumbers]
             else:
                 return SampleRecordView(li)
 

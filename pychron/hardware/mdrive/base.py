@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Int, Bool, Float, CInt
 
 # ============= standard library imports ========================
@@ -223,9 +222,7 @@ class BaseMDrive(BaseLinearDrive):
         self.set_slew(0)
         return True
 
-    def start_jitter(
-        self, turns, p1, p2, velocity=None, acceleration=None, deceleration=None
-    ):
+    def start_jitter(self, turns, p1, p2, velocity=None, acceleration=None, deceleration=None):
         def _jitter():
             kw = dict(
                 velocity=velocity,
@@ -314,9 +311,7 @@ class BaseMDrive(BaseLinearDrive):
             args = self._check_error()
             if args:
                 ecode, estr = args
-                self.warning(
-                    "Existing error ErrorCode={}, Error={}".format(ecode, estr)
-                )
+                self.warning("Existing error ErrorCode={}, Error={}".format(ecode, estr))
 
         ret = True
         self.tell("{} {}".format(var, val))
@@ -325,9 +320,7 @@ class BaseMDrive(BaseLinearDrive):
             if args:
                 ecode, estr = args
                 self.warning(
-                    "Error setting {}={} ErrorCode={}. Error={}".format(
-                        var, val, ecode, estr
-                    )
+                    "Error setting {}={} ErrorCode={}. Error={}".format(var, val, ecode, estr)
                 )
                 ret = False
         return ret

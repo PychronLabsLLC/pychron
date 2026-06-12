@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from envisage.ui.tasks.preferences_pane import PreferencesPane
 from traits.api import Int, Str, Password, Bool
 from traitsui.api import View, Item, Spring, Label, VGroup, HGroup
@@ -106,11 +105,7 @@ class LabspyExperimentPreferencesPane(PreferencesPane):
     category = "Experiment"
 
     def traits_view(self):
-        v = View(
-            VGroup(
-                Item("enabled", label="Use Labspy"), label="Labspy", show_border=True
-            )
-        )
+        v = View(VGroup(Item("enabled", label="Use Labspy"), label="Labspy", show_border=True))
         return v
 
 

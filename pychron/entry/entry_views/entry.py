@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import List, Property, Str
 from traitsui.api import View, VGroup, UItem
 from traitsui.menu import Action
@@ -85,9 +84,7 @@ class BaseEntry(DVCAble):
             UItem("error_message", style="readonly", style_sheet=STYLESHEET),
         )
         buttons = [OKButton(), "Cancel"]
-        return self._new_view(
-            a, width=400, title="Add {}".format(self.tag), buttons=buttons
-        )
+        return self._new_view(a, width=400, title="Add {}".format(self.tag), buttons=buttons)
 
 
 # ============= EOF =============================================

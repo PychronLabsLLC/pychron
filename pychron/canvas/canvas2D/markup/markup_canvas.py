@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from traits.api import Enum, Any
 
 # =============standard library imports ========================
@@ -362,17 +360,11 @@ class InteractionMarkupCanvas(MarkupCanvas):
         self.temp_start_pos = (event.x, event.y)
 
         def _update_(point, container, elem):
-            if (
-                abs(point[0] - container[0][0]) <= 1
-                and abs(point[1] - container[0][1]) <= 1
-            ):
+            if abs(point[0] - container[0][0]) <= 1 and abs(point[1] - container[0][1]) <= 1:
                 ep = container[0]
                 re = [(ep[0] + xadj, ep[1] + yadj), container[1]] + elem[2:]
 
-            elif (
-                abs(point[0] - container[1][0]) <= 1
-                and abs(point[1] - container[1][1]) <= 1
-            ):
+            elif abs(point[0] - container[1][0]) <= 1 and abs(point[1] - container[1][1]) <= 1:
                 ep = container[1]
                 re = [container[0], (ep[0] + xadj, ep[1] + yadj)] + elem[2:]
 

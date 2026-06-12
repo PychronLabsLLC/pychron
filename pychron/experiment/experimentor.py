@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import time
 from _thread import LockType
@@ -245,24 +244,18 @@ class Experimentor(DVCIrradiationable):
                     elif not self.confirmation_dialog(
                         "Found analyses up to {}. "
                         "position={}, extract={}. "
-                        "Continue searching?".format(
-                            ai.runid, ai.extract_value, ai.position
-                        )
+                        "Continue searching?".format(ai.runid, ai.extract_value, ai.position)
                     ):
                         break
                     next_pos = queue.automated_runs[i + 1]
 
             if i:
                 if i == len(queue.automated_runs) - 1:
-                    self.information_dialog(
-                        "All Analyses from this experiment have been run"
-                    )
+                    self.information_dialog("All Analyses from this experiment have been run")
                 else:
                     queue.automated_runs = queue.automated_runs[i:]
             else:
-                self.information_dialog(
-                    "No Analyses from this experiment have been run"
-                )
+                self.information_dialog("No Analyses from this experiment have been run")
 
     # ===============================================================================
     # handlers
@@ -373,9 +366,7 @@ class Experimentor(DVCIrradiationable):
     def _experiment_factory_default(self):
         dms = "Spectrometer"
         if self.application:
-            p2 = (
-                "pychron.spectrometer.base_spectrometer_manager.BaseSpectrometerManager"
-            )
+            p2 = "pychron.spectrometer.base_spectrometer_manager.BaseSpectrometerManager"
             spec = self.application.get_service(p2)
             if spec:
                 dms = spec.name.capitalize()

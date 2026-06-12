@@ -36,7 +36,6 @@ Profile metadata (name, base_url, username) lives in pychron preferences as
 JSON. Only the password ever touches this module.
 """
 
-from __future__ import absolute_import
 
 import json
 import logging
@@ -94,9 +93,7 @@ try:
 except ImportError:
     Fernet = None
     InvalidToken = Exception
-    _logger.warning(
-        "'cryptography' not installed; cannot encrypt credentials at rest"
-    )
+    _logger.warning("'cryptography' not installed; cannot encrypt credentials at rest")
 
 
 def _store_dir():
@@ -124,9 +121,7 @@ def _store_dir():
     elif sys.platform == "darwin":
         base = os.path.expanduser("~/Library/Application Support")
     else:
-        base = os.environ.get("XDG_DATA_HOME") or os.path.expanduser(
-            "~/.local/share"
-        )
+        base = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
     path = os.path.join(base, "pychron", ".appdata")
     os.makedirs(path, exist_ok=True)
     return path

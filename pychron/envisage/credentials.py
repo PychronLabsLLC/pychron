@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Str, Password, Any, Button
 from traitsui.api import View, Item, spring, HGroup
 
@@ -64,9 +63,7 @@ class Credentials(Loggable):
             else:
                 if self.db.connect(force=True):
                     if self.db.get_user(nc.username):
-                        self.warning_dialog(
-                            "User {} already exists".format(nc.username)
-                        )
+                        self.warning_dialog("User {} already exists".format(nc.username))
                     else:
                         password, salt = self.generate_hashed_password(nc.password)
                         self.db.add_user(nc.username, password=password, salt=salt)

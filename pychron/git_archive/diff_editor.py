@@ -17,7 +17,6 @@
 # ============= standard library imports ========================
 from itertools import groupby
 
-import six
 
 # ============= enthought library imports =======================
 from pyface.qt.QtGui import (
@@ -40,10 +39,7 @@ from pychron.git_archive.diff_util import extract_line_numbers
 
 
 def get_ranges(data):
-    return [
-        [gi[0] for gi in g]
-        for k, g in groupby(enumerate(data), lambda i_x: i_x[0] - i_x[1])
-    ]
+    return [[gi[0] for gi in g] for k, g in groupby(enumerate(data), lambda i_x: i_x[0] - i_x[1])]
 
 
 class QDiffConnector(QFrame):
@@ -281,7 +277,7 @@ class _DiffEditor(Editor):
         except AttributeError:
             value = ctrl.toPlainText()
 
-        value = six.text_type(value)
+        value = str(value)
 
         try:
             value = self.evaluate(value)

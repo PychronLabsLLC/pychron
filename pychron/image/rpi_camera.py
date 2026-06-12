@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import os
 from threading import Thread
 
@@ -29,7 +28,6 @@ import time
 from pychron.core.helpers.filetools import unique_path2
 from pychron.headless_config_loadable import HeadlessConfigLoadable
 from pychron.paths import paths
-from six.moves import map
 
 
 class RPiCamera(HeadlessConfigLoadable):

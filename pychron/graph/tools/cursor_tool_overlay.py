@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.api import TextBoxOverlay
 from traits.api import Enum, Any, Bool
 

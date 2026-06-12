@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 
 from chaco.api import AbstractOverlay
 
@@ -202,11 +201,7 @@ class RectSelectionTool(BaseTool):
                     data = vstack([datax, datay]).transpose()
                     self._cached_data = data
 
-                ind = [
-                    i
-                    for i, (xi, yi) in enumerate(data)
-                    if dx <= xi <= dx2 and dy2 <= yi <= dy
-                ]
+                ind = [i for i, (xi, yi) in enumerate(data) if dx <= xi <= dx2 and dy2 <= yi <= dy]
 
         selection = index.metadata[self.selection_metadata_name]
         nind = list(set(ind) ^ set(selection))

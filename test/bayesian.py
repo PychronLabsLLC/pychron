@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import unittest
 
 from pychron.processing.bayesian_modeler import BayesianModeler
@@ -23,12 +22,12 @@ from pychron.processing.bayesian_modeler import BayesianModeler
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 
+
 class BayesianTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.modeler = BayesianModeler()
-
 
     def testStratOrder(self):
         ages = [1, 2, 3, 4, 5, 6]
@@ -37,5 +36,6 @@ class BayesianTest(unittest.TestCase):
     def testStratOrderFail(self):
         ages = [1, 2, 3, 6, 4, 5]
         self.assertFalse(self.modeler._is_valid(ages))
+
 
 # ============= EOF =============================================

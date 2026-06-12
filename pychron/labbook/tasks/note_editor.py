@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import hashlib
 import os
 
@@ -115,9 +114,7 @@ class NoteEditor(BaseTraitsEditor):
         # v = View(VGroup(HGroup(Item('new_name', label='Name', visible_when='name_editable')),
         # VGroup(UItem('note', style='custom'),
         #                        cgrp)))
-        v = View(
-            VGroup(UItem("note", style="custom"), UItem("labels", editor=LabelEditor()))
-        )
+        v = View(VGroup(UItem("note", style="custom"), UItem("labels", editor=LabelEditor())))
         return v
 
 

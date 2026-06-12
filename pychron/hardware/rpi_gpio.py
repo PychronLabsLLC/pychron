@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pychron.hardware.actuators import get_switch_address
 from pychron.hardware.actuators.gp_actuator import GPActuator

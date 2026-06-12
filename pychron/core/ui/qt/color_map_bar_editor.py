@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.data_range_1d import DataRange1D
 from chaco.default_colormaps import color_map_dict, color_map_name_dict
 from pyface.qt.QtGui import QPainter, QColor, QFrame

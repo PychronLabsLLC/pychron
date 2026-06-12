@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import time
 
 from traits.api import Any, Int, Instance, Event
@@ -34,7 +33,6 @@ from pychron.graph.contour_graph import ContourGraph
 from pychron.graph.graph import Graph
 from chaco.plot_containers import HPlotContainer
 from pychron.paths import paths
-from six.moves import range
 
 
 # from pychron.core.ui.gui import invoke_in_main_thread

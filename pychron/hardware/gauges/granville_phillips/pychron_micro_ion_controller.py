@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 
 import time
 
@@ -51,9 +50,7 @@ class QtegraMicroIonController(MicroIonController):
             "QtegraGaugeController instead"
         )
 
-        self.display_name = self.config_get(
-            config, "General", "display_name", default=self.name
-        )
+        self.display_name = self.config_get(config, "General", "display_name", default=self.name)
         self._load_gauges(config)
         return True
 

@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 from sqlalchemy import Column, Integer, BLOB, Float, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import func

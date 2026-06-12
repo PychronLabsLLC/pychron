@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 import unittest
 
 from pychron.processing.entry.labnumber_entry import LabnumberEntry
@@ -24,6 +23,7 @@ from test.database import isotope_manager_factory
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
+
 
 class LabEntryTest(unittest.TestCase):
     def setUp(self):
@@ -42,19 +42,20 @@ class LabEntryTest(unittest.TestCase):
     #         le.make_table()
 
     def testLoadFile(self):
-        p = './data/irradiation_import.xls'
-        self.le.irradiation = 'TEST'
+        p = "./data/irradiation_import.xls"
+        self.le.irradiation = "TEST"
 
         self.le._load_positions_from_file(p, dry_run=False)
 
-        self.assertEqual(self.le.irradiation, 'TEST')
+        self.assertEqual(self.le.irradiation, "TEST")
         self.assertEqual(len(self.le.levels), 2)
-        self.assertEqual(self.le.level, 'B')
+        self.assertEqual(self.le.level, "B")
 
         self.assertEqual(len(self.le.irradiated_positions), 61)
-        self.assertEqual(self.le.irradiated_positions[0].sample, 'test_sample1')
-        self.assertEqual(self.le.irradiated_positions[0].material, 'test_material')
+        self.assertEqual(self.le.irradiated_positions[0].sample, "test_sample1")
+        self.assertEqual(self.le.irradiated_positions[0].material, "test_material")
         self.assertEqual(self.le.irradiated_positions[0].weight, 1.1)
+
 
 #     def testLabnumberGenerator(self):
 #         le = self.le

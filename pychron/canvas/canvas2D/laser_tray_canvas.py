@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
-from __future__ import print_function
 from traits.api import (
     Float,
     Any,
@@ -105,9 +103,7 @@ class ImageOverlay(AbstractOverlay):
         elif data.shape[2] == 4:
             kiva_depth = "rgba32"
         else:
-            raise RuntimeError(
-                "Unknown colormap depth value: %i".format(data.value_depth)
-            )
+            raise RuntimeError("Unknown colormap depth value: %i".format(data.value_depth))
 
         self._cached_image = GraphicsContextArray(data, pix_format=kiva_depth)
         self._image_cache_valid = True
@@ -257,9 +253,7 @@ class LaserTrayCanvas(StageCanvas):
             (
                 pts
                 for pts in self.get_points()
-                if abs(pts.x - x) < tol
-                and abs(pts.y - y) < tol
-                and abs(pts.z - z) < tol
+                if abs(pts.x - x) < tol and abs(pts.y - y) < tol and abs(pts.z - z) < tol
             ),
             None,
         )
@@ -279,7 +273,7 @@ class LaserTrayCanvas(StageCanvas):
         identifier=None,
         line_color=(1, 0, 0),
         point_color=(1, 0, 0),
-        **kw
+        **kw,
     ):
         if ptargs is None:
             ptargs = dict()
@@ -293,11 +287,7 @@ class LaserTrayCanvas(StageCanvas):
         if self._new_polygon:
             self._new_polygon = False
             poly = RasterPolygon(
-                [xy],
-                identifier=identifier,
-                default_color=point_color,
-                ptargs=ptargs,
-                **kw
+                [xy], identifier=identifier, default_color=point_color, ptargs=ptargs, **kw
             )
             self.polygons.append(poly)
             self.scene.add_item(poly)
@@ -321,7 +311,7 @@ class LaserTrayCanvas(StageCanvas):
                 canvas=self,
                 default_color=point_color,
                 step=step,
-                **ptargs
+                **ptargs,
             )
             self.scene.add_item(transect)
             self.transects.append(transect)
@@ -332,13 +322,7 @@ class LaserTrayCanvas(StageCanvas):
             tran.set_step_points(**ptargs)
 
     def new_line_point(
-        self,
-        xy=None,
-        z=0,
-        line_color=(1, 0, 0),
-        point_color=(1, 0, 0),
-        velocity=None,
-        **kw
+        self, xy=None, z=0, line_color=(1, 0, 0), point_color=(1, 0, 0), velocity=None, **kw
     ):
         if xy is None:
             xy = self._stage_position
@@ -516,7 +500,7 @@ class LaserTrayCanvas(StageCanvas):
                 source="laser_canvas",
                 start_timer=True,
                 check_moving=True,
-                use_calibration=False
+                use_calibration=False,
             )
             event.handled = True
 

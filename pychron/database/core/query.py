@@ -16,7 +16,6 @@
 
 from datetime import datetime, timedelta
 
-import six
 from sqlalchemy import func, DateTime
 
 # ============= standard library imports ========================
@@ -35,14 +34,12 @@ def in_func(q, col, values):
     if values:
         col = func.lower(col)
         # if not hasattr(values, '__iter__'):
-        if isinstance(values, (str, six.text_type)):
+        if isinstance(values, str):
             values = values.lower()
 
             q = q.filter(col == values)
         else:
-            values = [
-                v.lower() if isinstance(v, (str, six.text_type)) else v for v in values
-            ]
+            values = [v.lower() if isinstance(v, str) else v for v in values]
             q = q.filter(col.in_(values))
     return q
 

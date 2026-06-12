@@ -18,7 +18,6 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from pychron.entry.tasks.project.panes import ProjectPane
 from pychron.entry.tasks.project.project_manager import ProjectManager
 from pychron.envisage.tasks.base_task import BaseManagerTask

@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 
 from reportlab.lib import colors
 from traits.api import Bool, List, Instance
@@ -89,17 +88,13 @@ class ReportOptions(BasePDFOptions):
     cocktails_series_options_manager = Instance(CocktailReportSeriesOptionsManager, ())
     cocktails_series_options_controller = Instance(OptionsController)
 
-    cocktails_ideogram_options_manager = Instance(
-        CocktailReportIdeogramOptionsManager, ()
-    )
+    cocktails_ideogram_options_manager = Instance(CocktailReportIdeogramOptionsManager, ())
     cocktails_ideogram_options_controller = Instance(OptionsController)
 
     unknowns_series_options_manager = Instance(UnknownsReportSeriesOptionsManager, ())
     unknowns_series_options_controller = Instance(OptionsController)
 
-    unknowns_ideogram_options_manager = Instance(
-        UnknownsReportIdeogramOptionsManager, ()
-    )
+    unknowns_ideogram_options_manager = Instance(UnknownsReportIdeogramOptionsManager, ())
     unknowns_ideogram_options_controller = Instance(OptionsController)
 
     email_enabled = dumpable(Bool(True))

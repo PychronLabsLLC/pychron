@@ -15,13 +15,11 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import time
 
 from numpy import max, argmax, vstack, linspace
 from scipy import interpolate
-from six.moves import range
 from traits.api import Float, Str, Int, List, Enum, HasTraits
 
 from pychron.core.helpers.color_generators import colornames
@@ -79,9 +77,7 @@ class BasePeakCenter(HasTraits):
     use_pseudo_peak = False
     percent = Int
     use_interpolation = False
-    interpolation_kind = Enum(
-        "linear", "nearest", "zero", "slinear", "quadratic", "cubic"
-    )
+    interpolation_kind = Enum("linear", "nearest", "zero", "slinear", "quadratic", "cubic")
     n_peaks = 1
     select_peak = 1
     use_dac_offset = False
@@ -112,9 +108,7 @@ class BasePeakCenter(HasTraits):
 
         center_dac = self.center_dac
         self.info(
-            "starting peak center. center dac= {} step_width={}".format(
-                center_dac, self.step_width
-            )
+            "starting peak center. center dac= {} step_width={}".format(center_dac, self.step_width)
         )
 
         # self.graph = self._graph_factory()
@@ -192,9 +186,7 @@ class BasePeakCenter(HasTraits):
         graph.set_x_limits(min_=min([start, end]), max_=max([start, end]))
 
         def get_reference_intensity():
-            keys, signals, t, inc = spec.get_intensities(
-                trigger=True, integrated_intensity=True
-            )
+            keys, signals, t, inc = spec.get_intensities(trigger=True, integrated_intensity=True)
 
             idx = keys.index(self.reference_detector.name)
             return signals[idx]
@@ -216,9 +208,7 @@ class BasePeakCenter(HasTraits):
         tol = cur_intensity * (1 - self.percent / 100.0) / 2.0
         # print('asfasdf', cur_intensity, 1-self.percent/100., tol)
         timeout = 1 if spec.simulation else 10
-        self.info(
-            "Wait until signal near baseline. tol= {}. timeout= {}".format(tol, timeout)
-        )
+        self.info("Wait until signal near baseline. tol= {}. timeout= {}".format(tol, timeout))
 
         st = time.time()
         while 1:
@@ -237,9 +227,7 @@ class BasePeakCenter(HasTraits):
         self.debug("pre sweep, dataspace={}".format(self.dataspace))
 
         # ok = self._do_sweep(start, end, width, directions=self.directions, map_mass=self.dataspace == 'mass')
-        ok = self._do_sweep(
-            start, end, width, directions=self.directions, map_mass=False
-        )
+        ok = self._do_sweep(start, end, width, directions=self.directions, map_mass=False)
         self.debug("result of _do_sweep={}".format(ok))
 
         if ok and self.directions != "Oscillate":
@@ -269,10 +257,7 @@ class BasePeakCenter(HasTraits):
             center += self.dac_offset
 
         pcenter = self.center_dac
-        if (
-            self.peak_shift_threshold
-            and abs(center - pcenter) > self.peak_shift_threshold
-        ):
+        if self.peak_shift_threshold and abs(center - pcenter) > self.peak_shift_threshold:
             self.warning(
                 f"Peak center moved too much. current={center}, previous={pcenter}, "
                 f"dev={abs(center-pcenter)} > {self.peak_shift_threshold}"
@@ -417,9 +402,7 @@ class BasePeakCenter(HasTraits):
         graph.add_vertical_rule(center)
 
         if self.use_dac_offset:
-            l = graph.add_vertical_rule(
-                center + self.dac_offset, color="blue", add_move_tool=True
-            )
+            l = graph.add_vertical_rule(center + self.dac_offset, color="blue", add_move_tool=True)
             self._offset_rule = l
 
         graph.redraw()
@@ -432,9 +415,7 @@ class BasePeakCenter(HasTraits):
             fy = f(fx)
         except ValueError as e:
             self.warning(
-                "interpolation failed: error={}. x.shape={}, y.shape={}".format(
-                    e, x.shape, y.shape
-                )
+                "interpolation failed: error={}. x.shape={}, y.shape={}".format(e, x.shape, y.shape)
             )
 
         return fx, fy
@@ -477,9 +458,7 @@ class BasePeakCenter(HasTraits):
             else:
                 func = calculate_peak_center
 
-            result = func(
-                x, y, min_peak_height=self.min_peak_height, percent=self.percent, **kw
-            )
+            result = func(x, y, min_peak_height=self.min_peak_height, percent=self.percent, **kw)
             return result
         except PeakCenterError as e:
             self.warning("Failed to find a valid peak. {}".format(e))

@@ -15,11 +15,10 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 
-import six.moves.cPickle as pickle
+import pickle
 from traits.api import Property, Enum, Str, on_trait_change, List
 from traitsui.api import (
     View,
@@ -175,9 +174,7 @@ class PatternMakerView(Saveable, Patternable):
         return v
 
     def traits_view(self):
-        bgrp = VGroup(
-            UItem("patterns", editor=ListStrEditor(selected="selected_pattern_name"))
-        )
+        bgrp = VGroup(UItem("patterns", editor=ListStrEditor(selected="selected_pattern_name")))
         ngrp = VGroup(
             Item("kind", show_label=False),
             Item(

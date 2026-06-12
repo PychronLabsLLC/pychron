@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-import six
 from pyface.action.menu_manager import MenuManager
 from pyface.tasks.traits_dock_pane import TraitsDockPane
 from traits.api import Int, Property, Button, Instance
@@ -142,7 +141,7 @@ class PipelineHandlerMeta(MetaHasTraits):
         return klass
 
 
-class PipelineHandler(six.with_metaclass(PipelineHandlerMeta, Handler)):
+class PipelineHandler(Handler, metaclass=PipelineHandlerMeta):
     def save_template(self, info, obj):
         info.object.save_pipeline_template()
 
@@ -196,9 +195,7 @@ class PipelinePane(TraitsDockPane):
     def traits_view(self):
         def enable_disable_menu_factory():
             return MenuManager(
-                Action(
-                    name="Enable", action="enable", visible_when="not object.enabled"
-                ),
+                Action(name="Enable", action="enable", visible_when="not object.enabled"),
                 Action(name="Disable", action="disable", visible_when="object.enabled"),
                 Action(
                     name="Enable Permanent",
@@ -230,7 +227,7 @@ class PipelinePane(TraitsDockPane):
                 Action(name="Move Down", action="move_down"),
                 Action(name="Delete", action="delete_node"),
                 Action(name="Save Template", action="save_template"),
-                *actions
+                *actions,
             )
 
         def add_menu_factory():
@@ -295,9 +292,7 @@ class PipelinePane(TraitsDockPane):
         def chain_menu_factory():
             return MenuManager(
                 Action(name="Chain Ideogram", action="chain_ideogram"),
-                Action(
-                    name="Chain Isotope Evolution", action="chain_isotope_evolution"
-                ),
+                Action(name="Chain Isotope Evolution", action="chain_isotope_evolution"),
                 Action(name="Chain Spectrum", action="chain_spectrum"),
                 Action(name="Chain Blanks", action="chain_blanks"),
                 Action(name="Chain ICFactors", action="chain_icfactors"),
@@ -341,9 +336,7 @@ class PipelinePane(TraitsDockPane):
             )
 
         nodes = [
-            PipelineGroupTreeNode(
-                node_for=[PipelineGroup], children="pipelines", auto_open=True
-            ),
+            PipelineGroupTreeNode(node_for=[PipelineGroup], children="pipelines", auto_open=True),
             PipelineTreeNode(
                 node_for=[Pipeline],
                 children="nodes",
@@ -351,22 +344,14 @@ class PipelinePane(TraitsDockPane):
                 label="name",
                 auto_open=True,
             ),
-            NodeGroupTreeNode(
-                node_for=[NodeGroup], children="nodes", auto_open=True, label="name"
-            ),
-            DataTreeNode(
-                node_for=[DataNode, InterpretedAgeNode], menu=data_menu_factory()
-            ),
-            FilterTreeNode(
-                node_for=[FilterNode, MSWDFilterNode], menu=filter_menu_factory()
-            ),
+            NodeGroupTreeNode(node_for=[NodeGroup], children="nodes", auto_open=True, label="name"),
+            DataTreeNode(node_for=[DataNode, InterpretedAgeNode], menu=data_menu_factory()),
+            FilterTreeNode(node_for=[FilterNode, MSWDFilterNode], menu=filter_menu_factory()),
             IdeogramTreeNode(node_for=[IdeogramNode], menu=figure_menu_factory()),
             SpectrumTreeNode(node_for=[SpectrumNode], menu=figure_menu_factory()),
             SeriesTreeNode(node_for=[SeriesNode], menu=figure_menu_factory()),
             PDFTreeNode(node_for=[PDFNode], menu=menu_factory()),
-            GroupingTreeNode(
-                node_for=[GroupingNode, SubGroupingNode], menu=data_menu_factory()
-            ),
+            GroupingTreeNode(node_for=[GroupingNode, SubGroupingNode], menu=data_menu_factory()),
             DBSaveTreeNode(node_for=[DVCPersistNode], menu=data_menu_factory()),
             FindTreeNode(
                 node_for=[FindReferencesNode, FindFluxMonitorsNode],
@@ -399,9 +384,7 @@ class PipelinePane(TraitsDockPane):
 
         tnodes = [
             TreeNode(node_for=[PipelineTemplateRoot], children="groups"),
-            TemplateTreeNode(
-                node_for=[PipelineTemplateGroup], label="name", children="templates"
-            ),
+            TemplateTreeNode(node_for=[PipelineTemplateGroup], label="name", children="templates"),
             TemplateTreeNode(
                 node_for=[
                     PipelineTemplate,
@@ -424,9 +407,7 @@ class PipelinePane(TraitsDockPane):
                 UItem("pipeline_template_root", editor=teditor),
                 VGroup(
                     HGroup(
-                        icon_button_editor(
-                            "run_needed", "start", visible_when="run_enabled"
-                        ),
+                        icon_button_editor("run_needed", "start", visible_when="run_enabled"),
                         icon_button_editor(
                             "run_needed", "edit-redo-3", visible_when="resume_enabled"
                         ),
@@ -542,9 +523,7 @@ class UnknownsAdapter(BaseAnalysesAdapter):
             Action(name="Recall", action="recall_unknowns"),
             Action(name="Fix Plateau Selected", action="unknowns_set_fixed_plateau"),
             Action(name="Tag", action="tag_analyses"),
-            Action(
-                name="Graph Group Selected", action="unknowns_graph_group_by_selected"
-            ),
+            Action(name="Graph Group Selected", action="unknowns_graph_group_by_selected"),
             Action(name="Save Analysis Group", action="save_analysis_group"),
             Action(name="Toggle Status", action="unknowns_toggle_status"),
             Action(name="Configure", action="configure_unknowns"),
@@ -834,11 +813,7 @@ class EditorOptionsPane(TraitsDockPane):
     id = "pychron.pipeline.editor_options"
 
     def traits_view(self):
-        v = View(
-            UItem(
-                "object.active_editor_options", style="custom", editor=InstanceEditor()
-            )
-        )
+        v = View(UItem("object.active_editor_options", style="custom", editor=InstanceEditor()))
         return v
 
 

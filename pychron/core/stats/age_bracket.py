@@ -14,8 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import print_function
-
 
 def get_data_test():
     h = [20, 0]

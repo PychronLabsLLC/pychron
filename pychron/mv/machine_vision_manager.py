@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Instance, Float, List, Int
 
 # ============= standard library imports ========================
@@ -61,9 +60,7 @@ class MachineVisionManager(Loggable):
             return src
 
     def new_image(self, frame=None, title="AutoCenter", view_id="target", **kw):
-        im = StandAloneImage(
-            title=title, handler=CloseHandler(always_on_top=False), **kw
-        )
+        im = StandAloneImage(title=title, handler=CloseHandler(always_on_top=False), **kw)
         im.window_x = OX + XOFFSET * CloseHandler.WINDOW_CNT
         im.window_y = OY + YOFFSET * CloseHandler.WINDOW_CNT
         im.window_height = 300

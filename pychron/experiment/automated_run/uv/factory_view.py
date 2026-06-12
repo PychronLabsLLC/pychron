@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Instance
 from traitsui.api import Item, VGroup, Spring, HGroup, UItem
 
@@ -24,9 +23,7 @@ from pychron.experiment.automated_run.factory_view import FactoryView, POSITION_
 
 
 class UVFactoryView(FactoryView):
-    model = Instance(
-        "pychron.experiment.automated_run.uv.factory.UVAutomatedRunFactory"
-    )
+    model = Instance("pychron.experiment.automated_run.uv.factory.UVAutomatedRunFactory")
 
     def _get_group(self):
         sspring = lambda width=17: Spring(springy=False, width=width)

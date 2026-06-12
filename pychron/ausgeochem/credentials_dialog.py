@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 
 from traits.api import HasTraits, List, Password, Str
 from traitsui.api import EnumEditor, Item, OKCancelButtons, View, VGroup

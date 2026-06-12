@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from pychron.hardware.core.headless.core_device import HeadlessCoreDevice
 from pychron.hardware.mdrive.base import BaseMDrive
 

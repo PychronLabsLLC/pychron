@@ -15,7 +15,6 @@
 # ===============================================================================
 
 
-from __future__ import absolute_import
 import socket
 
 from traits.api import Str, Int, Enum

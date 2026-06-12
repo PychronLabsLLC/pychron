@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 
@@ -95,16 +94,12 @@ class HumanErrorChecker(Loggable):
                             old = run.identifier
                             run.identifier = "-".join((idn, "{:02n}".format(mod), a))
                             self.debug(
-                                "repairing identifier. old={}, new={}".format(
-                                    old, run.identifier
-                                )
+                                "repairing identifier. old={}, new={}".format(old, run.identifier)
                             )
 
                     self.information_dialog("Auto repair complete")
                 except BaseException:
-                    self.warning_dialog(
-                        "Auto repair failed. Issues too extreme. Contact an expert"
-                    )
+                    self.warning_dialog("Auto repair failed. Issues too extreme. Contact an expert")
 
     def check_runs_non_fatal(self, runs):
         if not self.non_fatal_enabled:
@@ -188,17 +183,15 @@ class HumanErrorChecker(Loggable):
                 if " " in ed:
                     ds = ed.split(" ")[1].lower()
                 else:
-                    if ed=='ChromiumCO2':
-                        ds='co2'
+                    if ed == "ChromiumCO2":
+                        ds = "co2"
                     else:
                         ds = ed
 
                 if ds not in es:
                     return (
                         'Extraction script "{}" does not match the default "{}". An easy solution is to make sure '
-                        '"{}" is in the name of the extraction script'.format(
-                            es, ds, ds
-                        )
+                        '"{}" is in the name of the extraction script'.format(es, ds, ds)
                     )
                 if run.extract_value and not run.position:
                     return "Extract value but no position"
@@ -225,9 +218,7 @@ class HumanErrorChecker(Loggable):
         )
         bind_preference(self, "runs_enabled", "pychron.experiment.runs_enabled")
         bind_preference(self, "queue_enabled", "pychron.experiment.queue_enabled")
-        bind_preference(
-            self, "non_fatal_enabled", "pychron.experiment.non_fatal_enabled"
-        )
+        bind_preference(self, "non_fatal_enabled", "pychron.experiment.non_fatal_enabled")
 
     def _check_run(self, run, inform, test):
         if test:

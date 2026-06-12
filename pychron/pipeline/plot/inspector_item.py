@@ -15,7 +15,6 @@
 # # ===============================================================================
 #
 # # ============= standard library imports ========================
-# from __future__ import absolute_import
 # from traits.api import HasTraits, Str
 # from traitsui.api import View, UItem, TextEditor
 #

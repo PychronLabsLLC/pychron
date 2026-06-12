@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # =============standard library imports ========================
-from __future__ import absolute_import
 from PIL import Image as PILImage
 from pyface.image_resource import ImageResource
 

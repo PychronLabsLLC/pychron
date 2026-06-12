@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import os
 
 from datetime import datetime
@@ -147,15 +146,11 @@ class XMLDatabase(Loggable):
 
     def _load_irradiations(self):
         elem = self._parser.get_elements("Parameters/Experiment/Irradiation")
-        self.irradiations = [
-            XMLIrradiationRecordView(i.get("irradiationName")) for i in elem
-        ]
+        self.irradiations = [XMLIrradiationRecordView(i.get("irradiationName")) for i in elem]
 
     def _load_mass_spectrometers(self):
         elem = self._parser.get_elements("Parameters/Experiment")
-        self.mass_spectrometers = [
-            XMLSpectrometerRecord(i.get("massSpectrometer")) for i in elem
-        ]
+        self.mass_spectrometers = [XMLSpectrometerRecord(i.get("massSpectrometer")) for i in elem]
 
     def _load_sample_meta(self):
         elem = self._parser.get_elements("Sample")

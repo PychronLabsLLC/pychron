@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from pychron.core.ui import set_qt
 
 set_qt()
@@ -116,9 +115,7 @@ class PowerMapEditor(LaserEditor):
         cy = editor.center_y
         step_len = editor.step_length
 
-        t = Thread(
-            target=mapper.do_power_mapping, args=(bd, rp, cx, cy, padding, step_len)
-        )
+        t = Thread(target=mapper.do_power_mapping, args=(bd, rp, cx, cy, padding, step_len))
         t.start()
         self._execute_thread = t
 

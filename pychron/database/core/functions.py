@@ -13,11 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 import sqlalchemy
 
 from pychron.deprecate import deprecated_message
-import six
 
 
 # ============= enthought library imports =======================
@@ -71,7 +69,7 @@ def _get_one(*args, **kw):
 
 
 def _getter(getfunc, func, obj, name, *args, **kw):
-    if name is not None and not isinstance(name, (str, int, six.text_type, int, float)):
+    if name is not None and not isinstance(name, (str, int, float)):
         return name
 
     order_by = None

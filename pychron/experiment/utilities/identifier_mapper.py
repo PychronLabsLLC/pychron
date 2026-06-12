@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 
 import os
 
@@ -60,11 +59,7 @@ class IdentifierMapper(Loggable):
     def _get_mapping(self):
         p = paths.identifier_mapping_file
         if not os.path.isfile(p):
-            self.warning(
-                "Using the default identifier mapping because {} does not exist".format(
-                    p
-                )
-            )
+            self.warning("Using the default identifier mapping because {} does not exist".format(p))
             return default_mapping()
         else:
             return yload(p)

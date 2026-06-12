@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pychron.hardware.fusions.fusions_logic_board import FusionsLogicBoard
 
 

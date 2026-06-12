@@ -29,7 +29,6 @@ touched. Cross-platform: ``os.path.expanduser`` resolves ``~`` to
 ``%USERPROFILE%`` on Windows and ``$HOME`` elsewhere.
 """
 
-from __future__ import absolute_import
 
 import os
 import socket

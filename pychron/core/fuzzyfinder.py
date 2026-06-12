@@ -16,8 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 import re
 
 # ============= local library imports  ==========================
@@ -43,9 +41,7 @@ def fuzzyfinder(user_input, collection, attr=None):
     except re.error:
         return []
 
-    suggestions = [
-        x for x in [func(regex, item, attr) for item in collection] if x is not None
-    ]
+    suggestions = [x for x in [func(regex, item, attr) for item in collection] if x is not None]
     return [x for _, _, x in suggestions]
 
 

@@ -16,8 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import time
 from threading import Thread
 
@@ -186,9 +184,7 @@ class FusionsUVManager(FusionsLaserManager):
             sc.set_smooth_transitions(True)
 
             # enqueue all points
-            sm._move_polyline(
-                line, start_callback=atl.laser_run, end_callback=atl.laser_stop
-            )
+            sm._move_polyline(line, start_callback=atl.laser_run, end_callback=atl.laser_stop)
 
             # turn off smooth transitions
             sc.set_smooth_transitions(False)
@@ -344,9 +340,7 @@ class FusionsUVManager(FusionsLaserManager):
 
         sm = self.stage_manager
         cx, cy = sm.get_current_position()
-        self.debug(
-            'Making reference mark "{}":{}'.format(refmarks.mark, refmarks.get_mark())
-        )
+        self.debug('Making reference mark "{}":{}'.format(refmarks.mark, refmarks.get_mark()))
         for x, y in refmarks.make_mark():
             self.debug("mark x={}, y={}".format(x, y))
             sm.linear_move(cx + x, cy - y, use_calibration=False, block=True)
@@ -416,14 +410,10 @@ class FusionsUVManager(FusionsLaserManager):
         return self._stage_manager_factory(args)
 
     def _laser_controller_default(self):
-        return FusionsUVLogicBoard(
-            name="laser_controller", configuration_dir_name="fusions_uv"
-        )
+        return FusionsUVLogicBoard(name="laser_controller", configuration_dir_name="fusions_uv")
 
     def _atl_controller_default(self):
-        return ATLLaserControlUnit(
-            name="atl_controller", configuration_dir_name="fusions_uv"
-        )
+        return ATLLaserControlUnit(name="atl_controller", configuration_dir_name="fusions_uv")
 
     def _gas_handler_default(self):
         uv = UVGasHandlerManager(controller=self.atl_controller)

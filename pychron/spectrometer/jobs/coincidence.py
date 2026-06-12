@@ -15,13 +15,11 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 # ============= standard library imports ========================
 from random import random
 
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 from traits.api import List, HasTraits, Str, Bool, Float, Property
 from traitsui.api import UItem, TableEditor
 
@@ -175,13 +173,7 @@ class Coincidence(BasePeakCenter, MagnetSweep):
                 config.read(p)
                 for v in rv.clean_results:
                     config.set("Deflections", v.name, v.new_deflection)
-                    det = next(
-                        (
-                            d
-                            for d in self.active_detectors
-                            if d.lower() == v.name.lower()
-                        )
-                    )
+                    det = next((d for d in self.active_detectors if d.lower() == v.name.lower()))
                     det = spec.get_detector(det)
                     det.deflection = v.new_deflection
 

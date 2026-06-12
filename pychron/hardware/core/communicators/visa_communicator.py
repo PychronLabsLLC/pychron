@@ -16,7 +16,6 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from pychron.hardware.core.communicators.communicator import Communicator
 from pychron.hardware.core.communicators.visa import resource_manager
 from pyvisa.constants import StatusCode
@@ -66,9 +65,7 @@ class VisaCommunicator(Communicator):
             return True
 
     def load(self, config, path, **kw):
-        self.set_attribute(
-            config, "address", "Communications", "address", optional=True
-        )
+        self.set_attribute(config, "address", "Communications", "address", optional=True)
         self.set_attribute(config, "board", "Communications", "board")
         self.set_attribute(config, "interface_kind", "Communications", "interface")
         self.set_attribute(config, "manufacture_id", "Communications", "manufacture_id")

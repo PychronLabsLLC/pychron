@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Instance, Float
 from traitsui.api import View, Item, UItem, VGroup
 
@@ -108,9 +107,7 @@ class RatioEditor(BaseTraitsEditor):
         fitfunc = lambda p, x: (p[0] * x + p[1]) / (p[2] * x + p[3])
 
         fit = ((fitfunc, [1, 1, 1, 1]), None)
-        p, s, l = g.new_series(
-            xs, rys, fit=fit, use_error_envelope=False, filter_outliers_dict=fd
-        )
+        p, s, l = g.new_series(xs, rys, fit=fit, use_error_envelope=False, filter_outliers_dict=fd)
         reg = l.regressor
         self.ratio_intercept = reg.predict(0)
 

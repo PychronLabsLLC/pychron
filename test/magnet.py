@@ -15,11 +15,12 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import unittest
+
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 from pychron.spectrometer.thermo.spectrometer.argus import ArgusSpectrometer
+
 
 class MagnetTest(unittest.TestCase):
     def setUp(self):
@@ -32,11 +33,11 @@ class MagnetTest(unittest.TestCase):
         dac = self.spec.magnet.map_mass_to_dac(mass)
         self.assertEqual(dac, 6.0878436559224873)
 
-
     def testDacToMass(self):
-#         mass = 39.962
+        #         mass = 39.962
         dac = 6.0878436559224873
         mass = self.spec.magnet.map_dac_to_mass(dac)
         self.assertEqual(mass, 39.962)
+
 
 # ============= EOF =============================================

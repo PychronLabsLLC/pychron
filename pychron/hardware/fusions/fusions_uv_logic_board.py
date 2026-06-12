@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # from traits.api import Instance, DelegatesTo
-from __future__ import absolute_import
 from traits.api import Any, Int, Instance, Property, Event, Enum, String
 from traitsui.api import View, Item, VGroup, ButtonEditor, HGroup, Spring
 
@@ -266,15 +265,9 @@ class FusionsUVLogicBoard(FusionsLogicBoard):
             nf = self.nitrogen_flower
             section = "Flow"
             if config.has_section(section):
-                nf.delay = self.config_get(
-                    config, section, "delay", cast="int", default=30
-                )
-                nf.timeout = self.config_get(
-                    config, section, "timeout", cast="int", default=6000
-                )
-                nf.channel = self.config_get(
-                    config, section, "channel", cast="int", default=1
-                )
+                nf.delay = self.config_get(config, section, "delay", cast="int", default=30)
+                nf.timeout = self.config_get(config, section, "timeout", cast="int", default=6000)
+                nf.channel = self.config_get(config, section, "channel", cast="int", default=1)
                 nf.address = self.config_get(config, section, "address", default="01")
             return True
 

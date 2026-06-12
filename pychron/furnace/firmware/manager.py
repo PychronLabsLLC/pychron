@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 
 import json
 import time
@@ -314,9 +313,7 @@ class FirmwareManager(HeadlessLoggable):
         if self.switch_controller:
             ch, inverted = self._get_switch_channel(data)
             if ch:
-                self.switch_controller.set_channel_state(
-                    ch, False if inverted else True
-                )
+                self.switch_controller.set_channel_state(ch, False if inverted else True)
                 return "OK"
 
     @debug
@@ -324,9 +321,7 @@ class FirmwareManager(HeadlessLoggable):
         if self.switch_controller:
             ch, inverted = self._get_switch_channel(data)
             if ch:
-                self.switch_controller.set_channel_state(
-                    ch, True if inverted else False
-                )
+                self.switch_controller.set_channel_state(ch, True if inverted else False)
                 return "OK"
 
     @debug
@@ -462,9 +457,7 @@ class FirmwareManager(HeadlessLoggable):
             velocity = data.get("velocity", None)
             acceleration = data.get("acceleration", None)
             deceleration = data.get("deceleration", None)
-            return drive.start_jitter(
-                turns, p1, p2, velocity, acceleration, deceleration
-            )
+            return drive.start_jitter(turns, p1, p2, velocity, acceleration, deceleration)
 
     @debug
     def stop_jitter(self, data):
@@ -591,9 +584,7 @@ class FirmwareManager(HeadlessLoggable):
 
             result = oresult
             if oresult == cresult:
-                result = "Error: OpenIndicator={}, CloseIndicator={}".format(
-                    oresult, cresult
-                )
+                result = "Error: OpenIndicator={}, CloseIndicator={}".format(oresult, cresult)
             else:
                 # if inverted:
                 #    result = not result

@@ -1,9 +1,8 @@
-from __future__ import absolute_import
-__author__ = 'ross'
+__author__ = "ross"
 
 import unittest
 
-'''
+"""
 *	Version 7.75	Marker denoting start of set-up parameters
 CO2	Heating device name (see Calibration file)
 145-hole	Sample holder file
@@ -79,7 +78,7 @@ B
 18749	FC-2	Sanidine, single crystal	Unknown			3.2	0		False	False	False	False		60
 18749	FC-2	Sanidine, single crystal	Unknown			3.2	0		False	False	False	False		61
 18749	FC-2	Sanidine, single crystal	Unknown			3.2	0		False	False	False	False		62
-'''
+"""
 
 
 class MultRunsSequenceTestCase(unittest.TestCase):
@@ -87,5 +86,5 @@ class MultRunsSequenceTestCase(unittest.TestCase):
         self.assertEqual(True, False)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

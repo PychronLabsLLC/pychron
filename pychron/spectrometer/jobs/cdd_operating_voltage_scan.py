@@ -15,13 +15,12 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 # ============= standard library imports ========================
 import time
 
 import numpy as np
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 from traits.api import Float
 from traitsui.api import Item
 
@@ -80,9 +79,7 @@ class CDDOperatingVoltageScan(SpectrometerTask):
 
             graph.add_vertical_rule(nopv, color=(0, 0, 1))
 
-            if self.confirmation_dialog(
-                "Save new CDD Operating voltage {:0.1f}".format(nopv)
-            ):
+            if self.confirmation_dialog("Save new CDD Operating voltage {:0.1f}".format(nopv)):
                 self._save(nopv)
 
     def _save(self, nv):

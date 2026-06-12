@@ -16,7 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from threading import Timer
 
 from traits.api import Range, Event, Bool, on_trait_change, Property, Float, Int
@@ -52,9 +51,7 @@ class FiberLight(AbstractDevice):
             elif klass == "U3FiberLight":
                 package = "pychron.hardware.labjack.u3_fiber_light"
             factory = self.get_factory(package, klass)
-            self._cdevice = factory(
-                name=klass, configuration_dir_name=self.configuration_dir_name
-            )
+            self._cdevice = factory(name=klass, configuration_dir_name=self.configuration_dir_name)
 
             return True
 

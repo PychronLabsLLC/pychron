@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import base64
 import mimetypes
@@ -231,9 +230,7 @@ class Emailer(Loggable):
                 with open(p, "rb") as rfile:
                     part = MIMEBase("application", "octet-stream")
                     part.set_payload(rfile.read())
-                    part["Content-Disposition"] = 'attachment; filename="{}"'.format(
-                        name
-                    )
+                    part["Content-Disposition"] = 'attachment; filename="{}"'.format(name)
                     msg.attach(part)
         return msg
 

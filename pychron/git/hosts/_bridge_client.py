@@ -24,7 +24,6 @@ This module wraps both flows so the rest of pychrondc can call simple
 methods like `ensure_repository(...)`.
 """
 
-from __future__ import absolute_import
 
 import logging
 import time

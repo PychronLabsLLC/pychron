@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from traits.api import Str, List, Enum, Bool
 from traitsui.api import VGroup, UItem, Item, EnumEditor
 
@@ -91,9 +90,7 @@ class RepositoryIdentifierEntry(BaseEntry):
             UItem("error_message", style="readonly", style_sheet=STYLESHEET),
         )
         buttons = [OKButton(), "Cancel"]
-        return self._new_view(
-            a, width=400, title="Add {}".format(self.tag), buttons=buttons
-        )
+        return self._new_view(a, width=400, title="Add {}".format(self.tag), buttons=buttons)
 
 
 if __name__ == "__main__":

@@ -18,16 +18,13 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 import inspect
 
 import objgraph
 
 
 def show_chain(i, obj):
-    objgraph.show_chain(
-        objgraph.find_backref_chain(obj, inspect.ismodule), filename="chain.png"
-    )
+    objgraph.show_chain(objgraph.find_backref_chain(obj, inspect.ismodule), filename="chain.png")
 
 
 # ============= EOF =============================================

@@ -16,8 +16,7 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
-import six.moves.cPickle as pickle
+import pickle
 import os
 
 from traits.api import Float, Property, TraitError
@@ -30,9 +29,7 @@ from pychron.paths import paths
 class FusionsCO2LogicBoard(FusionsLogicBoard):
     """ """
 
-    request_power = Property(
-        Float(enter_set=True, auto_set=False), depends_on="_request_power"
-    )
+    request_power = Property(Float(enter_set=True, auto_set=False), depends_on="_request_power")
     _request_power = Float
     request_powermin = Float(0)
     request_powermax = Float(100)
@@ -41,12 +38,8 @@ class FusionsCO2LogicBoard(FusionsLogicBoard):
 
     def load_additional_args(self, config):
         """ """
-        self.set_attribute(
-            config, "request_powermin", "General", "power min", cast="float"
-        )
-        self.set_attribute(
-            config, "request_powermax", "General", "power max", cast="float"
-        )
+        self.set_attribute(config, "request_powermin", "General", "power min", cast="float")
+        self.set_attribute(config, "request_powermax", "General", "power max", cast="float")
 
         # read in the coefficients from file
         coeffs = self.config_get(config, "PowerMeter", "coefficients")

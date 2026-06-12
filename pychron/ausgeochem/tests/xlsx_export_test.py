@@ -4,8 +4,6 @@ Run:
     python -m pychron.ausgeochem.tests.xlsx_export_test
 """
 
-from __future__ import absolute_import, print_function
-
 import datetime
 import os
 import sys
@@ -197,7 +195,11 @@ def main():
             arar_failures += 1
         print(
             "  [{:4s}] {:18s} out={:>2d}  hw={:>2d}  common={:>2d}  hw_only={}".format(
-                status, tmpl_name, len(out_keys), len(hw_keys), len(common),
+                status,
+                tmpl_name,
+                len(out_keys),
+                len(hw_keys),
+                len(common),
                 sorted(only_hw)[:5],
             )
         )
@@ -212,9 +214,11 @@ def main():
     hw_keys = _api_fields(HW_SAMPLE, "Samples")
     common = set(out_keys) & set(hw_keys)
     only_hw = set(hw_keys) - set(out_keys)
-    print("  out={} hw={} common={} hw_only={}".format(
-        len(out_keys), len(hw_keys), len(common), sorted(only_hw)[:8]
-    ))
+    print(
+        "  out={} hw={} common={} hw_only={}".format(
+            len(out_keys), len(hw_keys), len(common), sorted(only_hw)[:8]
+        )
+    )
     sample_rows = _data_rows(sample_out, "Samples")
     print("  exported Sample rows: {}".format(len(sample_rows)))
 

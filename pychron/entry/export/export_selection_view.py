@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Enum, List, Instance, File, Str, Password, Dict
 from traitsui.api import View, Item, UItem, VGroup, InstanceEditor, ListStrEditor
 
@@ -63,10 +62,7 @@ class MassSpecDestination(BaseExportDestination):
     password = Password
 
     def to_dict(self):
-        return {
-            attr: getattr(self, attr)
-            for attr in ("name", "host", "username", "password")
-        }
+        return {attr: getattr(self, attr) for attr in ("name", "host", "username", "password")}
 
     def traits_view(self):
         v = View(VGroup(Item("name"), Item("host"), Item("username"), Item("password")))
@@ -101,9 +97,7 @@ class ExportSelectionView(HasTraits):
             VGroup(
                 UItem("export_type"),
                 VGroup(
-                    UItem(
-                        "export_destination", style="custom", editor=InstanceEditor()
-                    ),
+                    UItem("export_destination", style="custom", editor=InstanceEditor()),
                     label="Destination",
                     show_border=True,
                 ),

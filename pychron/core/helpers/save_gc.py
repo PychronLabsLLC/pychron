@@ -1,4 +1,3 @@
-import six
 from kiva.agg import GraphicsContextArray
 
 
@@ -33,10 +32,9 @@ def save(gc, filename, file_format=None, pil_options=None):
     if fmt.endswith("32"):
         pilformat = "RGBA"
         pixelformat = "rgba32"
-        if (
-            isinstance(filename, six.string_types)
-            and filename[-3:].lower() in FmtsWithoutAlpha
-        ) or (file_format is not None and file_format.lower() in FmtsWithoutAlpha):
+        if (isinstance(filename, str) and filename[-3:].lower() in FmtsWithoutAlpha) or (
+            file_format is not None and file_format.lower() in FmtsWithoutAlpha
+        ):
             pilformat = "RGB"
             pixelformat = "rgb24"
     elif fmt.endswith("24"):

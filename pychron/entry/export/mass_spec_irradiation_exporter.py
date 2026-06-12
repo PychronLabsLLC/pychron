@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import binascii
 import struct
 
@@ -27,7 +26,6 @@ from pychron.mass_spec.database.massspec_database_adapter import (
     MassSpecDatabaseAdapter,
     PR_KEYS,
 )
-from six.moves import zip
 
 SRC_PR_KEYS = (
     "Ca3637",
@@ -111,9 +109,7 @@ class MassSpecIrradiationExporter(BaseIrradiationExporter):
             if not dest.get_irradiation_exists(irradname):
                 self._export_chronology(dbirrad)
             else:
-                self.debug(
-                    'Irradiation="{}" already exists. {}'.format(irradname, action)
-                )
+                self.debug('Irradiation="{}" already exists. {}'.format(irradname, action))
 
             for level in dbirrad.levels:
                 self._export_level(irradname, level)
@@ -167,11 +163,7 @@ class MassSpecIrradiationExporter(BaseIrradiationExporter):
             dest_pr = dest.add_production_ratios(pdict)
             dest.flush()
         else:
-            self.debug(
-                'Production Ratios="{}" already exists. {}'.format(
-                    source_pr.name, action
-                )
-            )
+            self.debug('Production Ratios="{}" already exists. {}'.format(source_pr.name, action))
 
         return dest_pr
 
@@ -241,9 +233,7 @@ class MassSpecIrradiationExporter(BaseIrradiationExporter):
             )
 
         else:
-            self.debug(
-                'Irradiation Position="{}" already exists {}'.format(idn, action)
-            )
+            self.debug('Irradiation Position="{}" already exists {}'.format(idn, action))
 
 
 # ============= EOF =============================================

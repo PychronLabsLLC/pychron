@@ -16,14 +16,11 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 import time
 
 # ============= local library imports  ==========================
 from pychron.hardware.core.core_device import CoreDevice
 from pychron.hardware.labjack.base_u3_lv import BaseU3LV
-from six.moves import range
 
 
 class U3LV(BaseU3LV, CoreDevice):

@@ -15,19 +15,17 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from traits.api import String, Str, Int
 
 # from traitsui.api import View, Item, TableEditor
 # ============= standard library imports ========================
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from cStringIO import StringIO
-import cgi
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from io import BytesIO, StringIO
+import html
 
 # import string, cgi, time
 import os  # os. path
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import urllib.request, urllib.parse, urllib.error
 import posixpath
 import sys
 import shutil
@@ -136,7 +134,7 @@ class DirectoryHandler(BaseHTTPRequestHandler):
             return None
         ll.sort(key=lambda a: a.lower())
         f = StringIO()
-        displaypath = cgi.escape(six.moves.urllib.parse.unquote(self.path))
+        displaypath = html.escape(urllib.parse.unquote(self.path))
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
         f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
         f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
@@ -153,17 +151,16 @@ class DirectoryHandler(BaseHTTPRequestHandler):
                 # Note: a link to a directory displays with @ and links with /
             f.write(
                 '<li><a href="%s">%s</a>\n'
-                % (six.moves.urllib.parse.quote(linkname), cgi.escape(displayname))
+                % (urllib.parse.quote(linkname), html.escape(displayname))
             )
         f.write("</ul>\n<hr>\n</body>\n</html>\n")
-        length = f.tell()
-        f.seek(0)
-        self.send_response(200)
         encoding = sys.getfilesystemencoding()
+        data = f.getvalue().encode(encoding, "surrogateescape")
+        self.send_response(200)
         self.send_header("Content-type", "text/html; charset=%s" % encoding)
-        self.send_header("Content-Length", str(length))
+        self.send_header("Content-Length", str(len(data)))
         self.end_headers()
-        return f
+        return BytesIO(data)
 
     def _translate_path(self, path):
         """Translate a /-separated PATH to the local filename syntax.
@@ -176,7 +173,7 @@ class DirectoryHandler(BaseHTTPRequestHandler):
         # abandon query parameters
         path = path.split("?", 1)[0]
         path = path.split("#", 1)[0]
-        path = posixpath.normpath(six.moves.urllib.parse.unquote(path))
+        path = posixpath.normpath(urllib.parse.unquote(path))
         words = path.split("/")
         words = [_f for _f in words if _f]
 

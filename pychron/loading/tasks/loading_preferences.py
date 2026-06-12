@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from envisage.ui.tasks.preferences_pane import PreferencesPane
 from traits.api import Directory
 from traitsui.api import View, Item, UItem, HGroup, VGroup
@@ -50,9 +49,7 @@ class LoadingPreferencesPane(PreferencesPane):
             Item("crosshairs_radius", visible_when='crosshairs_kind=="UserRadius"'),
             Item("crosshairs_color", enabled_when="show_laser_position"),
             Item("crosshairs_line_width", enabled_when="show_laser_position"),
-            HGroup(
-                Item("crosshairs_offsetx", label="Offset"), UItem("crosshairs_offsety")
-            ),
+            HGroup(Item("crosshairs_offsetx", label="Offset"), UItem("crosshairs_offsety")),
             UItem("crosshairs_offset_color"),
             label="Crosshairs",
         )

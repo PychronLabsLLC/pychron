@@ -13,11 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
-from __future__ import print_function
 
 from chaco.label import Label
-from six.moves import map
 
 from pychron.core.ui import set_qt
 
@@ -111,9 +108,7 @@ class GraphicModel(HasTraits):
     initialized = False
 
     def _get_name(self):
-        return os.path.splitext(
-            self._name if self._name else os.path.basename(self.srcpath)
-        )[0]
+        return os.path.splitext(self._name if self._name else os.path.basename(self.srcpath))[0]
 
     def save(self, path=None):
         #        print self.container.bounds
@@ -396,9 +391,7 @@ def make_xml(
     return out
 
 
-def open_txt(
-    p, bounds, radius, use_label=True, convert_mm=False, make=True, rotate=None
-):
+def open_txt(p, bounds, radius, use_label=True, convert_mm=False, make=True, rotate=None):
     gm = GraphicModel(srcpath=p, rotation=rotate or 0)
     p = make_xml(
         p,

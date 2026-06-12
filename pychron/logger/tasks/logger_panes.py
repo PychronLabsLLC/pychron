@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.tasks.traits_task_pane import TraitsTaskPane
 from traits.api import List, Any
 from traitsui.api import View, UItem, ListEditor
@@ -33,9 +32,7 @@ class DisplayPane(TraitsTaskPane):
         v = View(
             UItem(
                 "loggers",
-                editor=ListEditor(
-                    use_notebook=True, page_name=".title", selected="selected"
-                ),
+                editor=ListEditor(use_notebook=True, page_name=".title", selected="selected"),
                 style="custom",
             )
         )

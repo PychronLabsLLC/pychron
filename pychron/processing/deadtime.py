@@ -13,13 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from numpy import polyfit, linspace, polyval
 
 from pychron.core.ui import set_qt
-import six
-from six.moves import range
-from six.moves import zip
 
 set_qt()
 
@@ -49,7 +45,7 @@ class DeadTimeModel(HasTraits):
         """
         xs = []
         ys = []
-        for r in six.itervalues(self._cp):
+        for r in self._cp.values():
             xs.append(int(r["NShots"]))
             ys.append(float(r["Ar40"]) / float(r["Ar36"]))
 
@@ -61,7 +57,7 @@ class DeadTimeModel(HasTraits):
     def get_mean_raw(self, tau=None):
         vs = []
         corrfunc = self._deadtime_correct
-        for r in six.itervalues(self._cp):
+        for r in self._cp.values():
             n = int(r["NShots"])
             nv = ufloat(float(r["Ar40"]), float(r["Ar40err"])) * 6240
             dv = ufloat(float(r["Ar36"]), float(r["Ar36err"])) * 6240

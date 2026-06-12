@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-import six
 from traitsui.api import View, Item, Group, ListEditor, InstanceEditor
 
 from pychron.hardware.core.core_device import CoreDevice
@@ -51,9 +50,7 @@ class PfeifferMaxiGaugeController(BaseGaugeController, CoreDevice):
 
     def load_additional_args(self, config, *args, **kw):
         self.address = self.config_get(config, "General", "address", optional=False)
-        self.display_name = self.config_get(
-            config, "General", "display_name", default=self.name
-        )
+        self.display_name = self.config_get(config, "General", "display_name", default=self.name)
         # self.mode = self.config_get(config, 'Communications', 'mode', default='rs485')
         self._load_gauges(config)
         return True

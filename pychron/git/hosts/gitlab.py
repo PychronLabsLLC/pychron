@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from apptools.preferences.preference_binding import bind_preference
 from traits.api import Str

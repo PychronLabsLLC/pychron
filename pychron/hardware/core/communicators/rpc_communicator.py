@@ -22,7 +22,6 @@
 # pyro.configuration.HMAC_KEY = bytes(hmac.new('pychronjjj.rpc.hmac').digest())
 
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from pychron.hardware.core.communicators.communicator import Communicator
 
 
@@ -45,11 +44,7 @@ class RpcCommunicator(Communicator):
             self.simulation = False
             return True
 
-        self.info(
-            "testing rpc communicator - {} test_func={}".format(
-                self.name, self.test_func
-            )
-        )
+        self.info("testing rpc communicator - {} test_func={}".format(self.name, self.test_func))
         try:
             getattr(self.handle, self.test_func)()
             self.simulation = False
@@ -64,9 +59,7 @@ class RpcCommunicator(Communicator):
             except KeyError:
                 pass
         else:
-            return super(RpcCommunicator, self).config_get(
-                config, section, option, **kw
-            )
+            return super(RpcCommunicator, self).config_get(config, section, option, **kw)
 
     def _backend_load_hook(self, config):
         backend = self.config_get(config, "Communications", "backend", optional=True)

@@ -22,7 +22,6 @@
 # ============= local library imports  ==========================
 
 # ============= views ===================================
-from __future__ import absolute_import
 from pychron.hardware.gauges.base_gauge import BaseGauge
 
 

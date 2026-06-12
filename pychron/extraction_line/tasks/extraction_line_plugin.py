@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 
@@ -58,9 +57,7 @@ class ExtractionLinePlugin(BaseTaskPlugin):
     id = "pychron.extraction_line"
     name = "ExtractionLine"
     extraction_line_manager_klass = ExtractionLineManager
-    plugin_canvases = ExtensionPoint(
-        List(Dict), id="pychron.extraction_line.plugin_canvases"
-    )
+    plugin_canvases = ExtensionPoint(List(Dict), id="pychron.extraction_line.plugin_canvases")
 
     def _preferences_default(self):
         return self._preferences_factory("extractionline")
@@ -143,27 +140,19 @@ class ExtractionLinePlugin(BaseTaskPlugin):
                     1,
                     SchemaAddition(
                         id="extraction_line.group",
-                        factory=lambda: SGroup(
-                            name="ExtractionLine", id="extraction_line.group"
-                        ),
+                        factory=lambda: SGroup(name="ExtractionLine", id="extraction_line.group"),
                         path="MenuBar/procedures.menu",
                     ),
                 )
                 ex.append(TaskExtension(actions=actions))
             else:
-                self.warning(
-                    'no procedure scripts located in "{}"'.format(paths.procedures_dir)
-                )
+                self.warning('no procedure scripts located in "{}"'.format(paths.procedures_dir))
         return ex
 
     def _service_offers_default(self):
         """ """
-        so = self.service_offer_factory(
-            protocol=ExtractionLineManager, factory=self._factory
-        )
-        so1 = self.service_offer_factory(
-            protocol=IPyScriptRunner, factory=self._runner_factory
-        )
+        so = self.service_offer_factory(protocol=ExtractionLineManager, factory=self._factory)
+        so1 = self.service_offer_factory(protocol=IPyScriptRunner, factory=self._runner_factory)
 
         return [so, so1]
 

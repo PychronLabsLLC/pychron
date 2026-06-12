@@ -20,7 +20,6 @@ import logging
 import math
 import os
 
-import six
 from chaco.api import (
     OverlayPlotContainer,
     VPlotContainer,
@@ -258,7 +257,7 @@ class Graph(ContextMenuMixin):
 
     def get_data(self, plotid=0, series=0, axis=0):
         """ """
-        if isinstance(series, (str, six.text_type)):
+        if isinstance(series, str):
             s = series
         else:
             s = self.series[plotid][series][axis]
@@ -633,9 +632,7 @@ class Graph(ContextMenuMixin):
         if handler:
             t.on_trait_change(handler, "limits_updated")
 
-    def add_plot_label(
-        self, txt, plotid=0, overlay_position="inside top", hjustify="left", **kw
-    ):
+    def add_plot_label(self, txt, plotid=0, overlay_position="inside top", hjustify="left", **kw):
         """ """
 
         c = self.plots[plotid]
@@ -837,9 +834,7 @@ class Graph(ContextMenuMixin):
         for pi, d in zip(plotlist, data):
             self.add_datum(d, plotid=pi, **kw)
 
-    def add_bulk_data(
-        self, xs, ys, plotid=0, series=0, ypadding="0.1", update_y_limits=False
-    ):
+    def add_bulk_data(self, xs, ys, plotid=0, series=0, ypadding="0.1", update_y_limits=False):
         try:
             names = self.series[plotid][series]
         except IndexError:
@@ -1295,9 +1290,7 @@ class Graph(ContextMenuMixin):
         except AttributeError as e:
             logger.debug("get_limits failed error=%s", e)
 
-    def _set_limits(
-        self, mi, ma, axis, plotid, pad, pad_style="symmetric", force=False
-    ):
+    def _set_limits(self, mi, ma, axis, plotid, pad, pad_style="symmetric", force=False):
         if not plotid < len(self.plots):
             return
 
@@ -1407,7 +1400,7 @@ class Graph(ContextMenuMixin):
         return change
 
     def _append_data(self, existing, values, limit=None):
-        if hasattr(values, "__iter__") and not isinstance(values, six.string_types):
+        if hasattr(values, "__iter__") and not isinstance(values, str):
             new_values = array(values)
         else:
             new_values = array([values])
@@ -1443,9 +1436,7 @@ class Graph(ContextMenuMixin):
         do_after_timer(1, self.edit_traits)
 
     def panel_view(self):
-        plot = Item(
-            "plotcontainer", style="custom", show_label=False, editor=ComponentEditor()
-        )
+        plot = Item("plotcontainer", style="custom", show_label=False, editor=ComponentEditor())
 
         v = View(plot)
         return v

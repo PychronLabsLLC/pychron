@@ -13,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 import traceback
 
-from six.moves import map
 
 from pychron.canvas.utils import make_geom
 
@@ -54,7 +51,7 @@ def iterdir(d, exclude=None):
 
 
 # def load_isotopedb_defaults(db):
-#     for name, mass in six.iteritems(MOLECULAR_WEIGHTS):
+#     for name, mass in MOLECULAR_WEIGHTS.items():
 #         db.add_molecular_weight(name, mass)
 #
 #     populate_isotopes(db)

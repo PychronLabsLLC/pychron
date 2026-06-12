@@ -13,10 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from pychron.core.ui import set_qt
-from six.moves import range
-from six.moves import zip
 
 set_qt()
 
@@ -121,19 +118,11 @@ class MassSpecReverter(Loggable):
 
     def _generate_blobs(self, src, isok):
         dbiso = next(
-            (
-                i
-                for i in src.isotopes
-                if i.molecular_weight.name == isok and i.kind == "signal"
-            ),
+            (i for i in src.isotopes if i.molecular_weight.name == isok and i.kind == "signal"),
             None,
         )
         dbiso_bs = next(
-            (
-                i
-                for i in src.isotopes
-                if i.molecular_weight.name == isok and i.kind == "baseline"
-            ),
+            (i for i in src.isotopes if i.molecular_weight.name == isok and i.kind == "baseline"),
             None,
         )
 
@@ -216,9 +205,7 @@ class MassSpecReverter(Loggable):
 
             # fix IsotopeTable.NumCnts
             n = len(iso.peak_time_series[0].PeakTimeBlob) / 8
-            self.debug(
-                "{} fixing NumCnts. current={} new={}".format(isol, iso.NumCnts, n)
-            )
+            self.debug("{} fixing NumCnts. current={} new={}".format(isol, iso.NumCnts, n))
             iso.NumCnts = n
 
             nf = len(iso.peak_time_series)
@@ -226,20 +213,12 @@ class MassSpecReverter(Loggable):
                 self.debug("{} deleting {} refits".format(isol, nf - 1))
                 # delete peak time blobs
                 for i, pt in enumerate(iso.peak_time_series[1:]):
-                    self.debug(
-                        "{} A {:02d} deleting pt series {}".format(
-                            isol, i + 1, pt.Counter
-                        )
-                    )
+                    self.debug("{} A {:02d} deleting pt series {}".format(isol, i + 1, pt.Counter))
                     dest.delete(pt)
 
                 # delete isotope results
                 for i, ir in enumerate(iso.results[1:]):
-                    self.debug(
-                        "{} B {:02d} deleting results {}".format(
-                            isol, i + 1, ir.Counter
-                        )
-                    )
+                    self.debug("{} B {:02d} deleting results {}".format(isol, i + 1, ir.Counter))
                     dest.delete(ir)
 
         dest.commit()

@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 
 import json
 import re
@@ -685,14 +684,11 @@ class AusGeochemEarthBankService(Loggable):
 
         if analysis is not None:
             gmin, gmax = self._parse_grain_size(
-                getattr(analysis, "grainsize", None)
-                or getattr(analysis_group, "grainsize", None)
+                getattr(analysis, "grainsize", None) or getattr(analysis_group, "grainsize", None)
             )
             payload.setdefault("analysisDate", self._format_date(analysis))
             payload.setdefault("analysisUnits", "fA")
-            payload.setdefault(
-                "analysisScaleName", self._analysis_scale_name(analysis_group)
-            )
+            payload.setdefault("analysisScaleName", self._analysis_scale_name(analysis_group))
             payload.setdefault(
                 "analyticalUncertaintyTypeName",
                 getattr(analysis_group, "age_error_kind", None),
@@ -715,13 +711,11 @@ class AusGeochemEarthBankService(Loggable):
             payload.setdefault("grainDiameterMax", gmax)
             payload.setdefault(
                 "lithologyName",
-                getattr(analysis_group, "lithology", None)
-                or getattr(analysis, "lithology", None),
+                getattr(analysis_group, "lithology", None) or getattr(analysis, "lithology", None),
             )
             payload.setdefault(
                 "mineralName",
-                getattr(analysis_group, "material", None)
-                or getattr(analysis, "material", None),
+                getattr(analysis_group, "material", None) or getattr(analysis, "material", None),
             )
 
         return self._cleanup(payload, DATA_POINT_FIELDS)
@@ -732,9 +726,7 @@ class AusGeochemEarthBankService(Loggable):
         if analysis is not None:
             payload.setdefault("aliquotName", self._aliquot_name(analysis))
             payload.setdefault("aliquotSize", getattr(analysis, "weight", None))
-            payload.setdefault(
-                "aliquotUnits", "mg" if getattr(analysis, "weight", None) else None
-            )
+            payload.setdefault("aliquotUnits", "mg" if getattr(analysis, "weight", None) else None)
 
         return self._cleanup(payload, ALIQUOT_FIELDS)
 
@@ -841,9 +833,7 @@ class AusGeochemEarthBankService(Loggable):
 
         pv = analysis_group.get_preferred_obj("age")
         calc_name = getattr(pv, "computed_kind", pv.kind)
-        age_units = getattr(
-            getattr(analysis_group, "arar_constants", None), "age_units", "Ma"
-        )
+        age_units = getattr(getattr(analysis_group, "arar_constants", None), "age_units", "Ma")
         scaled = analysis_group.get_ma_scaled_age()
         mswd, _, _, pvalue = analysis_group.get_preferred_mswd_tuple()
 
@@ -862,9 +852,7 @@ class AusGeochemEarthBankService(Loggable):
         payload.setdefault("agepvalue", pvalue)
         payload.setdefault("preferredAge", True)
         payload.setdefault("dataInterpretationToolName", "Pychron")
-        payload.setdefault(
-            "description", self._analysis_group_description(analysis_group)
-        )
+        payload.setdefault("description", self._analysis_group_description(analysis_group))
         payload.setdefault(
             "interpretationName",
             self._interpretation_name(analysis_group, calc_name),
@@ -888,15 +876,15 @@ class AusGeochemEarthBankService(Loggable):
             sample.setdefault("sampleID", getattr(analysis, "sample", None))
             sample.setdefault(
                 "materialName",
-                getattr(analysis, "material", None)
-                or getattr(analysis_group, "material", None),
+                getattr(analysis, "material", None) or getattr(analysis_group, "material", None),
             )
             sample.setdefault(
                 "description",
-                getattr(analysis, "sample_note", None)
-                or self._default_comment(analysis_group)
-                if analysis_group is not None
-                else getattr(analysis, "sample_note", None),
+                (
+                    getattr(analysis, "sample_note", None) or self._default_comment(analysis_group)
+                    if analysis_group is not None
+                    else getattr(analysis, "sample_note", None)
+                ),
             )
             lat = getattr(analysis, "latitude", None)
             lon = getattr(analysis, "longitude", None)
@@ -989,8 +977,7 @@ class AusGeochemEarthBankService(Loggable):
             props.append({"propName": name, "propValue": str(value)})
 
         _add("pychron.project", getattr(analysis, "project", None))
-        _add("pychron.principal_investigator",
-             getattr(analysis, "principal_investigator", None))
+        _add("pychron.principal_investigator", getattr(analysis, "principal_investigator", None))
         _add("pychron.repository", getattr(analysis, "repository_identifier", None))
         _add("pychron.material", getattr(analysis, "material", None))
         _add("pychron.lithology", getattr(analysis, "lithology", None))
@@ -1010,9 +997,8 @@ class AusGeochemEarthBankService(Loggable):
             if consts is not None:
                 # Pychron stores raw author/year citations on ArArConstants;
                 # normalize to the EarthBank controlled-vocabulary name.
-                dc_citation = (
-                    getattr(consts, "lambda_b_citation", None)
-                    or getattr(consts, "lambda_e_citation", None)
+                dc_citation = getattr(consts, "lambda_b_citation", None) or getattr(
+                    consts, "lambda_e_citation", None
                 )
                 if dc_citation:
                     payload.setdefault(
@@ -1021,9 +1007,7 @@ class AusGeochemEarthBankService(Loggable):
                     )
                 ar_citation = getattr(consts, "atm4036_citation", None)
                 if ar_citation:
-                    payload.setdefault(
-                        "airRatioName", _normalize_air_ratio(ar_citation)
-                    )
+                    payload.setdefault("airRatioName", _normalize_air_ratio(ar_citation))
 
         return self._cleanup(payload, AGE_CALC_FIELDS)
 
@@ -1042,22 +1026,21 @@ class AusGeochemEarthBankService(Loggable):
             return [("(none)", "analyses", None, None)]
 
         sheets = [
-            ("ArArDataPoint",
-             self.build_data_point_payload(
-                 analysis_group=analysis_group, analysis=analyses[0])),
-            ("ArArAgeSummary",
-             self.build_age_summary_payload(analysis_group)),
-            ("ArArAgeCalc",
-             self.build_age_calc_payload(analysis_group)),
+            (
+                "ArArDataPoint",
+                self.build_data_point_payload(analysis_group=analysis_group, analysis=analyses[0]),
+            ),
+            ("ArArAgeSummary", self.build_age_summary_payload(analysis_group)),
+            ("ArArAgeCalc", self.build_age_calc_payload(analysis_group)),
         ]
-        s_dto, _ = self.build_sample_payload(
-            analysis=analyses[0], analysis_group=analysis_group
-        )
+        s_dto, _ = self.build_sample_payload(analysis=analyses[0], analysis_group=analysis_group)
         sheets.append(("Sample", s_dto))
         for a in analyses:
             sheets.append(
-                ("ArArMeasurement[{}]".format(self._aliquot_name(a)),
-                 self.build_measurement_payload(analysis=a))
+                (
+                    "ArArMeasurement[{}]".format(self._aliquot_name(a)),
+                    self.build_measurement_payload(analysis=a),
+                )
             )
 
         misses = []
@@ -1165,9 +1148,7 @@ class AusGeochemEarthBankService(Loggable):
             if aname in seen_aliquots:
                 continue
             seen_aliquots.add(aname)
-            self.create_aliquot(
-                self.build_aliquot_payload(analysis=a, arArDataPointId=dp_id)
-            )
+            self.create_aliquot(self.build_aliquot_payload(analysis=a, arArDataPointId=dp_id))
 
         for a in analyses:
             self.create_measurement(
@@ -1280,9 +1261,7 @@ class AusGeochemEarthBankService(Loggable):
         target = name.lower()
 
         def _get(params):
-            resp = self._request(
-                "get", endpoint, require_auth=require_auth, params=params
-            )
+            resp = self._request("get", endpoint, require_auth=require_auth, params=params)
             if resp is None:
                 return None
             try:
@@ -1313,9 +1292,7 @@ class AusGeochemEarthBankService(Loggable):
         # /api/core/L* lookups need auth — use auth if we have it, otherwise
         # try anonymously so the cache still warms partially.
         require_auth = bool(self.username and self.password)
-        resp = self._request(
-            "get", endpoint, require_auth=require_auth, params={"size": 2000}
-        )
+        resp = self._request("get", endpoint, require_auth=require_auth, params={"size": 2000})
         if resp is None:
             return None
         try:
@@ -1376,9 +1353,7 @@ class AusGeochemEarthBankService(Loggable):
             headers.setdefault("Authorization", "Bearer {}".format(token))
 
         try:
-            resp = self._session.request(
-                method, url, headers=headers, timeout=timeout, **kw
-            )
+            resp = self._session.request(method, url, headers=headers, timeout=timeout, **kw)
         except requests.RequestException as exc:
             self.warning("EarthBank request error ({}): {}".format(path, exc))
             return
@@ -1391,18 +1366,14 @@ class AusGeochemEarthBankService(Loggable):
                 return
             headers["Authorization"] = "Bearer {}".format(token)
             try:
-                resp = self._session.request(
-                    method, url, headers=headers, timeout=timeout, **kw
-                )
+                resp = self._session.request(method, url, headers=headers, timeout=timeout, **kw)
             except requests.RequestException as exc:
                 self.warning("EarthBank retry failed ({}): {}".format(path, exc))
                 return
 
         if not resp.ok:
             self.warning(
-                "EarthBank request failed ({} {}): {}".format(
-                    method.upper(), path, resp.text
-                )
+                "EarthBank request failed ({} {}): {}".format(method.upper(), path, resp.text)
             )
             return
 
@@ -1516,9 +1487,7 @@ class AusGeochemEarthBankService(Loggable):
 
     @staticmethod
     def _format_datetime(analysis):
-        dt = getattr(analysis, "analysis_timestamp", None) or getattr(
-            analysis, "rundate", None
-        )
+        dt = getattr(analysis, "analysis_timestamp", None) or getattr(analysis, "rundate", None)
         if dt is None:
             ts = getattr(analysis, "timestamp", None)
             if isinstance(ts, datetime):

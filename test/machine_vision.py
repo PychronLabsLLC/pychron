@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 import unittest
 
 from pychron.mv.focus.autofocus_manager import AutoFocusManager
@@ -26,10 +25,11 @@ from pychron.globals import globalv
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 
+
 class FocusTest(unittest.TestCase):
     def setUp(self):
         globalv.video_test = True
-        globalv.video_test_path = '/Users/ross/Sandbox/pos_err/pos_err_221_0-005.jpg'
+        globalv.video_test_path = "/Users/ross/Sandbox/pos_err/pos_err_221_0-005.jpg"
         v = Video()
 
         self.auto_focus = AutoFocusManager(video=v)
@@ -38,9 +38,10 @@ class FocusTest(unittest.TestCase):
         af = self.auto_focus
 
         src = af._load_source()
-        operator = 'laplace'
+        operator = "laplace"
         roi = 0, 0, 100, 100
         a = af._calculate_focus_measure(src, operator, roi)
         self.assertEqual(a, 782)
+
 
 # ============= EOF =============================================

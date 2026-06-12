@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Any, Str, Int, Float, Bool, Property, on_trait_change, CInt
 from traitsui.api import View, Item
 
@@ -115,9 +114,7 @@ class Axis(ConfigLoadable):
     def simple_view(self):
         v = View(
             Item("calculate_parameters"),
-            Item(
-                "velocity", format_str="%0.3f", enabled_when="not calculate_parameters"
-            ),
+            Item("velocity", format_str="%0.3f", enabled_when="not calculate_parameters"),
             Item(
                 "acceleration",
                 format_str="%0.3f",

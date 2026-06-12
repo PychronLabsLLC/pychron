@@ -1,21 +1,21 @@
-from __future__ import absolute_import
 from pychron.globals import globalv
 from pychron.core.ui import set_toolkit
 
-set_toolkit('qt4')
+set_toolkit("qt4")
 
 from pychron.paths import paths
 
-paths.build('_unittest')
-#build_directories(paths)
+paths.build("_unittest")
+# build_directories(paths)
 
 from pychron.core.helpers.logger_setup import logging_setup
 from pychron.lasers.laser_managers.fusions_diode_manager import FusionsDiodeManager
 
-logging_setup('arar')
+logging_setup("arar")
 import unittest
 
-globalv.ignore_connection_warnings=True
+globalv.ignore_connection_warnings = True
+
 
 class Diode(unittest.TestCase):
 
@@ -25,9 +25,9 @@ class Diode(unittest.TestCase):
         cls.manager.temperature_controller.bootstrap()
 
     def test_pid_bins_first(self):
-        temp=300
-        pd=self.manager._get_pid_bin(temp)
-        self.assertEqual(pd, [0.0,0.0,0.0])
+        temp = 300
+        pd = self.manager._get_pid_bin(temp)
+        self.assertEqual(pd, [0.0, 0.0, 0.0])
 
     def test_pid_bins(self):
         temp = 600

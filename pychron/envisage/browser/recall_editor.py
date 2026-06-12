@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import Instance, Str, Int
 from traitsui.api import View, UItem, InstanceEditor
@@ -38,9 +37,7 @@ class BaseRecallEditor(BaseTraitsEditor):
 
 class RecallEditor(BaseRecallEditor):
     analysis = Instance("pychron.processing.analyses.analysis.Analysis")
-    analysis_view = Instance(
-        "pychron.processing.analyses.view.analysis_view.AnalysisView"
-    )
+    analysis_view = Instance("pychron.processing.analyses.view.analysis_view.AnalysisView")
 
     def __init__(self, analysis, av, *args, **kw):
         super(RecallEditor, self).__init__(*args, **kw)

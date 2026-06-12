@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.qt import QtCore
 from traits.api import Bool
 from traitsui.api import Handler

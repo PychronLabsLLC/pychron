@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import HasTraits, Str, Any, Property, cached_property
 from traitsui.api import UItem, Item, HGroup, VGroup, EnumEditor, TabularEditor
@@ -56,9 +55,7 @@ class SampleLocator(HasTraits):
     @cached_property
     def _get_projects(self):
         if self.principal_investigator:
-            return [
-                p.name for p in self.dvc.get_projects((self.principal_investigator,))
-            ]
+            return [p.name for p in self.dvc.get_projects((self.principal_investigator,))]
         else:
             return []
 

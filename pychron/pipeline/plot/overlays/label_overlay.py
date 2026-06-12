@@ -15,13 +15,11 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.abstract_overlay import AbstractOverlay
 from chaco.api import PlotLabel
 from kiva.trait_defs.kiva_font_trait import KivaFont
 from traits.api import List, Bool, Int, on_trait_change
 from traitsui.api import Color
-from six.moves import zip
 
 
 # ============= standard library imports ========================

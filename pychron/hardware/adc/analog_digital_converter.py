@@ -20,7 +20,6 @@
 # import time
 # =============local library imports  ==========================
 # from pychron.core import Q_
-from __future__ import absolute_import
 
 from pychron.hardware.core.core_device import CoreDevice
 
@@ -48,9 +47,7 @@ class M1000(AnalogDigitalConverter):
     def load_additional_args(self, config):
         """ """
         self.set_attribute(config, "address", "General", "address")
-        self.set_attribute(
-            config, "voltage_scalar", "General", "voltage_scalar", cast="float"
-        )
+        self.set_attribute(config, "voltage_scalar", "General", "voltage_scalar", cast="float")
         self.set_attribute(config, "units", "General", "units")
         if self.address is not None:
             return True
@@ -76,9 +73,7 @@ class M1000(AnalogDigitalConverter):
         short *+00072.00
         long *1RD+00072.00A4
         """
-        func = lambda X: (
-            float(X[5:-2]) if form == self.long_form_prompt else float(X[2:])
-        )
+        func = lambda X: (float(X[5:-2]) if form == self.long_form_prompt else float(X[2:]))
 
         if r:
             if type_ == "block":

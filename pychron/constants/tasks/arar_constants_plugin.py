@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pychron.constants.tasks.arar_constants_preferences import (
     ArArConstantsPreferencesPane,
 )

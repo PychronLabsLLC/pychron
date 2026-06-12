@@ -20,7 +20,7 @@ from traits.api import Instance, Bool, Str, Button
 # import apptools.sweet_pickle as pickle
 # ============= standard library imports ========================
 from threading import Event, Thread
-import six.moves.cPickle as pickle
+import pickle
 import os
 
 # ============= local library imports  ==========================
@@ -74,9 +74,7 @@ class LaserManager(BaseLaserManager):
         bind_preference(self, "window_height", "{}.height".format(pref_id))
         bind_preference(self, "window_x", "{}.x".format(pref_id))
         bind_preference(self, "window_y", "{}.y".format(pref_id))
-        bind_preference(
-            self, "use_calibrated_power", "{}.use_calibrated_power".format(pref_id)
-        )
+        bind_preference(self, "use_calibrated_power", "{}.use_calibrated_power".format(pref_id))
 
         self.debug("binding stage manager preferences")
         self.stage_manager.bind_preferences(pref_id)
@@ -104,16 +102,12 @@ class LaserManager(BaseLaserManager):
             self.monitor.reset()
             if not self.monitor.monitor():
                 self.disable_laser()
-                self.warning_dialog(
-                    "Monitor could not be started. Laser disabled", sound="alarm1"
-                )
+                self.warning_dialog("Monitor could not be started. Laser disabled", sound="alarm1")
             else:
                 if self.monitor.check():
                     self.emergency_shutoff("Laser Monitor detected an error")
         else:
-            self.warning_dialog(
-                "Could not enable laser. Check coolant and manual interlocks"
-            )
+            self.warning_dialog("Could not enable laser. Check coolant and manual interlocks")
 
             if self.set_flag("enable_error_flag"):
                 self.debug("setting enable_error_flag")
@@ -166,9 +160,7 @@ class LaserManager(BaseLaserManager):
             return False
 
         if verbose:
-            self.info(
-                "request power {:0.3f}, calibrated power {:0.3f}".format(power, p)
-            )
+            self.info("request power {:0.3f}, calibrated power {:0.3f}".format(power, p))
 
         self._requested_power = power
         self._calibrated_power = p
@@ -206,9 +198,7 @@ class LaserManager(BaseLaserManager):
 
             self.error_code = LaserMonitorErrorCode(reason)
 
-            invoke_in_main_thread(
-                self.warning_dialog, reason, title="AUTOMATIC LASER SHUTOFF"
-            )
+            invoke_in_main_thread(self.warning_dialog, reason, title="AUTOMATIC LASER SHUTOFF")
 
     def emergency_shutoff_hook(self):
         pass

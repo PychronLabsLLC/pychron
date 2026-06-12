@@ -14,9 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
-from six.moves import range
 from traits.api import List, Property, Str, Dict
 from traitsui.api import UItem, HGroup, Item, EnumEditor
 
@@ -79,14 +77,10 @@ class TitleTemplater(BaseTemplater):
     )
 
     delimiter = Str
-    delimiters = Dict(
-        {",": "Comma", "\t": "Tab", " ": "Space", ":": "Colon", ";": "Semicolon"}
-    )
+    delimiters = Dict({",": "Comma", "\t": "Tab", " ": "Space", ":": "Colon", ";": "Semicolon"})
 
     example = Property(depends_on="label, delimiter, leading_text, trailing_text")
-    multi_group_example = Property(
-        depends_on="label, delimiter, leading_text, trailing_text"
-    )
+    multi_group_example = Property(depends_on="label, delimiter, leading_text, trailing_text")
     leading_text = Str
     trailing_text = Str
     leading_texts = List(["Project"])
@@ -146,9 +140,7 @@ class MeanLabelTemplater(BaseTemplater):
     attribute_formats = {"identifier": "", "sample": "", "material": ""}
 
     example_context = {"material": "GMC", "identifier": "50102", "sample": "NM-001"}
-    base_predefined_labels = List(
-        ["Sample", "Identifier Sample", "Identifier( Sample )"]
-    )
+    base_predefined_labels = List(["Sample", "Identifier Sample", "Identifier( Sample )"])
     persistence_name = "mean_label_maker"
 
 
@@ -172,13 +164,9 @@ class TitleTemplateView(BaseTemplateView):
             ),
             HGroup(
                 Item("leading_text", label="Leading"),
-                UItem(
-                    "leading_text", width=-25, editor=EnumEditor(name="leading_texts")
-                ),
+                UItem("leading_text", width=-25, editor=EnumEditor(name="leading_texts")),
                 Item("trailing_text", label="Trailing"),
-                UItem(
-                    "trailing_text", width=-25, editor=EnumEditor(name="trailing_texts")
-                ),
+                UItem("trailing_text", width=-25, editor=EnumEditor(name="trailing_texts")),
             ),
             HGroup(Item("delimiter", editor=EnumEditor(name="delimiters"))),
         )

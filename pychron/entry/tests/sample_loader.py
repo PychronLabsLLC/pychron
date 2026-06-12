@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import os
 
 from pychron.core.test_helpers import get_data_dir, isotope_db_factory
@@ -52,18 +51,14 @@ class SampleLoaderTestCase(unittest.TestCase):
 
     def test_load_samples1(self):
         path = os.path.join(fget_data_dir(), "sample_import.xls")
-        self.loader.do_loading(
-            None, self.db, path, dry=True, use_progress=False, quiet=True
-        )
+        self.loader.do_loading(None, self.db, path, dry=True, use_progress=False, quiet=True)
 
         dbsam = self.db.get_sample("foo-001")
         self.assertIsNone(dbsam)
 
     def test_load_samples2(self):
         path = os.path.join(fget_data_dir(), "sample_import.xls")
-        self.loader.do_loading(
-            None, self.db, path, dry=False, use_progress=False, quiet=True
-        )
+        self.loader.do_loading(None, self.db, path, dry=False, use_progress=False, quiet=True)
 
         dbsam = self.db.get_sample("moo-002")
         self.assertEqual(dbsam.name, "moo-002")

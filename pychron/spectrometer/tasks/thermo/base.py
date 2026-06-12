@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pychron.core.helpers.strtools import to_bool
 from pychron.envisage.view_util import open_view
@@ -27,9 +26,7 @@ class ThermoSpectrometerPlugin(BaseSpectrometerPlugin):
     def start(self):
         super(ThermoSpectrometerPlugin, self).start()
 
-        if to_bool(
-            self.application.preferences.get("pychron.spectrometer.auto_open_readout")
-        ):
+        if to_bool(self.application.preferences.get("pychron.spectrometer.auto_open_readout")):
             from pychron.spectrometer.readout_view import new_readout_view
 
             rv = self.application.get_service(ReadoutView)

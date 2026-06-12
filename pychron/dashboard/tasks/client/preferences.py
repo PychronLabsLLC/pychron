@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from envisage.ui.tasks.preferences_pane import PreferencesPane
 from traits.api import Bool, Str, Int
 from traitsui.api import View, Item, VGroup
@@ -48,11 +47,7 @@ class DashboardClientPreferencesPane(PreferencesPane):
     category = "Dashboard"
 
     def traits_view(self):
-        v = View(
-            VGroup(
-                Item("host"), Item("port"), show_border=True, label="Dashboard Server"
-            )
-        )
+        v = View(VGroup(Item("host"), Item("port"), show_border=True, label="Dashboard Server"))
         return v
 
 

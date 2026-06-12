@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 
 from traits.api import HasTraits, List, Instance, Str, Int, on_trait_change, Any
 from traitsui.api import (
@@ -40,9 +39,7 @@ class RunHistoryModel(HasTraits):
     mass_spectrometer = Str
     mass_spectrometers = List
     n = Int(10, auto_set=False, enter_set=True)
-    analysis_view = Instance(
-        "pychron.processing.analyses.view.analysis_view.AnalysisView"
-    )
+    analysis_view = Instance("pychron.processing.analyses.view.analysis_view.AnalysisView")
     selected = Any
     _cache = None
 
@@ -97,9 +94,7 @@ class RunHistoryView(Controller):
                     agrp,
                     UItem(
                         "analyses",
-                        editor=TabularEditor(
-                            dclicked="selected", editable=False, adapter=adapter
-                        ),
+                        editor=TabularEditor(dclicked="selected", editable=False, adapter=adapter),
                     ),
                 ),
                 UItem(

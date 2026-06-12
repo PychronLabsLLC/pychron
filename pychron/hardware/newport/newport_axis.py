@@ -16,7 +16,6 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from traits.api import Property, Str, Float, Int, Button
 from traitsui.api import View, Item, Group, EnumEditor, HGroup, VGroup, spring
 
@@ -26,7 +25,6 @@ from pychron.hardware.axis import Axis
 from pychron.core.helpers.filetools import parse_file
 
 from pychron.hardware.results_report import ResultsReport
-import six
 
 KINDS = [
     "Undefined",
@@ -285,9 +283,7 @@ class NewportAxis(Axis):
     _feedback_configuration = Int
     estop_configuration = Property(depends_on="_estop_configuration")
     _estop_configuration = Int
-    following_error_configuration = Property(
-        depends_on="_following_error_configuration"
-    )
+    following_error_configuration = Property(depends_on="_following_error_configuration")
     _following_error_configuration = Int
     hardware_limit_configuration = Property(depends_on="_hardware_limit_configuration")
     _hardware_limit_configuration = Int
@@ -315,17 +311,13 @@ class NewportAxis(Axis):
     def _set_acceleration(self, v):
         self.trait_set(_acceleration=v, trait_change_notify=False)
         if self.loaded:
-            com = self.parent._build_command(
-                COMMAND_MAP["acceleration"], xx=self.id, nn=v
-            )
+            com = self.parent._build_command(COMMAND_MAP["acceleration"], xx=self.id, nn=v)
             self.parent.tell(com)
 
     def _set_deceleration(self, v):
         self.trait_set(_deceleration=v, trait_change_notify=False)
         if self.loaded:
-            com = self.parent._build_command(
-                COMMAND_MAP["deceleration"], xx=self.id, nn=v
-            )
+            com = self.parent._build_command(COMMAND_MAP["deceleration"], xx=self.id, nn=v)
             self.parent.tell(com)
 
     def upload_parameters_to_device(self):
@@ -336,9 +328,7 @@ class NewportAxis(Axis):
                 continue
             value = getattr(self, key)
             if isinstance(value, str):
-                name = (
-                    "{}S".format(key.upper()) if not key.endswith("s") else key.upper()
-                )
+                name = "{}S".format(key.upper()) if not key.endswith("s") else key.upper()
 
                 if cmd in ["ZA", "ZB", "ZE", "ZF", "ZH", "ZS"]:
                     value = "{:X}H".format(binstr_int(value))
@@ -351,9 +341,7 @@ class NewportAxis(Axis):
             self.parent.tell(cmd)
             self.parent.read_error()
 
-        value = "{:n},{:n}".format(
-            self.reduce_motor_torque_time, self.reduce_motor_torque_percent
-        )
+        value = "{:n},{:n}".format(self.reduce_motor_torque_time, self.reduce_motor_torque_percent)
         cmd = self.parent._build_command("QR", xx=self.id, nn=value)
         self.parent.tell(cmd)
 
@@ -543,7 +531,7 @@ class NewportAxis(Axis):
 
     def _read_parameters_fired(self):
         results = ResultsReport(axis=self)
-        for name, c in six.iteritems(COMMAND_MAP):
+        for name, c in COMMAND_MAP.items():
             cmd = self.parent._build_query(c, xx=self.id)
             result = self.parent.ask(cmd)
             results.add(name, c, result)

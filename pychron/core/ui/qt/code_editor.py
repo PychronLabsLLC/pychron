@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Int, Str
 from traitsui.editors.code_editor import CodeEditor
 

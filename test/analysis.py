@@ -16,8 +16,8 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import unittest
+
 # ============= local library imports  ==========================
 from test.database import isotope_manager_factory
 from pychron.core.codetools.simple_timeit import timethis
@@ -29,15 +29,14 @@ class AnalysisTest(unittest.TestCase):
         self.manager.db.connect()
 
     def testMakeAnalysis(self):
-    #         ai = self.manager.db.get_analyses(18)
-        ln = self.manager.db.get_labnumber('61311')
+        #         ai = self.manager.db.get_analyses(18)
+        ln = self.manager.db.get_labnumber("61311")
 
         aa = timethis(self.manager.make_analyses, args=(ln.analyses,))
-        timethis(self.manager.load_analyses, args=(aa,),
-                 kwargs={'open_progress': False})
+        timethis(self.manager.load_analyses, args=(aa,), kwargs={"open_progress": False})
         na = aa[0]
         #         timethis(na.load_isotopes)
-        self.assertEqual(na.labnumber, '61311')
+        self.assertEqual(na.labnumber, "61311")
 
 
 # ============= EOF =============================================

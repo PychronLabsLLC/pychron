@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 # ============= standard library imports ========================
 from datetime import datetime
@@ -43,9 +42,7 @@ class Consoleable(Loggable):
         )
 
         color_bind_preference(self, "console_bgcolor", "{}.bgcolor".format(prefid))
-        color_bind_preference(
-            self, "console_default_color", "{}.textcolor".format(prefid)
-        )
+        color_bind_preference(self, "console_default_color", "{}.textcolor".format(prefid))
         bind_preference(self, "console_fontsize", "{}.fontsize".format(prefid))
 
     def console_set_preferences(self, preferences, prefid):
@@ -54,9 +51,7 @@ class Consoleable(Loggable):
             color_set_preference,
         )
 
-        color_set_preference(
-            preferences, self, "console_bgcolor", "{}.bg_color".format(prefid)
-        )
+        color_set_preference(preferences, self, "console_bgcolor", "{}.bg_color".format(prefid))
         color_set_preference(
             preferences, self, "console_default_color", "{}.textcolor".format(prefid)
         )

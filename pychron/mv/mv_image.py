@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.array_plot_data import ArrayPlotData
 from chaco.default_colormaps import hot
 from chaco.plot import Plot
@@ -30,7 +29,6 @@ from numpy import ones, asarray
 # ============= local library imports  ==========================
 from pychron.image.cv_wrapper import grayspace
 from pychron.viewable import Viewable
-from six.moves import range
 
 
 class MVImage(Viewable):

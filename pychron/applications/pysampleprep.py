@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # from traits.api import HasTraits
 # from traitsui.api import View, Item
-from __future__ import absolute_import
 from pychron.applications.pychron_application import PychronApplication
 
 

@@ -17,8 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
-from __future__ import print_function
 import logging
 from numpy import inf as Inf
 
@@ -28,7 +26,6 @@ from pychron.graph.tools.regression_inspector import (
     RegressionInspectorOverlay,
 )
 from pychron.pipeline.plot.plotter.arar_figure import BaseArArFigure
-import six
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +57,7 @@ class IsoEvo(BaseArArFigure):
         except KeyError as e:
             is_baseline = True
             iso = ai.get_isotope(detector=name)
-            # iso = next((iso for iso in six.itervalues(ai.isotopes) if iso.detector == name), None)
+            # iso = next((iso for iso in ai.isotopes.values() if iso.detector == name), None)
             if iso is None:
                 logger.warning(
                     "iso_evo plot missing isotope record_id=%s isotope_keys=%s name=%s",
@@ -74,9 +71,7 @@ class IsoEvo(BaseArArFigure):
         xmi, xma = 0, -Inf
         inspectors = []
         if is_baseline:
-            xma, xmi, yma, ymi, scatter, ins = self._plot_baseline(
-                i, iso, p, xma, xmi, yma, ymi
-            )
+            xma, xmi, yma, ymi, scatter, ins = self._plot_baseline(i, iso, p, xma, xmi, yma, ymi)
             self._add_scatter_inspector(scatter, inspector=inspectors)
             # print xma, xmi, yma, ymi
         else:
@@ -95,9 +90,7 @@ class IsoEvo(BaseArArFigure):
                     color="red",
                 )
                 psinspector = PointInspector(scatter)
-                pinspector_overlay = PointInspectorOverlay(
-                    component=scatter, tool=psinspector
-                )
+                pinspector_overlay = PointInspectorOverlay(component=scatter, tool=psinspector)
                 scatter.overlays.append(pinspector_overlay)
                 inspectors.append(psinspector)
 
@@ -121,16 +114,12 @@ class IsoEvo(BaseArArFigure):
             )
 
             pinspector = PointInspector(scatter, use_pane=False)
-            pinspector_overlay = PointInspectorOverlay(
-                component=scatter, tool=pinspector
-            )
+            pinspector_overlay = PointInspectorOverlay(component=scatter, tool=pinspector)
             scatter.overlays.append(pinspector_overlay)
             inspectors.append(pinspector)
 
             linspector = RegressionInspectorTool(component=line, use_pane=False)
-            scatter.overlays.append(
-                RegressionInspectorOverlay(component=line, tool=linspector)
-            )
+            scatter.overlays.append(RegressionInspectorOverlay(component=line, tool=linspector))
             inspectors.append(linspector)
 
             # if psinspector:

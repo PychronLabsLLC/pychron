@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from chaco.abstract_overlay import AbstractOverlay
 
@@ -41,7 +40,6 @@ from traits.api import Array, Int, Float, Str, Bool, List
 
 # ============= standard library imports ========================
 from numpy import where, array
-from six.moves import zip
 
 # ============= local library imports  ==========================
 from pychron.core.helpers.formatting import floatfmt
@@ -203,9 +201,7 @@ class SpectrumErrorOverlay(AbstractOverlay):
         comp = self.component
         with gc:
             # gc.clip_to_rect(comp.x, comp.y, comp.width, comp.height)
-            gc.clip_to_rect(
-                *(float(p) for p in (comp.x, comp.y, comp.width, comp.height))
-            )
+            gc.clip_to_rect(*(float(p) for p in (comp.x, comp.y, comp.width, comp.height)))
 
             xs = comp.index.get_data()
             ys = comp.value.get_data()
@@ -225,6 +221,7 @@ class SpectrumErrorOverlay(AbstractOverlay):
                 func = gc.stroke_path
 
             color = self.user_color
+
             def _component(value):
                 return value() if callable(value) else value
 
@@ -461,9 +458,7 @@ class PlateauOverlay(BasePlateauOverlay):
             pt1, pt2, y1, y2 = points
             with gc:
                 comp = self.component
-                gc.clip_to_rect(
-                    *(float(p) for p in (comp.x, comp.y, comp.width, comp.height))
-                )
+                gc.clip_to_rect(*(float(p) for p in (comp.x, comp.y, comp.width, comp.height)))
 
                 # gc.clip_to_rect(comp.x, comp.y, comp.width, comp.height)
                 # color = convert_from_pyqt_color(None, None, self.line_color)

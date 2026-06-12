@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import math
 import os
@@ -37,7 +36,6 @@ from numpy import (
     hstack,
 )
 from scipy import signal
-from six.moves import zip
 from traits.api import (
     Bool,
     Float,
@@ -98,9 +96,7 @@ class DirectionOverlay(AbstractOverlay):
                 other_component.width,
                 other_component.height,
             )
-            a, b = self.component.map_screen(
-                [(0, 0), (self.olength / 2.0, self.owidth)]
-            )
+            a, b = self.component.map_screen([(0, 0), (self.olength / 2.0, self.owidth)])
             l, w = b[0] - a[0], b[1] - a[1]
             ox, oy = self.component.map_screen([(0, 0)])[0]
 
@@ -359,9 +355,7 @@ class Pattern(HasTraits):
         return list(gen_out)
 
     def graph_view(self):
-        v = View(
-            UItem("graph", style="custom"), handler=self.handler_klass, title=self.name
-        )
+        v = View(UItem("graph", style="custom"), handler=self.handler_klass, title=self.name)
         return v
 
     def clear_graph(self):
@@ -443,9 +437,7 @@ class Pattern(HasTraits):
 
         x, y, sx, sy = [], [], [], []
         if funcname != NULL_STR:
-            if self.xy_pattern_enabled and getattr(
-                self, "{}_use_transit_time".format(attr)
-            ):
+            if self.xy_pattern_enabled and getattr(self, "{}_use_transit_time".format(attr)):
                 t = self.calculate_transit_time()
             else:
                 t = duration
@@ -471,12 +463,7 @@ class Pattern(HasTraits):
                     return (
                         0.5
                         * amp
-                        * (
-                            signal.square(
-                                period * xx * 2 * pi + offset, duty=duty / 100.0
-                            )
-                            + 1
-                        )
+                        * (signal.square(period * xx * 2 * pi + offset, duty=duty / 100.0) + 1)
                         + mi
                     )
 
@@ -492,10 +479,7 @@ class Pattern(HasTraits):
             elif funcname == "Saw":
 
                 def func(xx):
-                    return (
-                        0.5 * amp * (signal.sawtooth(period * xx * 2 * pi + offset) + 1)
-                        + mi
-                    )
+                    return 0.5 * amp * (signal.sawtooth(period * xx * 2 * pi + offset) + 1) + mi
 
                 y = func(x)
 
@@ -521,9 +505,7 @@ class Pattern(HasTraits):
         oo.request_redraw()
 
     def _target_radius_changed(self):
-        self.graph.plots[0].plots["plot0"][0].overlays[
-            0
-        ].target_radius = self.target_radius
+        self.graph.plots[0].plots["plot0"][0].overlays[0].target_radius = self.target_radius
 
     @on_trait_change("z_+,p_+")
     def _handle_amplitude_change(self, obj, name, new):
@@ -562,9 +544,7 @@ class Pattern(HasTraits):
 
     def _graph_factory(self, **kw):
         g = Graph(window_height=250, window_width=300, container_dict=dict(padding=0))
-        g.new_plot(
-            bounds=[250, 250], aspect_ratio=1, resizable="", padding=[30, 0, 0, 30]
-        )
+        g.new_plot(bounds=[250, 250], aspect_ratio=1, resizable="", padding=[30, 0, 0, 30])
 
         cx = self.cx
         cy = self.cy
@@ -603,9 +583,7 @@ class Pattern(HasTraits):
 
     # views
     def maker_group(self):
-        para_grp = Group(
-            self.get_parameter_group(), show_border=True, label="Parameters"
-        )
+        para_grp = Group(self.get_parameter_group(), show_border=True, label="Parameters")
         pattern_grp = VGroup(
             HGroup(
                 Item(
@@ -746,9 +724,7 @@ class RubberbandPattern(Pattern):
         return l
 
     def pattern_generator_factory(self, **kw):
-        return rubberband_pattern(
-            self.cx, self.cy, self.offset, self.length, self.rotation
-        )
+        return rubberband_pattern(self.cx, self.cy, self.offset, self.length, self.rotation)
 
 
 class RasterRubberbandPattern(RubberbandPattern):
@@ -809,9 +785,7 @@ class TroughPattern(Pattern):
         lp.overlays.append(o)
 
     def pattern_generator_factory(self, **kw):
-        return trough_pattern(
-            self.cx, self.cy, self.length, self.width, self.rotation, self.use_x
-        )
+        return trough_pattern(self.cx, self.cy, self.length, self.width, self.rotation, self.use_x)
 
     def get_parameter_group(self):
         return Group(
@@ -866,9 +840,7 @@ class RandomPattern(Pattern):
         )
 
     def pattern_generator_factory(self, **kw):
-        return random_pattern(
-            self.cx, self.cy, self.walk_x, self.walk_y, self.npoints, **kw
-        )
+        return random_pattern(self.cx, self.cy, self.walk_x, self.walk_y, self.npoints, **kw)
 
     def points_factory(self):
         gen_out = self.pattern_generator_factory()
@@ -903,9 +875,7 @@ class PolygonPattern(Pattern):
         )
 
     def pattern_generator_factory(self, **kw):
-        return polygon_pattern(
-            self.cx, self.cy, self.radius, self.nsides, rotation=self.rotation
-        )
+        return polygon_pattern(self.cx, self.cy, self.radius, self.nsides, rotation=self.rotation)
 
 
 class ArcPattern(Pattern):
@@ -964,13 +934,7 @@ class LineSpiralPattern(SpiralPattern):
 
     def pattern_generator_factory(self, **kw):
         return line_spiral_pattern(
-            self.cx,
-            self.cy,
-            self.radius,
-            self.nsteps,
-            self.percent_change,
-            self.step_scalar,
-            **kw
+            self.cx, self.cy, self.radius, self.nsteps, self.percent_change, self.step_scalar, **kw
         )
 
 

@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from __future__ import absolute_import
 from sqlalchemy import Column, BLOB, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import func

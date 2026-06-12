@@ -15,9 +15,9 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Instance, Tuple, Bool, Any, Float, Property
 from pyface.ui_traits import PyfaceColor
+
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 from pychron.canvas.canvas2D.crosshairs_overlay import (

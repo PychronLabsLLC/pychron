@@ -16,7 +16,6 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 
 from numpy import exp, ones, log, std, mean
 from numpy.random.mtrand import randn
@@ -126,9 +125,7 @@ class AgeConverter(object):
         pd_el = -(1.0 / lambda_total) * (
             age + (b * f * r / ((el**2) * umath.exp(lambda_total * age)))
         )
-        pd_b = (1 / lambda_total) * (
-            (f * r / (el * umath.exp(lambda_total * age))) - age
-        )
+        pd_b = (1 / lambda_total) * ((f * r / (el * umath.exp(lambda_total * age))) - age)
         pd_f = r / (el * umath.exp(lambda_total * age))
         pd_r = f / (el * umath.exp(lambda_total * age))
 

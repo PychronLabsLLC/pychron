@@ -19,7 +19,6 @@ import os
 from datetime import datetime, timedelta
 from threading import Lock
 
-import six
 from sqlalchemy import create_engine, distinct, MetaData
 from sqlalchemy.exc import (
     SQLAlchemyError,
@@ -1007,7 +1006,7 @@ host= {}\nurl= {}'.format(
 
     def _retrieve_first(self, table, value=None, key="name", order_by=None):
         if value is not None:
-            if not isinstance(value, (str, int, six.text_type, int, float)):
+            if not isinstance(value, (str, int, float)):
                 return value
         q = self.session.query(table)
         if value is not None:
@@ -1096,7 +1095,7 @@ host= {}\nurl= {}'.format(
         verbose=True,
         verbose_query=False,
     ):
-        if not isinstance(value, (str, int, six.text_type, int, float, list, tuple)):
+        if not isinstance(value, (str, int, float, list, tuple)):
             return value
 
         if not isinstance(value, (list, tuple)):

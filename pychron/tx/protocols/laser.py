@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 
 from pychron.core.helpers.binpack import encode_blob
 from pychron.core.helpers.strtools import to_bool
@@ -159,9 +158,7 @@ class LaserProtocol(ServiceProtocol):
                 name=name, return_blob=True, inform=False, pic_format=pic_format
             )
 
-            s = "{:02X}{}{:02x}{}{}".format(
-                len(lpath), lpath, len(upath), upath, imageblob
-            )
+            s = "{:02X}{}{:02x}{}{}".format(len(lpath), lpath, len(upath), upath, imageblob)
             return s
 
     def _get_grain_polygon_blob(self, data):
@@ -418,9 +415,7 @@ class LaserProtocol(ServiceProtocol):
         try:
             hole = int(hole)
             autocenter = to_bool(autocenter)
-            err = self._manager.stage_manager.move_to_hole(
-                str(hole), correct_position=autocenter
-            )
+            err = self._manager.stage_manager.move_to_hole(str(hole), correct_position=autocenter)
         except (ValueError, TypeError):
             err = InvalidArgumentsErrorCode("GoToHole", (hole, autocenter))
 

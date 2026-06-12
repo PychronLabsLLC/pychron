@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import math
 from threading import Thread
 
@@ -165,15 +164,11 @@ class SeekTester(HasTraits):
     def _src_graph_default(self):
         g = Graph()
         p = g.new_plot(padding_top=10)
-        p.data.set_data(
-            "imagedata", zeros((self.height * self.pxpermm, self.width * self.pxpermm))
-        )
+        p.data.set_data("imagedata", zeros((self.height * self.pxpermm, self.width * self.pxpermm)))
         p.img_plot("imagedata", colormap=jet)
 
         p = g.new_plot(padding_bottom=10)
-        p.data.set_data(
-            "imagedata", zeros((self.height * self.pxpermm, self.width * self.pxpermm))
-        )
+        p.data.set_data("imagedata", zeros((self.height * self.pxpermm, self.width * self.pxpermm)))
         p.img_plot("imagedata", colormap=jet)
 
         return g

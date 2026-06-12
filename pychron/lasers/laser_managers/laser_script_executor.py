@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 import os
 from threading import Thread
 
@@ -25,8 +24,6 @@ from pychron.core.helpers.filetools import pathtolist
 from pychron.lasers.laser_managers.ilaser_manager import ILaserManager
 from pychron.loggable import Loggable
 from pychron.paths import paths
-from six.moves import map
-from six.moves import range
 
 
 class LaserScriptExecutor(Loggable):

@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import unittest
 import os
 
@@ -24,7 +22,7 @@ from pychron.experiment.experimentor import Experimentor
 from test.database import isotope_manager_factory
 from pychron.experiment.tasks.experiment_editor import ExperimentEditor
 from pychron.experiment.tasks.experiment_task import ExperimentEditorTask
-from six.moves import zip
+
 # from pychron.database.records.isotope_record import IsotopeRecord
 
 
@@ -36,7 +34,7 @@ class BaseExperimentTest(unittest.TestCase):
     def _load_queues(self):
         man = self.experimentor
         path = self._experiment_file
-        with open(path, 'r') as rfile:
+        with open(path, "r") as rfile:
             txt = rfile.read()
 
             qtexts = self.exp_task._split_text(txt)
@@ -54,12 +52,10 @@ class BaseExperimentTest(unittest.TestCase):
         return qs
 
     def setUp(self):
-        self.experimentor = Experimentor(connect=False,
-                                         unique_executor_db=False
-        )
+        self.experimentor = Experimentor(connect=False, unique_executor_db=False)
         self.experimentor.db = db = isotope_manager_factory().db
 
-        self._experiment_file = './data/experiment2.txt'
+        self._experiment_file = "./data/experiment2.txt"
 
         self.exp_task = ExperimentEditorTask()
         self._load_queues()
@@ -73,17 +69,17 @@ class ExperimentTest2(BaseExperimentTest):
         aqs = (1, 46, 46, 47, 46, 46, 2)
         aqs = (1, 46, 46, 45, 46, 46, 2)
         for i, (aq, an) in enumerate(zip(aqs, queue.automated_runs)):
-            print(i, an.labnumber, an.aliquot, aq, 'aaa')
+            print(i, an.labnumber, an.aliquot, aq, "aaa")
             self.assertEqual(an.aliquot, aq)
 
     def testSteps(self):
         queue = self._load_queues()[0]
         #         sts = ('A', 'B', '', 'A', 'B', '', '', '', '')
-        sts = ('A', 'B', 'A', 'C', 'D')
-        sts = ('', 'A', 'B', 'A', 'C', 'D', '')
-        sts = ('', 'A', 'B', 'E', 'C', 'D')
+        sts = ("A", "B", "A", "C", "D")
+        sts = ("", "A", "B", "A", "C", "D", "")
+        sts = ("", "A", "B", "E", "C", "D")
         for i, (st, an) in enumerate(zip(sts, queue.automated_runs)):
-        #             if st in ('E', 'F'):
+            #             if st in ('E', 'F'):
             print(i, an.labnumber, an.step, st, an.aliquot)
             self.assertEqual(an.step, st)
 
@@ -113,27 +109,45 @@ class ExperimentTest(BaseExperimentTest):
     def testSteps(self):
         queue = self._load_queues()[0]
         #         sts = ('A', 'B', '', 'A', 'B', '', '', '', '')
-        sts = ('A', 'B', '', 'A', 'B', 'C', 'D', '', '', 'E', 'F',
-               '', '', '', 'C', 'D')
+        sts = ("A", "B", "", "A", "B", "C", "D", "", "", "E", "F", "", "", "", "C", "D")
         for i, (st, an) in enumerate(zip(sts, queue.automated_runs)):
-        #             if st in ('E', 'F'):
+            #             if st in ('E', 'F'):
             print(i, an.labnumber, an.step, st, an.aliquot)
             self.assertEqual(an.step, st)
 
-    @unittest.skip('foo')
+    @unittest.skip("foo")
     def testSample(self):
         queue = self._load_queues()[0]
-        samples = ('NM-779', 'NM-779', '', 'NM-779', 'NM-779', 'NM-779',
-                   'NM-779', '', 'NM-791', 'NM-791'
+        samples = (
+            "NM-779",
+            "NM-779",
+            "",
+            "NM-779",
+            "NM-779",
+            "NM-779",
+            "NM-779",
+            "",
+            "NM-791",
+            "NM-791",
         )
         for sample, an in zip(samples, queue.automated_runs):
             self.assertEqual(an.sample, sample)
 
-    @unittest.skip('foo')
+    @unittest.skip("foo")
     def testIrradation(self):
         queue = self._load_queues()[0]
-        irrads = ('NM-251H', 'NM-251H', '', 'NM-251H', 'NM-251H', 'NM-251H',
-                  'NM-251H', '', 'NM-251H', 'NM-251H')
+        irrads = (
+            "NM-251H",
+            "NM-251H",
+            "",
+            "NM-251H",
+            "NM-251H",
+            "NM-251H",
+            "NM-251H",
+            "",
+            "NM-251H",
+            "NM-251H",
+        )
         for irrad, an in zip(irrads, queue.automated_runs):
             self.assertEqual(an.irradiation, irrad)
 
@@ -171,21 +185,21 @@ class HumanErrorCheckerTest(BaseExperimentTest):
 
     def testNoLabnumber(self):
         err = self._get_errors()
-        self.assertTrue('-01' in list(err.keys()))
-        self.assertEqual(err['-01'], 'no labnumber')
+        self.assertTrue("-01" in list(err.keys()))
+        self.assertEqual(err["-01"], "no labnumber")
 
     def testNoDuration(self):
         err = self._get_errors()
-        self.assertEqual(err['61311-101'], 'no duration')
+        self.assertEqual(err["61311-101"], "no duration")
 
     #
     def testNoCleanup(self):
         err = self._get_errors()
-        self.assertEqual(err['61311-100'], 'no cleanup')
+        self.assertEqual(err["61311-100"], "no cleanup")
 
     def testPositionNoExtract(self):
         err = self._get_errors()
-        self.assertEqual(err['61311-102'], 'position but no extract value')
+        self.assertEqual(err["61311-102"], "position but no extract value")
 
     def _get_errors(self):
         hec = self.hec

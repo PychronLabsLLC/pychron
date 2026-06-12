@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from envisage.ui.tasks.task_factory import TaskFactory
 from traits.api import List
 
@@ -45,9 +44,7 @@ class ExternalPipettePlugin(BaseTaskPlugin):
             return m
 
     def _service_offers_default(self):
-        so = self.service_offer_factory(
-            protocol=IPipetteManager, factory=self._manager_factory
-        )
+        so = self.service_offer_factory(protocol=IPipetteManager, factory=self._manager_factory)
         return [
             so,
         ]

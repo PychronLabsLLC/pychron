@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import os
 
 from enable.component_editor import ComponentEditor
@@ -76,9 +75,7 @@ class UVGasHandlerManager(SwitchManager):
         self._timer = Timer(1000, self._update_pressure)
         self._timer.Start()
         #        self.controller.start_update_timer()
-        if not self.confirmation_dialog(
-            "Are both gas cylinders closed", title="Auto Gas Exchange"
-        ):
+        if not self.confirmation_dialog("Are both gas cylinders closed", title="Auto Gas Exchange"):
             self._timer.Stop()
             return
 

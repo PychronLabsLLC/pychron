@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.qt import QtCore, QtGui
 from traits.api import Any, Str, Event, Bool
 
@@ -46,6 +45,7 @@ class _EnumEditor(SimpleEditor):
 
     def rebuild_editor(self):
         super().rebuild_editor()
+
         # Ensure selection is re-applied after values refresh.
         def _safe_update():
             if self.factory is None or self.control is None:
@@ -78,9 +78,7 @@ class myEnumEditor(BasicEditorFactory):
 
     def _values_changed(self):
         """Recomputes the mappings whenever the **values** trait is changed."""
-        self._names, self._mapping, self._inverse_mapping = enum_values_changed(
-            self.values
-        )
+        self._names, self._mapping, self._inverse_mapping = enum_values_changed(self.values)
 
         self.values_modified = True
 

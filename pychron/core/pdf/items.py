@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-import six
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus.paragraph import Paragraph
 
@@ -78,7 +77,7 @@ class BaseItem(HasTraits):
             fmt = self.fmt
             if fmt is None:
                 fmt = "{}"
-            if isinstance(fmt, (str, six.text_type)):
+            if isinstance(fmt, str):
                 v = fmt.format(v)
             else:
                 v = fmt(v)
@@ -90,16 +89,12 @@ class BaseItem(HasTraits):
     def _set_font(self, v, size, name):
         if isinstance(v, Paragraph):
             for frag in v.frags:
-                if (hasattr(frag, "super") and frag.super) or (
-                    hasattr(frag, "sub") and frag.sub
-                ):
+                if (hasattr(frag, "super") and frag.super) or (hasattr(frag, "sub") and frag.sub):
                     frag.fontSize = size - 2
                 else:
                     frag.fontSize = size
         elif name:
-            v = self._new_paragraph(
-                '<font size="{}" name="{}">{}</font>'.format(size, name, v)
-            )
+            v = self._new_paragraph('<font size="{}" name="{}">{}</font>'.format(size, name, v))
         else:
             v = self._new_paragraph('<font size="{}">{}</font>'.format(size, v))
 

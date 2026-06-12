@@ -21,7 +21,6 @@
     http://code.activestate.com/recipes/391367-deprecated/
 """
 
-from __future__ import absolute_import
 import inspect
 import warnings
 
@@ -35,9 +34,7 @@ def deprecated(func):
     def newFunc(*args, **kwargs):
         caller = inspect.getframeinfo(inspect.currentframe().f_back)[2]
         warnings.warn(
-            "Call to deprecated function {}. From {}. {}".format(
-                func.__name__, caller, message
-            ),
+            "Call to deprecated function {}. From {}. {}".format(func.__name__, caller, message),
             category=DeprecationWarning,
         )
         return func(*args, **kwargs)

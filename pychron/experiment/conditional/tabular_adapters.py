@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Str, Int, Property
 from traitsui.tabular_adapter import TabularAdapter
 

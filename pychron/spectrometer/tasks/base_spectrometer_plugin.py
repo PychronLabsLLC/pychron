@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 
@@ -143,13 +142,9 @@ class BaseSpectrometerPlugin(BaseTaskPlugin):
             protocol=IonOpticsManager, factory=self._factory_ion_optics
         )
 
-        so2 = self.service_offer_factory(
-            protocol=ScanManager, factory=self._factory_scan_manager
-        )
+        so2 = self.service_offer_factory(protocol=ScanManager, factory=self._factory_scan_manager)
 
-        so3 = self.service_offer_factory(
-            protocol=ReadoutView, factory=self._readout_view_factory
-        )
+        so3 = self.service_offer_factory(protocol=ReadoutView, factory=self._readout_view_factory)
         return [so, so1, so2, so3]
 
     def _preferences_default(self):
@@ -200,9 +195,7 @@ class BaseSpectrometerPlugin(BaseTaskPlugin):
 
         actions = []
 
-        for f in glob_list_directory(
-            paths.hops_dir, extension=".yaml", remove_extension=True
-        ):
+        for f in glob_list_directory(paths.hops_dir, extension=".yaml", remove_extension=True):
             actions.append(
                 SchemaAddition(
                     id="procedure.{}".format(f),
@@ -256,9 +249,7 @@ class BaseSpectrometerPlugin(BaseTaskPlugin):
             #                    path='MenuBar')
             g = SchemaAddition(
                 id="spectrometer_script.group",
-                factory=lambda: SGroup(
-                    name="Spectrometer", id="spectrometer_script.group"
-                ),
+                factory=lambda: SGroup(name="Spectrometer", id="spectrometer_script.group"),
                 path="MenuBar/procedures.menu",
             )
 

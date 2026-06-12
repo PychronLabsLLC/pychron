@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 import time
@@ -217,9 +216,7 @@ class SynExtractionCollector(Loggable):
                 sname = os.path.basename(p)
 
                 # setup the script
-                ms = ThermoSynMeasurementPyScript(
-                    root=root, name=sname, automated_run=self.arun
-                )
+                ms = ThermoSynMeasurementPyScript(root=root, name=sname, automated_run=self.arun)
                 self.arun.baseline_modifiers = spec.baseline_modifiers
                 if ms.bootstrap():
                     if ms.syntax_ok(warn=False):

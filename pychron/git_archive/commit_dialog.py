@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
-from __future__ import print_function
 
 from pychron.core.helpers.traitsui_shortcuts import okcancel_view
 from pychron.envisage.icon_button_editor import icon_button_editor
@@ -66,9 +64,7 @@ class CommitDialog(HasTraits):
     def __init__(self, ps, *args, **kw):
         super(CommitDialog, self).__init__(*args, **kw)
         self.paths = sorted((ModifiedPath(pp) for pp in ps), key=lambda x: x.directory)
-        self.commit_message = "Updated {}".format(
-            ",".format([pp.name for pp in self.paths])
-        )
+        self.commit_message = "Updated {}".format(",".format([pp.name for pp in self.paths]))
 
     def _toggle_use_fired(self):
         rows = self.paths

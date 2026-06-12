@@ -16,7 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.timer.api import Timer
 from traits.api import Str, Int, Instance, Bool, Property, Event, Button, String
 from traitsui.api import View, Item, Group, HGroup, VGroup, ButtonEditor, Handler
@@ -100,9 +99,7 @@ class RemoteCommandServer(ConfigLoadable):
             c = CommandRepeater(
                 logger_name="{}_repeater".format(self.name),
                 name=self.name,
-                config_path=os.path.join(
-                    paths.root, "servers", "{}.cfg".format(self.name)
-                ),
+                config_path=os.path.join(paths.root, "servers", "{}.cfg".format(self.name)),
             )
             if c.bootstrap():
                 return c
@@ -217,9 +214,7 @@ class RemoteCommandServer(ConfigLoadable):
         #        THREAD_LIMIT = 15
         while self._running:
             try:
-                readySocket = select.select(
-                    [self._server.socket], [], [], SELECT_TIMEOUT
-                )
+                readySocket = select.select([self._server.socket], [], [], SELECT_TIMEOUT)
                 if readySocket[0]:
                     self._server.handle_request()
                 #                    if threading.activeCount() < THREAD_LIMIT:

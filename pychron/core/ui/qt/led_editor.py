@@ -16,7 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.qt.QtCore import Qt
 from pyface.qt.QtGui import QColor, QWidget, QLabel
 from pyface.qt.QtGui import (
@@ -144,9 +143,7 @@ class _LEDEditor(Editor):
             x += r / DIAMETER_SCALAR
             y += r / DIAMETER_SCALAR
 
-            self._led_ellipse.setBrush(
-                get_gradient(self.colors[self.value], x, y, r / 2)
-            )
+            self._led_ellipse.setBrush(get_gradient(self.colors[self.value], x, y, r / 2))
 
 
 class LEDEditor(BasicEditorFactory):

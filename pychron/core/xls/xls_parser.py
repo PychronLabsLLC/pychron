@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 
-import six
 
 # ============= standard library imports ========================
 import xlrd
@@ -52,7 +51,7 @@ class XLSParser(BaseColumnParser):
         wb = self.workbook
         if isinstance(sheet, int):
             sheet = wb.sheet_by_index(sheet)
-        elif isinstance(sheet, (str, six.text_type)):
+        elif isinstance(sheet, str):
             sheet = wb.sheet_by_name(sheet)
         self.sheet = sheet
         self._header = [str(r).strip() for r in sheet.row_values(header_idx)]

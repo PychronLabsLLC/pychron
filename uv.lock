@@ -1242,7 +1242,6 @@ dependencies = [
     { name = "scipy" },
     { name = "segno" },
     { name = "setuptools" },
-    { name = "six" },
     { name = "sqlalchemy" },
     { name = "statsmodels" },
     { name = "tables" },
@@ -1287,7 +1286,6 @@ dev = [
     { name = "types-pyyaml" },
     { name = "types-requests" },
     { name = "types-simplejson" },
-    { name = "types-six" },
     { name = "types-ujson" },
 ]
 
@@ -1328,7 +1326,6 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.16.2,<2" },
     { name = "segno", specifier = ">=1.6,<2" },
     { name = "setuptools", specifier = "<81" },
-    { name = "six", specifier = ">=1.17.0,<2" },
     { name = "sqlalchemy", specifier = ">=2.0.44,<3" },
     { name = "statsmodels", specifier = ">=0.14.5,<1" },
     { name = "tables", specifier = ">=3.10.2,<4" },
@@ -1356,7 +1353,6 @@ dev = [
     { name = "types-pyyaml" },
     { name = "types-requests" },
     { name = "types-simplejson" },
-    { name = "types-six" },
     { name = "types-ujson" },
 ]
 
@@ -1948,15 +1944,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/9f/36/e319fd0f6d906dbf7c2c03eef17db77ef461197a75b253fccd9c7c695d3e/types_simplejson-3.20.0.20260408.tar.gz", hash = "sha256:0b0e1bf61e70f81dfe6ef4c2b9c02e39403848c0652df334e7a430c3a26c06b3", size = 10693, upload-time = "2026-04-08T04:28:07.8Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/22/c0/01a5a4c3948c2269cf9d727e5e66a8b404e03beb4f9522680a3f71097011/types_simplejson-3.20.0.20260408-py3-none-any.whl", hash = "sha256:f9e542199cb159ed34ad54b6ceb3dc9af890c256b810ad1bd7c69c61db7d2236", size = 10415, upload-time = "2026-04-08T04:28:06.984Z" },
-]
-
-[[package]]
-name = "types-six"
-version = "1.17.0.20260408"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/9d/95/14bb40b2fa8f19234d60b370bfa1ff64b42509b6d2dee070132949ce4f80/types_six-1.17.0.20260408.tar.gz", hash = "sha256:b28579aedb204d07abac52e49c87e2b4c03cb6171bd764bd9b7775ba58fffaba", size = 15766, upload-time = "2026-04-08T04:26:23.54Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/83/04/3e9c382043579b5170c3bc38d13154d48e8ef2c89c4473748a33e3c9bccd/types_six-1.17.0.20260408-py3-none-any.whl", hash = "sha256:02208fa1099944ed0c8f8de42f065ffd63c55cd7b59f49be49802626b8d58318", size = 19937, upload-time = "2026-04-08T04:26:22.259Z" },
 ]
 
 [[package]]

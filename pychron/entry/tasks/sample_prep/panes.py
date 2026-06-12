@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pyface.action.menu_manager import MenuManager
 from pyface.tasks.traits_dock_pane import TraitsDockPane
@@ -152,9 +151,7 @@ class SamplePrepPane(TraitsTaskPane):
                     Item(
                         "object.prep_step.{}".format(step),
                         enabled_when="not {}".format(fstep),
-                        editor=ComboboxEditor(
-                            name="object.prep_step.choices_{}".format(step)
-                        ),
+                        editor=ComboboxEditor(name="object.prep_step.choices_{}".format(step)),
                     ),
                     spring,
                     UItem(fstep),
@@ -192,12 +189,8 @@ class SamplePrepPane(TraitsTaskPane):
                     enabled_when="object.active_sample.name",
                     tooltip='Clear values entered in "New"',
                 ),
-                icon_button_editor(
-                    "upload_image_button", "image_add", tooltip="Add image"
-                ),
-                icon_button_editor(
-                    "view_camera_button", "camera", tooltip="Take a picture"
-                ),
+                icon_button_editor("upload_image_button", "image_add", tooltip="Add image"),
+                icon_button_editor("view_camera_button", "camera", tooltip="Take a picture"),
                 icon_button_editor(
                     "view_image_button",
                     "insert-image-link",

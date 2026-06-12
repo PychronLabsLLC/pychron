@@ -22,7 +22,6 @@ import os
 import re
 from typing import Any
 
-import six
 from lxml.etree import (
     ElementTree,
     Element,
@@ -91,9 +90,7 @@ def pprint_xml(txt):
                 skip_next = True
                 continue
             else:
-                lines.append(
-                    "{}{}".format(indent * (len(stack) - 1), "".join(line).strip())
-                )
+                lines.append("{}{}".format(indent * (len(stack) - 1), "".join(line).strip()))
                 line = []
                 if not t.startswith("?xml"):
                     stack.append(t)
@@ -155,7 +152,7 @@ class XMLParser(object):
 
     def _parse_file(self, p: Any) -> bool:
         txt = None
-        if isinstance(p, (str, six.text_type)):
+        if isinstance(p, str):
             txt = ""
             if os.path.isfile(p):
                 with open(p, "rb") as rfile:

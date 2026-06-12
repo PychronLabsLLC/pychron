@@ -15,7 +15,6 @@
 # # ===============================================================================
 #
 # # ============= enthought library imports =======================
-# from __future__ import absolute_import
 # from traits.api import HasTraits, Str, Bool, List
 # from traitsui.api import View, UItem, TableEditor, Handler
 # # ============= standard library imports ========================

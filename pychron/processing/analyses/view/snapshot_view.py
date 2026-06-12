@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, List, Str, Instance, Any
 from traitsui.api import View, UItem, VGroup, TabularEditor, HSplit, Item
 

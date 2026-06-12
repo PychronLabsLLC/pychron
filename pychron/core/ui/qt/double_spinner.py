@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Float, Str
 
 # ============= standard library imports ========================
@@ -52,9 +51,7 @@ class _DoubleSpinnerEditor(SimpleSpinEditor):
         self.control.setMinimum(low)
         self.control.setMaximum(high)
         self.control.setValue(self.value)
-        QtCore.QObject.connect(
-            self.control, QtCore.SIGNAL("valueChanged(int)"), self.update_object
-        )
+        QtCore.QObject.connect(self.control, QtCore.SIGNAL("valueChanged(int)"), self.update_object)
         self.set_tooltip()
 
 

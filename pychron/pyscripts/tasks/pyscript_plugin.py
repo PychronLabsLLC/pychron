@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 
 from envisage.ui.tasks.task_extension import TaskExtension
 from envisage.ui.tasks.task_factory import TaskFactory
@@ -45,9 +44,7 @@ class PyScriptPlugin(BaseTaskPlugin):
     id = "pychron.pyscript.plugin"
 
     def _service_offers_default(self):
-        so = self.service_offer_factory(
-            factory=self._executor_factory, protocol=ScriptExecutor
-        )
+        so = self.service_offer_factory(factory=self._executor_factory, protocol=ScriptExecutor)
         return [so]
 
     def _executor_factory(self):
@@ -67,9 +64,7 @@ class PyScriptPlugin(BaseTaskPlugin):
             TaskExtension(
                 task_id="pychron.pyscript.task",
                 actions=[
-                    SchemaAddition(
-                        id="replace", path="MenuBar/edit.menu", factory=_replace_action
-                    )
+                    SchemaAddition(id="replace", path="MenuBar/edit.menu", factory=_replace_action)
                 ],
             ),
             TaskExtension(

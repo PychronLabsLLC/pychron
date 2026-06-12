@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 
 from pyface.qt.QtCore import Qt
@@ -231,9 +230,7 @@ class _FilterTabularEditor(_TabularEditor):
 
             if index:
                 self.selected_row = index.row()
-                self.selected = self.adapter.get_item(
-                    self.object, self.name, self.selected_row
-                )
+                self.selected = self.adapter.get_item(self.object, self.name, self.selected_row)
             else:
                 self.selected_row = -1
                 self.selected = None

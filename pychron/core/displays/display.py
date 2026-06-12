@@ -15,14 +15,13 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 # ============= standard library imports ========================
 from threading import Lock
 
 from pyface.qt.QtGui import QColor
 from pyface.ui_traits import PyfaceColor
-from six.moves.queue import Queue
+from queue import Queue
 from traits.api import HasTraits, Int, Str, Event, Bool
 from pyface.color import Color
 from traitsui.api import View, UItem, Controller

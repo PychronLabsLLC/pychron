@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from traits.api import Property, DelegatesTo, Instance, provides, CStr
 
 # =============standard library imports ========================
@@ -110,9 +109,7 @@ class AbstractDevice(ScanableDevice, ConfigLoadable, HasCommunicator):
             if not self._check_cdevice():
                 self.warning(
                     "Invalid device "
-                    '"{}" for abstract device "{}"'.format(
-                        self._cdevice.name, self.name
-                    )
+                    '"{}" for abstract device "{}"'.format(self._cdevice.name, self.name)
                 )
                 return
 

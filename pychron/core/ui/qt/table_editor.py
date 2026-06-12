@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pyface.qt import QtGui
 from pyface.qt.QtCore import Qt, QSize

@@ -16,15 +16,15 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Str, Float, List, Any, Property
 from traitsui.api import View, Item, Group, HGroup, TableEditor, Handler, RangeEditor
 from traitsui.table_column import ObjectColumn
 from pyface.ui_traits import PyfaceColor
+
 # =============standard library imports ========================
 import os
 import glob
-import six.moves.cPickle as pickle
+import pickle
 import copy
 
 # =============local library imports  ==========================
@@ -146,9 +146,7 @@ class ViewController(HasTraits):
                         pass
             return px
         else:
-            return (
-                []
-            )  # UserView(name = 'home', key = 'h', scene_graph = self.scene_graph)]
+            return []  # UserView(name = 'home', key = 'h', scene_graph = self.scene_graph)]
 
     def _scene_graph_changed(self):
         for v in self.views:
@@ -180,45 +178,31 @@ class ViewController(HasTraits):
                     HGroup("name", "key"),
                     Item(
                         "x",
-                        editor=RangeEditor(
-                            low_name="xmin", high_name="xmax", mode="slider"
-                        ),
+                        editor=RangeEditor(low_name="xmin", high_name="xmax", mode="slider"),
                     ),
                     Item(
                         "y",
-                        editor=RangeEditor(
-                            low_name="xmin", high_name="xmax", mode="slider"
-                        ),
+                        editor=RangeEditor(low_name="xmin", high_name="xmax", mode="slider"),
                     ),
                     Item(
                         "z",
-                        editor=RangeEditor(
-                            low_name="xmin", high_name="xmax", mode="slider"
-                        ),
+                        editor=RangeEditor(low_name="xmin", high_name="xmax", mode="slider"),
                     ),
                     Item(
                         "rx",
-                        editor=RangeEditor(
-                            low_name="rmin", high_name="rmax", mode="slider"
-                        ),
+                        editor=RangeEditor(low_name="rmin", high_name="rmax", mode="slider"),
                     ),
                     Item(
                         "ry",
-                        editor=RangeEditor(
-                            low_name="rmin", high_name="rmax", mode="slider"
-                        ),
+                        editor=RangeEditor(low_name="rmin", high_name="rmax", mode="slider"),
                     ),
                     Item(
                         "rz",
-                        editor=RangeEditor(
-                            low_name="rmin", high_name="rmax", mode="slider"
-                        ),
+                        editor=RangeEditor(low_name="rmin", high_name="rmax", mode="slider"),
                     ),
                     Item(
                         "zoom",
-                        editor=RangeEditor(
-                            low_name="zmin", high_name="zmax", mode="slider"
-                        ),
+                        editor=RangeEditor(low_name="zmin", high_name="zmax", mode="slider"),
                     ),
                     Group(
                         "background_color"

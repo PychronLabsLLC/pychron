@@ -21,8 +21,6 @@ add a path verification function
 make sure directory exists and build if not
 """
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 import pickle
@@ -520,9 +518,7 @@ class Paths(object):
 
         self.packages_file = join(self.appdata_dir, "packages.json")
 
-        self.baseline_model = join(
-            self.scripts_dir, "syn_extraction", "baseline_model.csv"
-        )
+        self.baseline_model = join(self.scripts_dir, "syn_extraction", "baseline_model.csv")
 
         build_directories()
 

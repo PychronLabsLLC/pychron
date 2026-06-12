@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pyface.tasks.traits_dock_pane import TraitsDockPane
 from traits.api import Str
@@ -87,9 +86,7 @@ class ColorColumn(TableColumn):
                 r, g, b, a = color
             else:
                 return QColor(color)
-            if all(isinstance(v, float) for v in (r, g, b, a)) and max(
-                r, g, b, a
-            ) <= 1.0:
+            if all(isinstance(v, float) for v in (r, g, b, a)) and max(r, g, b, a) <= 1.0:
                 return QColor.fromRgbF(r, g, b, a)
             if a <= 1.0:
                 a = int(round(a * 255))
@@ -181,9 +178,7 @@ class RecordControlsPane(TraitsDockPane):
                     tooltip="Stop recording",
                     enabled_when="_recording",
                 ),
-                icon_button_editor(
-                    "add_marker_button", "flag", enabled_when="_recording"
-                ),
+                icon_button_editor("add_marker_button", "flag", enabled_when="_recording"),
                 show_border=True,
                 label="Record Scan",
             ),
@@ -353,9 +348,7 @@ class ControlsPane(TraitsDockPane):
             Item(
                 "detectors",
                 show_label=False,
-                editor=ListEditor(
-                    style="custom", mutable=False, editor=InstanceEditor()
-                ),
+                editor=ListEditor(style="custom", mutable=False, editor=InstanceEditor()),
             ),
             show_border=True,
             label="Detectors",
@@ -383,9 +376,7 @@ class ControlsPane(TraitsDockPane):
             Item("graph_ymax", label="Max", format_str="%0.3f"),
             Item("graph_ymin", label="Min", format_str="%0.3f"),
             HGroup(
-                icon_button_editor(
-                    "clear_button", "clear", tooltip="Clear and reset graph"
-                ),
+                icon_button_editor("clear_button", "clear", tooltip="Clear and reset graph"),
                 spring,
             ),
             show_border=True,

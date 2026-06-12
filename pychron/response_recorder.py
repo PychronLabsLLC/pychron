@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import time
 from threading import Thread
 
@@ -102,9 +101,7 @@ class ResponseRecorder(Loggable):
             r = rd.get_response(force=True)
             rdata = vstack((rdata, (t, r)))
 
-            self.debug(
-                "response t={}, out={}, setpoint={}, response={}".format(t, out, sp, r)
-            )
+            self.debug("response t={}, out={}, setpoint={}, response={}".format(t, out, sp, r))
             if rds:
                 r2 = rds.get_response(force=True)
 

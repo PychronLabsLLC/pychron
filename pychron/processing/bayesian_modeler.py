@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import time
 
@@ -27,7 +25,6 @@ from numpy import vstack, histogram, array
 from numpy.core.fromnumeric import argmax
 from numpy.random import normal
 from pylab import show, plot, axvline
-from six.moves import zip
 from traits.api import HasTraits
 
 # from scipy.stats.stats import mode

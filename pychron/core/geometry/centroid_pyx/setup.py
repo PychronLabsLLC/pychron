@@ -22,7 +22,6 @@ http://docs.cython.org/pychron/quickstart/build.html
 python setup.py build_ext --inplace
 """
 
-from __future__ import absolute_import
 from distutils.core import setup
 from distutils.extension import Extension
 
@@ -30,9 +29,7 @@ import numpy
 from Cython.Distutils import build_ext
 
 ext_modules = [
-    Extension(
-        "calculate_centroid", ["centroid.pyx"], include_dirs=[numpy.get_include()]
-    )
+    Extension("calculate_centroid", ["centroid.pyx"], include_dirs=[numpy.get_include()])
 ]
 
 setup(

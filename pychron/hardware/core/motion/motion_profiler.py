@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Float
 
 from pychron.config_loadable import ConfigLoadable
@@ -73,9 +72,7 @@ class MotionProfiler(ConfigLoadable):
         mdc = obj.deceleration
 
         try:
-            nv, nac, ndc = self.calculate_corrected_parameters(
-                0, displacement, mac, mdc
-            )
+            nv, nac, ndc = self.calculate_corrected_parameters(0, displacement, mac, mdc)
         except Exception:
             """
             max recusion.
@@ -135,17 +132,12 @@ class MotionProfiler(ConfigLoadable):
                 )
 
             # # is ac time less than min
-            if (
-                times[0] < self.min_acceleration_time
-                or times[1] < self.min_acceleration_time
-            ):
+            if times[0] < self.min_acceleration_time or times[1] < self.min_acceleration_time:
                 """
                 acc is too fast. calculate new accel so that acctime=min
                 """
                 ac = vel / (2 * self.min_acceleration_time)
-                return self.calculate_corrected_parameters(
-                    cnt + 1, displacement, ac, ac
-                )
+                return self.calculate_corrected_parameters(cnt + 1, displacement, ac, ac)
             return vel, acc, dec
 
         else:  # not a trapezoid

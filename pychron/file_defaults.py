@@ -22,7 +22,6 @@ This file defines the text for various default files.
 
 Values are used in pychron.paths when building directory structure
 """
-from __future__ import absolute_import
 
 import yaml
 

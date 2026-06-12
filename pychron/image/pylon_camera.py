@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 
@@ -66,9 +64,7 @@ class PylonCamera(Loggable):
                         self._cam.properties[k] = v
                         self.debug("Set {} to {}".format(k, v))
                     except ValueError as e:
-                        self.warning(
-                            'Invalid Property value. k="{}",v={}. e={}'.format(k, v, e)
-                        )
+                        self.warning('Invalid Property value. k="{}",v={}. e={}'.format(k, v, e))
                     except KeyError:
                         self.warning('Invalid Camera Property "{}"'.format(k))
                     except RuntimeError as e:

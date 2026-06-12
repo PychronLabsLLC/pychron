@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 import pickle
@@ -113,9 +112,7 @@ ATimeView = View(
                     "mass_spectrometer",
                     editor=EnumEditor(name="available_mass_spectrometers"),
                 ),
-                UItem(
-                    "analysis_type", editor=EnumEditor(name="available_analysis_types")
-                ),
+                UItem("analysis_type", editor=EnumEditor(name="available_analysis_types")),
                 UItem(
                     "extract_device",
                     editor=EnumEditor(name="available_extract_devices"),
@@ -123,14 +120,10 @@ ATimeView = View(
             ),
             HGroup(
                 Item("lowdays", label="Greater Than"),
-                UItem(
-                    "lowdate", editor=DateEditor(strftime="%m/%d/%Y"), style="readonly"
-                ),
+                UItem("lowdate", editor=DateEditor(strftime="%m/%d/%Y"), style="readonly"),
                 spring,
                 Item("highdays", label="Less Than"),
-                UItem(
-                    "highdate", editor=DateEditor(strftime="%m/%d/%Y"), style="readonly"
-                ),
+                UItem("highdate", editor=DateEditor(strftime="%m/%d/%Y"), style="readonly"),
                 spring,
                 Item("limit"),
             ),
@@ -162,7 +155,9 @@ class TimeViewModel(HasTraits):
     selected = List
     refresh_table_needed = Event
     clear_filter_button = Button
-    help_str = "Select an analysis. Click on the column label to filter results by the selected value"
+    help_str = (
+        "Select an analysis. Click on the column label to filter results by the selected value"
+    )
 
     mass_spectrometer = Str
     analysis_type = Str
@@ -189,9 +184,7 @@ class TimeViewModel(HasTraits):
         else:
             return self.analyses
 
-    @on_trait_change(
-        "mass_spectrometer, analysis_type, extract_device, lowdate, highdate, limit"
-    )
+    @on_trait_change("mass_spectrometer, analysis_type, extract_device, lowdate, highdate, limit")
     def _handle_filter(self):
         ms = self.mass_spectrometer
         at = self.analysis_type
@@ -212,9 +205,7 @@ class TimeViewModel(HasTraits):
                 name, field = event.editor.adapter.columns[event.column]
 
                 sattrs = {getattr(s, field) for s in self.selected}
-                self.analyses = [
-                    ai for ai in self.analyses if getattr(ai, field) in sattrs
-                ]
+                self.analyses = [ai for ai in self.analyses if getattr(ai, field) in sattrs]
 
             self.refresh_table_needed = True
 
@@ -272,13 +263,9 @@ class TimeViewModel(HasTraits):
             func = getattr(db, "get_{}s".format(attr))
             ms = func()
             ms.sort()
-            setattr(
-                self, "available_{}s".format(attr), [NULL_STR] + [mi.name for mi in ms]
-            )
+            setattr(self, "available_{}s".format(attr), [NULL_STR] + [mi.name for mi in ms])
 
-    def _load_analyses(
-        self, mass_spectrometer=None, analysis_type=None, extract_device=None
-    ):
+    def _load_analyses(self, mass_spectrometer=None, analysis_type=None, extract_device=None):
         if self._suppress_load_analyses:
             return
 

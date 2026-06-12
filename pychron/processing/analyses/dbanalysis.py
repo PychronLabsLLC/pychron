@@ -15,15 +15,12 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from traits.has_traits import HasTraits
 from traits.trait_types import Str, Float, Either, Date, Any, Dict, List, Int
 
 # ============= standard library imports ========================
 import os
 from datetime import datetime
-from six.moves import range
 
 import struct
 import time
@@ -45,8 +42,6 @@ from pychron.pychron_constants import (
     QTEGRA_SOURCE_KEYS,
     QTEGRA_SOURCE_NAMES,
 )
-import six
-from six.moves import zip
 
 
 class DValue(HasTraits):
@@ -141,8 +136,7 @@ class DBAnalysis(Analysis):
                 (
                     fi
                     for fi in fits
-                    if fi.isotope.kind == kind
-                    and fi.isotope.molecular_weight.name == name
+                    if fi.isotope.kind == kind and fi.isotope.molecular_weight.name == name
                 ),
                 None,
             )
@@ -251,9 +245,7 @@ class DBAnalysis(Analysis):
             self.data_reduction_tag = tag.name
 
             # get the data_reduction_tag_set entry associated with this analysis
-            drentry = next(
-                (ai for ai in tag.analyses if ai.analysis_id == meas_analysis.id), None
-            )
+            drentry = next((ai for ai in tag.analyses if ai.analysis_id == meas_analysis.id), None)
             print(drentry.selected_histories)
             return drentry.selected_histories
 
@@ -351,12 +343,9 @@ class DBAnalysis(Analysis):
                     defls = meas.deflections
 
                     try:
-                        names = sort_detectors(
-                            [di.detector.name for di in meas.deflections]
-                        )
+                        names = sort_detectors([di.detector.name for di in meas.deflections])
                         self.deflections = [
-                            DValue(ni, defls[i].deflection or "---")
-                            for i, ni in enumerate(names)
+                            DValue(ni, defls[i].deflection or "---") for i, ni in enumerate(names)
                         ]
                     except AttributeError as e:
                         # self.deflections = [DValue(str(i), i * 34) for i in range(10)]
@@ -392,8 +381,7 @@ class DBAnalysis(Analysis):
             bid = meas_analysis.selected_histories.selected_blanks_id
 
         self.blank_changes = [
-            BlankChange(bi, active=bi.id == bid)
-            for bi in meas_analysis.blanks_histories
+            BlankChange(bi, active=bi.id == bid) for bi in meas_analysis.blanks_histories
         ]
         self.fit_changes = [FitChange(fi) for fi in meas_analysis.fit_histories]
 
@@ -499,7 +487,7 @@ class DBAnalysis(Analysis):
 
         # self.ic_factors = self._get_ic_factors(meas_analysis)
         ics = self._get_ic_factors(meas_analysis)
-        for iso in six.itervalues(self.isotopes):
+        for iso in self.isotopes.values():
             det = iso.detector
             try:
                 r = ics[det]
@@ -519,9 +507,7 @@ class DBAnalysis(Analysis):
                 # calculate discrimination
                 idisc = disc**n
                 e = disc
-                idisc = ufloat(
-                    idisc.nominal_value, e.std_dev, tag="{} D".format(iso.name)
-                )
+                idisc = ufloat(idisc.nominal_value, e.std_dev, tag="{} D".format(iso.name))
 
             iso.discrimination = idisc
 
@@ -618,15 +604,11 @@ class DBAnalysis(Analysis):
 
             if r.unpack_error:
                 self.warning(
-                    "Bad isotope {} {}. error: {}".format(
-                        self.record_id, key, r.unpack_error
-                    )
+                    "Bad isotope {} {}. error: {}".format(self.record_id, key, r.unpack_error)
                 )
                 self.temp_status = 1
             else:
-                fit = self.get_db_fit(
-                    meas_analysis, isoname, "signal", selected_histories
-                )
+                fit = self.get_db_fit(meas_analysis, isoname, "signal", selected_histories)
                 if fit is None:
                     fit = default_fit()
                 r.set_fit(fit, notify=False)
@@ -670,9 +652,7 @@ class DBAnalysis(Analysis):
                     r.error = result.signal_err
                 if unpack:
                     r.unpack_data(dbiso.signal.data)
-                fit = self.get_db_fit(
-                    meas_analysis, name, "baseline", selected_histories
-                )
+                fit = self.get_db_fit(meas_analysis, name, "baseline", selected_histories)
                 if fit is None:
                     fit = default_fit()
 
@@ -765,10 +745,7 @@ class DBAnalysis(Analysis):
             center = float(pc.center)
             packed_xy = pc.points
             return center, zip(
-                *[
-                    struct.unpack("<ff", packed_xy[i : i + 8])
-                    for i in range(0, len(packed_xy), 8)
-                ]
+                *[struct.unpack("<ff", packed_xy[i : i + 8]) for i in range(0, len(packed_xy), 8)]
             )
         else:
             return 0.0, None

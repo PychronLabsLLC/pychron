@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import math
 import os
 
@@ -99,9 +97,7 @@ def calculate_spacing(p):
 
 
 def plot(im, edges, lines):
-    fig, (ax1, ax2, ax3) = plt.subplots(
-        nrows=1, ncols=3, figsize=(8, 3), sharex=True, sharey=True
-    )
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3), sharex=True, sharey=True)
 
     ax1.imshow(im, cmap=plt.cm.jet)
     ax1.axis("off")
@@ -117,9 +113,7 @@ def plot(im, edges, lines):
             ax2.plot((x1, x2), (y1, y2))
             ax3.plot((x1, x2), (y1, y2))
 
-    fig.subplots_adjust(
-        wspace=0.02, hspace=0.02, top=0.9, bottom=0.02, left=0.02, right=0.98
-    )
+    fig.subplots_adjust(wspace=0.02, hspace=0.02, top=0.9, bottom=0.02, left=0.02, right=0.98)
 
     # plt.show()
 
@@ -155,11 +149,7 @@ def calculate_spacings():
         a = "{:0.3f}".format(a)
         s = "{:0.3f}".format(s)
 
-        print(
-            "{}|{:<4s}|{:<5s}|{:<4s}|{:<6s}|{}".format(
-                bp, str(zn), str(m), str(c), a, s
-            )
-        )
+        print("{}|{:<4s}|{:<5s}|{:<4s}|{:<6s}|{}".format(bp, str(zn), str(m), str(c), a, s))
         zns.append(zn)
         zas.append(za)
 

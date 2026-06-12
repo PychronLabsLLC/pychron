@@ -16,10 +16,8 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Any, Property, List
 from traitsui.api import View, Item, Group, VGroup
-from six.moves import range
 
 
 # =============standard library imports ========================

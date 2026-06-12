@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 import time
@@ -34,9 +32,7 @@ from .toupcam.camera_v2 import ToupCamCamera
 from .toupcam.toupcam import Toupcam
 
 
-def convert_to_video(
-    path, fps, name_filter="snapshot%03d.jpg", ffmpeg=None, output=None
-):
+def convert_to_video(path, fps, name_filter="snapshot%03d.jpg", ffmpeg=None, output=None):
     """
     path: path to directory containing list of images
 
@@ -297,9 +293,7 @@ class Video(Image):
             cnt += 1
             time.sleep(max(0, fps_1 - (time.time() - st)))
 
-        self._convert_to_video(
-            image_dir, name_filter="image_%05d.{}".format(ext), output=path
-        )
+        self._convert_to_video(image_dir, name_filter="image_%05d.{}".format(ext), output=path)
 
         if self._save_ok_event:
             self._save_ok_event.set()

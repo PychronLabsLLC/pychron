@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import HasTraits, Str, Int, Bool, Any, Button, Instance, List, Dict
 
@@ -119,8 +118,7 @@ class DVCIrradiationImporterModel(BaseDVCImporterModel):
                 self.debug(irrad.name)
 
             specs = [
-                (i.name, self.source.get_irradiation_import_spec(i.name))
-                for i in self.selected
+                (i.name, self.source.get_irradiation_import_spec(i.name)) for i in self.selected
             ]
         else:
             spec = self.source.get_irradiation_import_spec()
@@ -177,9 +175,7 @@ class DVCIrradiationImporterModel(BaseDVCImporterModel):
     def _import_position(self, irradname, level, p):
         self.debug("importing position {} {}".format(p.position, p.identifier))
         self._progress.change_message(
-            "Importing {} {} {}({})".format(
-                irradname, level.name, p.position, p.identifier
-            )
+            "Importing {} {} {}({})".format(irradname, level.name, p.position, p.identifier)
         )
         dvc = self.dvc
         db = dvc.db
@@ -223,9 +219,7 @@ class DVCIrradiationImporterModel(BaseDVCImporterModel):
         )
         if added:
             self._active_import.npositions += 1
-        dvc.update_flux(
-            irradname, level.name, p.position, p.identifier, p.j, p.j_err, 0, 0
-        )
+        dvc.update_flux(irradname, level.name, p.position, p.identifier, p.j, p.j_err, 0, 0)
 
     def _open_progress(self, specs):
         n = len(specs)
@@ -356,18 +350,14 @@ class DVCAnalysisImporterModel(BaseDVCImporterModel):
             spec.sample, spec.project, spec.principal_investigator, spec.material
         ):
             self.debug("adding sample {}".format(spec.sample))
-            dest.add_sample(
-                spec.sample, spec.project, spec.principal_investigator, spec.material
-            )
+            dest.add_sample(spec.sample, spec.project, spec.principal_investigator, spec.material)
             dest.commit()
 
     def _add_project(self, spec):
         spec = spec.run_spec
         dest = self.dvc
         if not dest.get_project(spec.project, spec.principal_investigator):
-            self.debug(
-                "adding project {},{}".format(spec.project, spec.principal_investigator)
-            )
+            self.debug("adding project {},{}".format(spec.project, spec.principal_investigator))
             dest.add_project(spec.project, spec.principal_investigator)
             dest.commit()
 

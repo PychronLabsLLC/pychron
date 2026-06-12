@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 
 from operator import attrgetter
 
@@ -50,10 +49,7 @@ def calc_area(a):
 
 
 def centroid_distance(t0, t1):
-    d = (
-        (t0.centroid[0] - t1.centroid[0]) ** 0.5
-        + (t0.centroid[1] - t1.centroid[1]) ** 2
-    ) ** 0.5
+    d = ((t0.centroid[0] - t1.centroid[0]) ** 0.5 + (t0.centroid[1] - t1.centroid[1]) ** 2) ** 0.5
     return d
 
 
@@ -200,9 +196,7 @@ class LumenDetector(Locator):
         if area:
             ss = tsrc.sum()
             v = ss / (area * pd)
-            self.debug(
-                "v={}, sum={}, area={}, pd={}, mask={}".format(v, ss, area, pd, m.sum())
-            )
+            self.debug("v={}, sum={}, area={}, pd={}, mask={}".format(v, ss, area, pd, m.sum()))
 
         return src, v, targets
 
@@ -220,7 +214,7 @@ class LumenDetector(Locator):
             search_depth=5,
             search_start=254,
             # convexity_filter=0.75,
-            **kw
+            **kw,
         )
         self.active_targets = None
         if targets:

@@ -15,7 +15,6 @@
 # ===============================================================================
 """Tests for the device-flow → DVC IAM-credential persistence path."""
 
-from __future__ import absolute_import
 
 import ast
 import json

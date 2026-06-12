@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import unittest
 
 from uncertainties import nominal_value

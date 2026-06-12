@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 
 from envisage.ui.tasks.task_extension import TaskExtension
 from pyface.tasks.action.schema_addition import SchemaAddition
@@ -74,12 +73,8 @@ class AusGeochemPlugin(BaseTaskPlugin):
 
     def _task_extensions_default(self):
         actions = [
-            SchemaAddition(
-                factory=EarthBankLoginAction, path="MenuBar/data.menu"
-            ),
-            SchemaAddition(
-                factory=UploadAusGeochemAction, path="MenuBar/data.menu"
-            ),
+            SchemaAddition(factory=EarthBankLoginAction, path="MenuBar/data.menu"),
+            SchemaAddition(factory=UploadAusGeochemAction, path="MenuBar/data.menu"),
         ]
         return [TaskExtension(actions=actions)]
 

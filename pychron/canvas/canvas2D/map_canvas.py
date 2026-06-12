@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 
 import math
 
@@ -131,6 +130,7 @@ class MapCanvas(SceneCanvas):
 
     def _convert_color(self, color):
         if not isinstance(color, (list, tuple)):
+
             def _component(value):
                 return value() if callable(value) else value
 
@@ -181,11 +181,7 @@ class MapCanvas(SceneCanvas):
                         if ca:
                             tweaked = hole.id in ca.tweak_dict
 
-                        if (
-                            hole.render.lower() == "x"
-                            or tweaked
-                            or not self.use_valid_holes
-                        ):
+                        if hole.render.lower() == "x" or tweaked or not self.use_valid_holes:
                             tweak = None
 
                             x, y = map_screen([(hole.x, hole.y)])[0]

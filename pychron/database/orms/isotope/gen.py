@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 from sqlalchemy import (
     Column,
     Integer,
@@ -58,9 +57,7 @@ class gen_DetectorTable(Base, NameMixin):
     kind = stringcolumn()
     isotopes = relationship("meas_IsotopeTable", backref="detector")
     deflections = relationship("meas_SpectrometerDeflectionsTable", backref="detector")
-    intercalibrations = relationship(
-        "proc_DetectorIntercalibrationTable", backref="detector"
-    )
+    intercalibrations = relationship("proc_DetectorIntercalibrationTable", backref="detector")
     detector_parameters = relationship("proc_DetectorParamTable", backref="detector")
     gains = relationship("meas_GainTable", backref="detector")
 

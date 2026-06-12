@@ -16,12 +16,10 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 from hashlib import md5
 
 from traits.api import HasTraits, BaseStr
 from traitsui.api import View, UItem
-from six.moves import range
 
 
 # ============= standard library imports ========================

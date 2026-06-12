@@ -16,90 +16,118 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import math
 from unittest import TestCase
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
+
 # ============= local library imports  ==========================
 from pychron.processing.argon_calculations import calculate_arar_age
 from pychron.processing import constants
-from six.moves import map
+
 
 class AgeCalcTest(TestCase):
     def setUp(self):
-        rid = '60754-10'
+        rid = "60754-10"
         config = ConfigParser()
-        p = '/Users/ross/Sandbox/pychron_validation_data.cfg'
+        p = "/Users/ross/Sandbox/pychron_validation_data.cfg"
         config.read(p)
 
-        signals = [list(map(float, x.split(','))) for x in [config.get('Signals-{}'.format(rid), k)
-                        for k in ['ar40', 'ar39', 'ar38', 'ar37', 'ar36']]]
+        signals = [
+            list(map(float, x.split(",")))
+            for x in [
+                config.get("Signals-{}".format(rid), k)
+                for k in ["ar40", "ar39", "ar38", "ar37", "ar36"]
+            ]
+        ]
 
-        blanks = [list(map(float, x.split(','))) for x in [config.get('Blanks-{}'.format(rid), k)
-                        for k in ['ar40', 'ar39', 'ar38', 'ar37', 'ar36']]]
+        blanks = [
+            list(map(float, x.split(",")))
+            for x in [
+                config.get("Blanks-{}".format(rid), k)
+                for k in ["ar40", "ar39", "ar38", "ar37", "ar36"]
+            ]
+        ]
 
-        irradinfo = [list(map(float, x.split(','))) for x in [config.get('irrad-{}'.format(rid), k) for k in ['k4039', 'k3839', 'ca3937', 'ca3837', 'ca3637', 'cl3638']]]
+        irradinfo = [
+            list(map(float, x.split(",")))
+            for x in [
+                config.get("irrad-{}".format(rid), k)
+                for k in ["k4039", "k3839", "ca3937", "ca3837", "ca3637", "cl3638"]
+            ]
+        ]
 
-        j = config.get('irrad-{}'.format(rid), 'j')
-        j = [float(x) for x in j.split(',')]
+        j = config.get("irrad-{}".format(rid), "j")
+        j = [float(x) for x in j.split(",")]
         baselines = [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)]
         backgrounds = [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)]
 
-        ar37df = config.getfloat('irrad-{}'.format(rid), 'ar37df')
+        ar37df = config.getfloat("irrad-{}".format(rid), "ar37df")
         t = math.log(ar37df) / (constants.lambda_37.nominal_value * 365.25)
         irradinfo.append(t)
 
         # load results
-        r = 'results-{}'.format(rid)
-        self.age = config.getfloat(r, 'age')
-        self.rad4039 = config.getfloat(r, 'rad4039')
-        self.ca37k39 = config.getfloat(r, 'ca37k39')
+        r = "results-{}".format(rid)
+        self.age = config.getfloat(r, "age")
+        self.rad4039 = config.getfloat(r, "rad4039")
+        self.ca37k39 = config.getfloat(r, "ca37k39")
 
-
-        self.age_dict = calculate_arar_age(signals, baselines, blanks, backgrounds, j, irradinfo,
-                               )
+        self.age_dict = calculate_arar_age(
+            signals,
+            baselines,
+            blanks,
+            backgrounds,
+            j,
+            irradinfo,
+        )
 
     def test_age_dict(self):
         self.assertIsInstance(self.age_dict, dict)
 
     def test_age(self):
-        ageerr = self.age_dict['age']
+        ageerr = self.age_dict["age"]
         age = ageerr.nominal_value / 1e6
         err = ageerr.std_dev
-        self.assertAlmostEqual(age,
-                         self.age,  # 28.0625,
-                         places=4)
+        self.assertAlmostEqual(age, self.age, places=4)  # 28.0625,
 
     def test_4039(self):
-        ar40 = self.age_dict['rad40']
-        k39 = self.age_dict['k39']
+        ar40 = self.age_dict["rad40"]
+        k39 = self.age_dict["k39"]
 
         n = ar40 / k39
         n = n.nominal_value
-        self.assertAlmostEqual(n,
-                         self.rad4039,
-                         # 7.0039026,
-                         places=5
-                         )
+        self.assertAlmostEqual(
+            n,
+            self.rad4039,
+            # 7.0039026,
+            places=5,
+        )
+
     def test_3739(self):
-        ca37 = self.age_dict['ca37']
-        k39 = self.age_dict['k39']
+        ca37 = self.age_dict["ca37"]
+        k39 = self.age_dict["k39"]
         n = ca37 / k39
         n = n.nominal_value
-        self.assertAlmostEqual(n,
-                               self.ca37k39,
-#                               0.0062869,
-                          )
+        self.assertAlmostEqual(
+            n,
+            self.ca37k39,
+            #                               0.0062869,
+        )
+
     def test_mswd(self):
         pass
+
     def test_intercept(self):
         pass
+
     def test_intercept_error(self):
         pass
+
     def test_plateau_age(self):
         pass
+
     def test_plateau_error(self):
         pass
+
 
 # ============= EOF =============================================
 #        self.ca37k39 = 0.0062869

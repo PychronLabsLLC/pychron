@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from datetime import datetime
 
@@ -113,9 +112,7 @@ class XMLIsotope(XMLBaseValue):
         self.value = float(meas_elem.get("intercept{}".format(key)))
         self.error = float(meas_elem.get("intercept{}Sigma".format(key)))
 
-        self.fit_abbreviation = meas_elem.get("intercept{}RegressionType".format(key))[
-            0
-        ].upper()
+        self.fit_abbreviation = meas_elem.get("intercept{}RegressionType".format(key))[0].upper()
         self.detector = "---"
         self.blank = XMLBlank(key, meas_elem)
         self.baseline = XMLBaseline(key, meas_elem)

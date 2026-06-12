@@ -26,7 +26,6 @@ Adds a "Pychron Cloud" pane with:
   can actually register a workstation SSH key (P2).
 """
 
-from __future__ import absolute_import
 
 import hashlib
 import logging

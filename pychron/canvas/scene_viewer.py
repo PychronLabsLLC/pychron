@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Instance
 from traitsui.api import View, Item, HGroup, Group
 
@@ -30,8 +29,6 @@ from pychron.core.geometry.geometry import sort_clockwise
 # from pychron.canvas.canvas2D.scene.primitives.primitives import Polygon, RasterPolygon
 from pychron.core.geometry.scan_line import raster
 from pychron.canvas.canvas2D.scene.primitives.laser_primitives import RasterPolygon
-from six.moves import range
-from six.moves import zip
 
 
 class SceneViewer(Loggable):

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.qt.QtCore import QRect, QSize
 from pyface.qt.QtGui import (
     QRegion,
@@ -86,7 +85,7 @@ class NotificationWidget(QWidget):
         opacity=0.75,
         window_bgcolor="red",
         *args,
-        **kw
+        **kw,
     ):
         super(NotificationWidget, self).__init__(*args, **kw)
 
@@ -124,9 +123,7 @@ class NotificationWidget(QWidget):
             self.on_close(self)
 
     def _init_ui(self, txt):
-        self.setWindowFlags(
-            QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint
-        )
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint)
 
         pal = QPalette()
         color = QColor()

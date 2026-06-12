@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 import pickle
@@ -104,9 +103,7 @@ class LayoutManager(Loggable):
                     break
                 else:
                     if not self.confirmation_dialog(
-                        "Name {} already exists. Choose a different name (Yes/No)?".format(
-                            name
-                        )
+                        "Name {} already exists. Choose a different name (Yes/No)?".format(name)
                     ):
                         break
 

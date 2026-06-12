@@ -16,7 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pyface.action.api import Action
 from pyface.tasks.action.task_action import TaskAction
@@ -272,9 +271,7 @@ class MagnetFieldTableHistoryAction(Action):
 
             mft = man.spectrometer.magnet.mftable
             archive_root = mft.mftable_archive_path
-            if os.path.isfile(
-                os.path.join(archive_root, os.path.basename(paths.mftable))
-            ):
+            if os.path.isfile(os.path.join(archive_root, os.path.basename(paths.mftable))):
                 # from pychron.git_archive.history import GitArchiveHistory, GitArchiveHistoryView
                 from pychron.spectrometer.local_mftable_history_view import (
                     LocalMFTableHistory,
@@ -301,9 +298,7 @@ class DBMagnetFieldTableHistoryAction(Action):
                 MFTableHistoryView,
             )
 
-            mfh = MFTableHistory(
-                checkout_path=paths.mftable, spectrometer=man.spectrometer.name
-            )
+            mfh = MFTableHistory(checkout_path=paths.mftable, spectrometer=man.spectrometer.name)
             mfh.load_history()
             mv = MFTableHistoryView(model=mfh)
             mv.edit_traits()

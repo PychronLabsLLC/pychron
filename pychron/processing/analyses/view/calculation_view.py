@@ -13,13 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from uncertainties import nominal_value
 
 from pychron.core.helpers.formatting import floatfmt
 from pychron.core.ui import set_qt
 from pychron.pychron_constants import ARGON_KEYS
-from six.moves import map
 
 set_qt()
 
@@ -44,9 +42,7 @@ class CalculationView(HasTraits):
         for isok in ARGON_KEYS:
             iso = isos[isok]
 
-            vs = list(
-                map(floatfmt, (isok, iso.value, iso.blank.value, iso.baseline.value))
-            )
+            vs = list(map(floatfmt, (isok, iso.value, iso.blank.value, iso.baseline.value)))
             lines.append("{} = {} - {} - {}".format(*vs))
 
         lines.append(" ")
@@ -73,9 +69,7 @@ class CalculationView(HasTraits):
 
     def traits_view(self):
         editor = myTextEditor(bgcolor="#F7F6D0", fontsize=10, wrap=False, tab_width=15)
-        v = View(
-            UItem("text", style="custom", editor=editor), width=500, resizable=True
-        )
+        v = View(UItem("text", style="custom", editor=editor), width=500, resizable=True)
         return v
 
 

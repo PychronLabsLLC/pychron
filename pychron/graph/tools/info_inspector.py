@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from chaco.abstract_overlay import AbstractOverlay
 from chaco.tools.scatter_inspector import ScatterInspector, ScatterInspectorEvent
@@ -23,8 +22,6 @@ from enable.base_tool import BaseTool, KeySpec
 from kiva.fonttools import Font
 
 # from pychron.pipeline.plot.inspector_item import BaseInspectorItem
-from six.moves import range
-from six.moves import zip
 from traits.api import Event, Instance
 
 
@@ -75,9 +72,7 @@ class InfoInspector(ScatterInspector):
 
     def normal_left_dclick(self, event):
         for sel in self.component.index.metadata[self.selection_metadata_name]:
-            self.inspector_event = ScatterInspectorEvent(
-                event_type="deselect", event_index=sel
-            )
+            self.inspector_event = ScatterInspectorEvent(event_type="deselect", event_index=sel)
         self.component.index.metadata[self.selection_metadata_name] = []
 
     def normal_mouse_move(self, event):

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from functools import cmp_to_key
 
@@ -30,7 +29,6 @@ from pyface.ui.qt.tasks.editor_area_pane import EditorAreaDropFilter
 import sys
 from pyface.qt import QtCore
 from pyface.qt.QtGui import QAction, QCursor
-from six.moves import range
 
 
 # ============= local library imports  ==========================
@@ -216,8 +214,7 @@ class myAdvancedEditorAreaPane(AdvancedEditorAreaPane):
         if editor.dirty:
             ret = confirmation_dialog.confirm(
                 editor_widget,
-                'Unsaved changes to "{}". '
-                "Do you want to continue".format(editor.name),
+                'Unsaved changes to "{}". ' "Do you want to continue".format(editor.name),
             )
             if ret == NO:
                 return

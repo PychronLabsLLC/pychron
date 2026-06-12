@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import os
 
 # ============= standard library imports ========================
@@ -164,9 +162,7 @@ class Scanner(Loggable):
             self._write_metadata()
 
             # make header row
-            header = (
-                ["t"] + self._make_func_names() + [n for n, _ in self.static_values]
-            )
+            header = ["t"] + self._make_func_names() + [n for n, _ in self.static_values]
             self.data_manager.write_to_frame(header)
 
             self._scanning = True
@@ -312,9 +308,7 @@ class Scanner(Loggable):
             self._warned = False
             return yaml.load(open(self.control_path).read())
         elif not self._warned:
-            self.warning_dialog(
-                "No Scanner Control file found at {}".format(self.control_path)
-            )
+            self.warning_dialog("No Scanner Control file found at {}".format(self.control_path))
             self._warned = True
 
 
@@ -343,9 +337,7 @@ class PIDScanner(Scanner):
                 if "dead_band" in yd:
                     self.dead_band = yd["dead_band"]
 
-                self.data_manager.write_to_frame(
-                    ["dead_band={}".format(self.dead_band)]
-                )
+                self.data_manager.write_to_frame(["dead_band={}".format(self.dead_band)])
 
     def start_control_hook(self, ydict):
         if self.manager is not None:
