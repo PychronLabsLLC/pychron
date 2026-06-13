@@ -129,11 +129,7 @@ class MassCalibratorSweep(MagnetSweep):
 
             if self.isAlive():
                 self.selected = cp
-                self.info(
-                    "Fine scan calibration peak {}. {} dac={}".format(
-                        i, cp.isotope, cp.dac
-                    )
-                )
+                self.info("Fine scan calibration peak {}. {} dac={}".format(i, cp.isotope, cp.dac))
                 self._fine_scan_peak(cp)
 
             i += 1
@@ -141,10 +137,10 @@ class MassCalibratorSweep(MagnetSweep):
         self.period = operiod
         self._fine_scanning = False
         if self.isAlive():
-            if self.confirmation_dialog("Save to Database"):
+            if self.db and self.confirmation_dialog("Save to Database"):
                 self._save_to_db()
-                if self.confirmation_dialog("Apply Calibration"):
-                    self._apply_calibration()
+            if self.confirmation_dialog("Apply Calibration"):
+                self._apply_calibration()
 
     def _pack(self, d):
         data = "".join([struct.pack(">ff", x, y) for x, y in d])
@@ -208,9 +204,7 @@ class MassCalibratorSweep(MagnetSweep):
             # if not isinstance(center, str):
             [lx, cx, hx], [ly, cy, hy], mx, my = center
             self.graph.add_vertical_rule(cx, plotid=1)
-            self.info(
-                "new peak center. {} nominal={} dx={}".format(cp.isotope, cp.dac, cx)
-            )
+            self.info("new peak center. {} nominal={} dx={}".format(cp.isotope, cp.dac, cx))
             cp.dac += cx
             self._redraw()
         except PeakCenterError as e:
