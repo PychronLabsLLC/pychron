@@ -13,13 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from pychron.hardware.pychron_device import SerialDeviceMixin
+from traits.api import Str, CInt
+
+from pychron.hardware.pychron_device import (
+    RemoteDeviceMixin,
+    SerialCommunicationStrategy,
+)
 from pychron.lasers.laser_managers.remote_laser_manager import RemoteLaserManager
 
 
-class SerialLaserManager(RemoteLaserManager, SerialDeviceMixin):
+class SerialLaserManager(RemoteLaserManager, RemoteDeviceMixin):
+    port = Str
+    baudrate = CInt
+    parity = Str
+    stopbits = Str
+    read_delay = CInt
+
+    communication_strategy = SerialCommunicationStrategy()
+
     def open(self, *args, **kw):
-        return SerialDeviceMixin.open(self)
+        return RemoteDeviceMixin.open(self)
 
 
 # ============= EOF =============================================

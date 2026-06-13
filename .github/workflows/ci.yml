@@ -209,3 +209,8 @@ jobs:
             pychron.core.tests.import_hygiene_test \
             pychron.experiment.tests.queue_metadata \
             pychron.experiment.tests.pyscript_integration
+
+      - name: Run hardware tests
+        run: |
+          xvfb-run -a uv run --no-sync python -m unittest discover \
+            -s pychron/hardware -p "*test*.py"
