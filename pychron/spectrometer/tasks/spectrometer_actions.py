@@ -115,13 +115,13 @@ class ViewReadoutAction(Action):
 class SendConfigAction(myTaskAction):
     name = "Send Configuration"
     method = "send_configuration"
-    task_ids = ["pychron.spectrometer"]
+    task_ids = ["pychron.spectrometer"]  # type: ignore[assignment]
 
 
 class PopulateMFTableAction(myTaskAction):
     name = "Populate MF Table"
     method = "populate_mftable"
-    task_ids = ["pychron.spectrometer"]
+    task_ids = ["pychron.spectrometer"]  # type: ignore[assignment]
 
 
 class EditGainsAction(Action):

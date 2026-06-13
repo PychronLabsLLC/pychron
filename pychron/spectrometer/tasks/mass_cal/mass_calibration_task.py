@@ -32,7 +32,7 @@ from pychron.spectrometer.tasks.mass_cal.panes import (
 
 
 class MassCalibrationTask(BaseEditorTask):
-    name = "Mass Calibration"
+    name = "Mass Calibration"  # type: ignore[assignment]
     spectrometer_manager = Any
 
     scanner = Instance(MassCalibratorSweep)

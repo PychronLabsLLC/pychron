@@ -25,7 +25,7 @@ from pychron.envisage.tasks.base_task_plugin import BaseTaskPlugin
 
 class ImagePlugin(BaseTaskPlugin):
     id = "pychron.image.plugin"
-    name = "Image"
+    name = "Image"  # type: ignore[assignment]
 
     # watcher = Instance('pychron.image.watcher.DirectoryWatcher')
 
