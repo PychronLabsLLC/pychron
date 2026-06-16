@@ -18,7 +18,6 @@
 import csv
 import logging
 import math
-import os
 
 import six
 from chaco.api import (
@@ -42,6 +41,7 @@ from pychron.core.helpers.color_generators import colorname_generator as color_g
 from pychron.core.helpers.color_utils import normalize_color_name
 from pychron.core.helpers.filetools import add_extension
 from pychron.graph.context_menu_mixin import ContextMenuMixin
+from pychron.graph.graph_exporter import GraphExporter, get_file_path
 from pychron.graph.ml_label import MPlotAxis
 from pychron.graph.offset_plot_label import OffsetPlotLabel
 from pychron.graph.theme import themed_container_dict, themed_plot_bgcolor
@@ -54,8 +54,6 @@ CONTAINERS = {
     "g": GridPlotContainer,
     "o": OverlayPlotContainer,
 }
-IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".tiff", ".tif", ".gif"]
-DEFAULT_IMAGE_EXT = IMAGE_EXTENSIONS[0]
 logger = logging.getLogger(__name__)
 
 
@@ -69,14 +67,6 @@ def name_generator(base):
 
 def fmt(data):
     return ["%0.8f" % d for d in data]
-
-
-def get_file_path(action="save as", **kw):
-    from pyface.api import FileDialog, OK
-
-    dlg = FileDialog(action=action, **kw)
-    if dlg.open() == OK:
-        return dlg.path
 
 
 def add_aux_axis(po, p, title="", color="black"):
@@ -167,6 +157,9 @@ class Graph(ContextMenuMixin):
     plotcontainer = Instance(Container)
     container_dict = Dict
     plots = List(Plot)
+
+    # composed collaborator for image/pdf export
+    _exporter = Instance(GraphExporter, ())
 
     selected_plotid = Property(depends_on="selected_plot")
     selected_plot = Instance(Plot)
@@ -1140,41 +1133,8 @@ class Graph(ContextMenuMixin):
         return plot, (xname, yname), kw
 
     def _save(self, type_="pic", path=None):
-        """ """
-        if path is None:
-            path = get_file_path(default_directory=os.path.expanduser("~"))
-
-        if path is not None:
-            if type_ == "pdf" or path.endswith(".pdf"):
-                self._render_to_pdf(filename=path)
-            else:
-                # auto add an extension to the filename if not present
-                # extension is necessary for PIL compression
-                # set default save type_ DEFAULT_IMAGE_EXT='.png'
-
-                # see http://infohost.nmt.edu/tcc/help/pubs/pil/formats.html
-                for ei in IMAGE_EXTENSIONS:
-                    if path.endswith(ei):
-                        self._render_to_pic(path)
-                        break
-                else:
-                    path = add_extension(path, DEFAULT_IMAGE_EXT)
-                    self._render_to_pic(path)
-
-    def _render_to_pdf(self, save=True, canvas=None, filename=None, dest_box=None):
-        # NOTE: PDF rendering is currently a no-op (implementation disabled).
-        pass
-
-    def _render_to_pic(self, filename):
-        """ """
-        from chaco.plot_graphics_context import PlotGraphicsContext
-
-        p = self.plotcontainer
-        gc = PlotGraphicsContext((int(p.outer_width), int(p.outer_height)))
-        # p.use_backbuffer = False
-        gc.render_component(p)
-        # p.use_backbuffer = True
-        gc.save(filename)
+        # image/pdf export is delegated to a composed GraphExporter
+        self._exporter.save(self, type_=type_, path=path)
 
     def _render_to_clipboard(self):
         """

@@ -21,11 +21,14 @@ composition-over-inheritance refactor of the hierarchy can proceed safely.
 They are intentionally behavioral (new_plot / new_series / record / fit) rather
 than structural, so they survive a change in the inheritance graph.
 """
+import os
+import tempfile
 import unittest
 
 from numpy import array_equal
 
 from pychron.graph.graph import Graph
+from pychron.graph.graph_exporter import GraphExporter
 from pychron.graph.stacked_graph import StackedGraph, ColumnStackedGraph
 from pychron.graph.stream_graph import StreamGraph, StreamStackedGraph
 from pychron.graph.regression_graph import RegressionGraph
@@ -63,6 +66,25 @@ class GraphTestCase(unittest.TestCase):
         g.new_plot()
         ret = g.new_series([1, 2, 3], [4, 5, 6])
         self.assertEqual(len(ret), 2)
+
+
+class GraphExporterTestCase(unittest.TestCase):
+    """Image/pdf export is a composed collaborator, not inherited behavior."""
+
+    def test_graph_composes_an_exporter(self):
+        g = Graph()
+        self.assertIsInstance(g._exporter, GraphExporter)
+
+    def test_save_writes_png(self):
+        g = Graph()
+        g.new_plot()
+        g.new_series([1, 2, 3], [4, 5, 6])
+
+        path = os.path.join(tempfile.mkdtemp(), "out.png")
+        g.save(path)
+
+        self.assertTrue(os.path.exists(path))
+        self.assertGreater(os.path.getsize(path), 0)
 
 
 class StackedGraphTestCase(unittest.TestCase):
