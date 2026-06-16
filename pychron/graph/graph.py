@@ -48,10 +48,6 @@ from pychron.graph.theme import themed_container_dict, themed_plot_bgcolor
 from pychron.graph.tools.axis_tool import AxisTool
 from .tools.contextual_menu_tool import ContextualMenuTool
 
-# VALID_FONTS = ["Arial", "Lucida Grande", "Geneva", "Courier"]
-# 'Helvetica',
-# 'Times New Roman'
-
 CONTAINERS = {
     "v": VPlotContainer,
     "h": HPlotContainer,
@@ -633,9 +629,7 @@ class Graph(ContextMenuMixin):
         if handler:
             t.on_trait_change(handler, "limits_updated")
 
-    def add_plot_label(
-        self, txt, plotid=0, overlay_position="inside top", hjustify="left", **kw
-    ):
+    def add_plot_label(self, txt, plotid=0, overlay_position="inside top", hjustify="left", **kw):
         """ """
 
         c = self.plots[plotid]
@@ -816,18 +810,11 @@ class Graph(ContextMenuMixin):
 
     def add_aux_datum(self, datum, plotid=0, series=1, do_after=False):
         """ """
-
-        # def add():
         plot = self.plots[plotid]
 
         si = plot.plots["aux{:03d}".format(series)][0]
         si.index.set_data(self._append_data(si.index.get_data(), datum[0]))
         si.value.set_data(self._append_data(si.value.get_data(), datum[1]))
-
-        # if do_after:
-        #     do_after_timer(do_after, add)
-        # else:
-        #     add()
 
     def add_data(self, data, plotlist=None, **kw):
         """ """
@@ -837,9 +824,7 @@ class Graph(ContextMenuMixin):
         for pi, d in zip(plotlist, data):
             self.add_datum(d, plotid=pi, **kw)
 
-    def add_bulk_data(
-        self, xs, ys, plotid=0, series=0, ypadding="0.1", update_y_limits=False
-    ):
+    def add_bulk_data(self, xs, ys, plotid=0, series=0, ypadding="0.1", update_y_limits=False):
         try:
             names = self.series[plotid][series]
         except IndexError:
@@ -868,9 +853,6 @@ class Graph(ContextMenuMixin):
 
             mi -= ypad
             ma += ypad
-            # # if ymin_anchor is not None:
-            # #     mi = max(ymin_anchor, mi)
-            #
             self.set_y_limits(min_=mi, max_=ma, plotid=plotid)
 
     def add_datum(
@@ -1161,11 +1143,6 @@ class Graph(ContextMenuMixin):
         """ """
         if path is None:
             path = get_file_path(default_directory=os.path.expanduser("~"))
-            # from pyface.api import FileDialog, OK
-            # dlg = FileDialog(action='save as', default_directory=os.path.expanduser('~'))
-            # if dlg.open() == OK:
-            #     path = dlg.path
-            #     self.status_text = 'Image Saved: %s' % path
 
         if path is not None:
             if type_ == "pdf" or path.endswith(".pdf"):
@@ -1184,34 +1161,9 @@ class Graph(ContextMenuMixin):
                     path = add_extension(path, DEFAULT_IMAGE_EXT)
                     self._render_to_pic(path)
 
-                    #                base, ext = os.path.splitext(path)
-                    #
-                    #                if not ext in IMAGE_EXTENSIONS:
-                    #                    path = ''.join((base, DEFAULT_IMAGE_EXT))
-
     def _render_to_pdf(self, save=True, canvas=None, filename=None, dest_box=None):
-        """ """
-        # save_pdf()
-        # from chaco.pdf_graphics_context import PdfPlotGraphicsContext
-        #
-        # if filename:
-        #     # if not filename.endswith('.pdf'):
-        #     #     filename += '.pdf'
-        #     filename = add_extension(filename, ext='.pdf')
-        #
-        # gc = PdfPlotGraphicsContext(filename=filename,
-        #                             pdf_canvas=canvas,
-        #                             dest_box=dest_box)
-        # pc = self.plotcontainer
-        #
-        # # pc.do_layout(force=True)
-        # # pc.use_backbuffer=False
-        # gc.render_component(pc, valign='center')
-        # if save:
-        #     gc.save()
-        #     # pc.use_backbuffer=True
-        #
-        # return gc
+        # NOTE: PDF rendering is currently a no-op (implementation disabled).
+        pass
 
     def _render_to_pic(self, filename):
         """ """
@@ -1255,9 +1207,6 @@ class Graph(ContextMenuMixin):
         axis = getattr(self.plots[plotid], axistag)
         params = dict(title=title)
 
-        # if font not in VALID_FONTS:
-        #     font = "arial"
-
         if font is not None or size is not None:
             if size is None:
                 size = 12
@@ -1295,9 +1244,7 @@ class Graph(ContextMenuMixin):
         except AttributeError as e:
             logger.debug("get_limits failed error=%s", e)
 
-    def _set_limits(
-        self, mi, ma, axis, plotid, pad, pad_style="symmetric", force=False
-    ):
+    def _set_limits(self, mi, ma, axis, plotid, pad, pad_style="symmetric", force=False):
         if not plotid < len(self.plots):
             return
 
@@ -1443,9 +1390,7 @@ class Graph(ContextMenuMixin):
         do_after_timer(1, self.edit_traits)
 
     def panel_view(self):
-        plot = Item(
-            "plotcontainer", style="custom", show_label=False, editor=ComponentEditor()
-        )
+        plot = Item("plotcontainer", style="custom", show_label=False, editor=ComponentEditor())
 
         v = View(plot)
         return v
@@ -1462,11 +1407,5 @@ class Graph(ContextMenuMixin):
         )
         return v
 
-
-if __name__ == "__main__":
-    m = Graph()
-    m.new_plot(zoom=True)
-    m.new_series([1, 2, 3], [1, 41, 14])
-    m.configure_traits()
 
 # ============= EOF ====================================
