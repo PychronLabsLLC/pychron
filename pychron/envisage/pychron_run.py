@@ -300,6 +300,20 @@ def launch(klass):
     #         logger.critical('Login failed')
     #         return
 
+    # --- Phase 1 M3 diagnostics: install the Qt message handler and QTimer
+    # thread guard before any Qt object is constructed (i.e. before
+    # app_factory).  These are instrumentation only -- they capture
+    # cross-thread Qt timer/object warnings together with the originating
+    # Python stack so off-main violations are visible in the logs.  The
+    # functional fix (cross-thread marshalling) is installed later via
+    # install_late() once pyface is fully imported.
+    try:
+        from pychron.core.helpers.m3_diagnostics import install_early as _m3_install_early
+
+        _m3_install_early()
+    except Exception as _e:  # pragma: no cover
+        logger.warning("m3_diagnostics early install failed: %r", _e)
+
     # Register signal handler for SIGBUS (bus error, signal 10) to gracefully quit
     # instead of crashing
     signal.signal(signal.SIGBUS, _handle_bus_error)
