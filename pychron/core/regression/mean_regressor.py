@@ -124,8 +124,7 @@ class MeanRegressor(BaseRegressor):
         if ec == SEM.lower():
             e = self.sem
         elif ec in (MSEM.lower(), "msem"):
-            mswd = self.mswd
-            e = self.sem * (mswd**0.5 if mswd > 1 else 1)
+            e = self.sem * self._mswd_scale()
         elif ec == SE.lower():
             e = self.se
         else:
@@ -179,7 +178,7 @@ class WeightedMeanRegressor(MeanRegressor):
     def _get_weights(self):
         e = self.clean_yserr
         if self._check_integrity(e, e):
-            return 1 / e**2
+            return e**-2
 
 
 # ============= EOF =============================================

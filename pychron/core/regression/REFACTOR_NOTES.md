@@ -87,28 +87,29 @@ test suite reference values).
 - `flux_regressor.py` commented `BracketingFluxRegressor` + `MatchingFluxRegressor` classes
 - `wls_regressor.py` 50+ lines of commented stubs
 - `regression_graph.py` commented `__init__` lock, `cm_toggle_filtering` alternative branch, `set_filter_outliers` stubs
+- `csv_regressor.py` entire file (matplotlib demo / `__main__` plotting script, not imported anywhere)
+- `new_york_regressor.py` `ReedYorkRegressor._get_weights` (duplicate of inherited `YorkRegressor._get_weights`)
 
 ---
 
 ## Tests
 
-Test file: `pychron/core/regression/tests/error_propagation.py` (new, 74 tests).
-Existing tests: `pychron/core/regression/tests/regression.py` (30/35 pass; same 5
-pre-existing failures present at baseline `e98ae8be6` — not introduced by this work).
+Test files:
+- `pychron/core/regression/tests/error_propagation.py` — accuracy / coverage tests.
+- `pychron/core/regression/tests/regression.py` — behavioral tests.
 
 ```bash
-# Run new + existing tests
 uv run python -m unittest \
     pychron.core.regression.tests.error_propagation \
     pychron.core.regression.tests.regression
 
-# Expected at HEAD: 99 pass, 2 fail, 3 error (the 5 are baseline failures)
+# Expected: 230 pass, 0 fail. Module line coverage ~95%.
 ```
 
-The 5 pre-existing baseline failures:
-- `ReedRegressionTest.test_slope_err` — Reed (1989) impl vs paper reference (numerical)
-- `ReedRegressionTest.test_y_intercept_error` — same
-- `ExpoRegressionTest.test_a/b/c` — `RuntimeError` from `curve_fit` convergence on contrived seeded data
+The 5 formerly-failing baseline tests now pass: the Reed slope/intercept-error
+expectations were updated to the Reed (1992) eq-14 MSWD-scaled form, and the
+exponential `curve_fit` cases converge under the data-driven initial guess
+(`ExponentialRegressor._calculate_initial_guess`).
 
 ---
 
@@ -189,5 +190,6 @@ If output differs from pre-refactor behavior:
 
 |   | Baseline `e98ae8be6` | HEAD |
 |---|---|---|
-| `regression.py` tests | 30 pass / 5 fail-or-error | 30 pass / 5 fail-or-error |
-| `error_propagation.py` tests | n/a (file did not exist) | 74 pass |
+| `regression.py` tests | 30 pass / 5 fail-or-error | all pass |
+| `error_propagation.py` tests | n/a (file did not exist) | all pass |
+| combined | — | 230 pass / 0 fail (~95% line coverage) |
