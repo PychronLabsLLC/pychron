@@ -319,7 +319,7 @@ class PlaneFluxRegressor(MultipleLinearRegressor):
     def _get_weights(self):
         e = self.clean_yserr
         if self._check_integrity(e, e):
-            return 1 / e**2
+            return e**-2
 
     def _engine_factory(self, fy, X, check_integrity=True):
         if self.use_weighted_fit:

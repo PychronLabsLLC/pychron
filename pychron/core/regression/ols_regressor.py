@@ -213,9 +213,7 @@ class OLSRegressor(BaseRegressor):
         if ec == SEM.lower():
             return sef * sqrt(varY_hat)
         if ec == MSEM.lower():
-            mswd = self.mswd
-            m = mswd**0.5 if mswd > 1 else 1
-            return sef * sqrt(varY_hat) * m
+            return sef * sqrt(varY_hat) * self._mswd_scale()
         # SD: sqrt(sef^2 + sef^2 * varY_hat) = sef * sqrt(1 + varY_hat)
         return sef * sqrt(1.0 + varY_hat)
 

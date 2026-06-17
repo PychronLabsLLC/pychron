@@ -17,7 +17,7 @@
 from numpy import inf as Inf, zeros_like
 from scipy.optimize import fsolve
 from traits.api import Array, Float, Property
-from uncertainties import correlated_values, std_dev, ufloat
+from uncertainties import correlated_values, ufloat
 
 from pychron.core.helpers.logger_setup import new_logger
 from pychron.core.regression.ols_regressor import OLSRegressor
@@ -314,12 +314,6 @@ class ReedYorkRegressor(YorkRegressor):
     #             York regressor only for linear fit
     #         '''
     #         self._degree = 2
-    def _get_weights(self):
-        wx = self.clean_xserr**-2
-        wy = self.clean_yserr**-2
-
-        return wx, wy
-
     def _calculate(self):
         if self.coefficients is None:
             return
