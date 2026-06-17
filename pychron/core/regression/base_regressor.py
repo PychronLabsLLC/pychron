@@ -18,7 +18,7 @@ import logging
 import math
 import re
 
-from numpy import where, delete, percentile, array_equal, array, corrcoef
+from numpy import where, delete, percentile, array_equal, array, corrcoef, isscalar
 from scipy.stats import t as student_t
 
 # ============= enthought library imports =======================
@@ -344,12 +344,7 @@ class BaseRegressor(HasTraits):
             residuals = self.calculate_residuals()
         if residuals is None:
             return 0
-
-        n = residuals.shape[0]
-        q = len(self.coefficients)
-        if n <= q:
-            return 0
-        return ((residuals**2).sum() / (n - q)) ** 0.5
+        return self._residual_standard_error(residuals)
 
     def calculate_residuals(self):
         if self._result is not None:
@@ -371,7 +366,7 @@ class BaseRegressor(HasTraits):
         return rmodel - es, rmodel + es
 
     def calculate_mc_error(self, rx):
-        if isinstance(rx, (float, int)):
+        if isscalar(rx):
             rx = [rx]
 
         estimator = RegressionEstimator(10000, self)
@@ -393,11 +388,20 @@ class BaseRegressor(HasTraits):
         model = self.predict(self.clean_xs)
         if model is None:
             return 0
-        n = obs.shape[0]
+        return self._residual_standard_error(obs - model)
+
+    def _residual_standard_error(self, residuals):
+        """Residual standard error sqrt(SSres / (n - q)), q = num fit params."""
+        n = residuals.shape[0]
         q = len(self.coefficients)
         if n <= q:
             return 0
-        return (((obs - model) ** 2).sum() / (n - q)) ** 0.5
+        return ((residuals**2).sum() / (n - q)) ** 0.5
+
+    def _mswd_scale(self):
+        """√MSWD scale for MSEM-style errors (one-sided: 1 when MSWD ≤ 1)."""
+        mswd = self.mswd
+        return mswd**0.5 if mswd and mswd > 1 else 1
 
     def get_ssx(self, xm=None):
         x = self.clean_xs
@@ -456,7 +460,7 @@ class BaseRegressor(HasTraits):
 
     # private
     def _calculate_ci(self, rx):
-        if isinstance(rx, (float, int)):
+        if isscalar(rx):
             rx = [rx]
 
         X = self.clean_xs

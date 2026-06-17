@@ -23,38 +23,20 @@ from kiva.ps import PSGC
 from pyface.constant import OK
 from pyface.file_dialog import FileDialog
 from reportlab.pdfbase import _fontdata
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.pdfmetrics import TypeFace
-from reportlab.pdfbase.ttfonts import TTFont, TTFError
 from traitsui.handler import Controller
-
-from pychron import pychron_constants
 
 # ============= local library imports  ==========================
 from pychron.core.helpers.filetools import view_file, add_extension, unique_path2
+from pychron.core.pdf.font_manager import load_pdf_fonts
 from pychron.core.pdf.options import BasePDFOptions, PDFLayoutView
 from pychron.core.pdf.pdf_graphics_context import PdfPlotGraphicsContext
 
-from kiva.api import Font, NORMAL
-
-for face in pychron_constants.TTF_FONTS:
-    for face_name in (face, face.lower()):
-        spec = Font(face_name=face_name, style=NORMAL, weight=NORMAL).findfont()
-        try:
-            if isinstance(spec, str):
-                tf = TTFont(face_name, spec)
-            else:
-                tf = TTFont(
-                    face_name.lower(), spec.filename, subfontIndex=spec.face_index
-                )
-            pdfmetrics.registerFont(tf)
-            break
-        except TTFError as e:
-            print("invalid font", spec, e)
-            pdfmetrics.registerFont(TTFont(face_name, "Vera.tff"))
+# Register the fonts used for PDF export. Bundled fonts are authoritative so the
+# same glyphs render on every OS; the call never raises (see font_manager).
+load_pdf_fonts()
 
 
-class myPdfPlotGraphicsContext(PdfPlotGraphicsContext):
+class myPdfPlotGraphicsContext(PdfPlotGraphicsContext):  # type: ignore[valid-type, misc]
     def get_full_text_extent(self, textstring):
         fontname = self.gc._fontname
         fontsize = self.gc._fontsize
@@ -133,22 +115,12 @@ def save_pdf(component, path=None, default_directory=None, view=False, options=N
                 )
 
                 obounds = component.bounds
-                print(
-                    "obounds",
-                    obounds,
-                    options.valign,
-                    options.halign,
-                    options.page_size,
-                    options.dest_box,
-                )
                 # if component not yet drawn e.g. no bounds then force render
                 if (not obounds[0] and not obounds[1]) or options.fit_to_page:
                     size = options.bounds
                     component.do_layout(size=size, force=True)
 
-                gc.render_component(
-                    component, valign=options.valign, halign=options.halign
-                )
+                gc.render_component(component, valign=options.valign, halign=options.halign)
                 gc.save()
                 if view:
                     view_file(path)

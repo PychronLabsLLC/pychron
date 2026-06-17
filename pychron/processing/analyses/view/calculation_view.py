@@ -44,9 +44,7 @@ class CalculationView(HasTraits):
         for isok in ARGON_KEYS:
             iso = isos[isok]
 
-            vs = list(
-                map(floatfmt, (isok, iso.value, iso.blank.value, iso.baseline.value))
-            )
+            vs = list(map(floatfmt, (isok, iso.value, iso.blank.value, iso.baseline.value)))
             lines.append("{} = {} - {} - {}".format(*vs))
 
         lines.append(" ")
@@ -73,18 +71,8 @@ class CalculationView(HasTraits):
 
     def traits_view(self):
         editor = myTextEditor(bgcolor="#F7F6D0", fontsize=10, wrap=False, tab_width=15)
-        v = View(
-            UItem("text", style="custom", editor=editor), width=500, resizable=True
-        )
+        v = View(UItem("text", style="custom", editor=editor), width=500, resizable=True)
         return v
 
-
-if __name__ == "__main__":
-    from pychron.database.test_database import get_test_analysis
-
-    a, man = get_test_analysis()
-    cv = CalculationView()
-    cv.load_view(a)
-    cv.configure_traits()
 
 # ============= EOF =============================================

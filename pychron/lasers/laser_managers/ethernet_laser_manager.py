@@ -14,13 +14,24 @@
 # limitations under the License.
 # ===============================================================================
 
-from pychron.hardware.pychron_device import EthernetDeviceMixin
+from traits.api import Str, CInt
+
+from pychron.hardware.pychron_device import (
+    RemoteDeviceMixin,
+    EthernetCommunicationStrategy,
+)
 from pychron.lasers.laser_managers.remote_laser_manager import RemoteLaserManager
 
 
-class EthernetLaserManager(RemoteLaserManager, EthernetDeviceMixin):
+class EthernetLaserManager(RemoteLaserManager, RemoteDeviceMixin):
+    port = CInt
+    host = Str
+    timeout = CInt
+
+    communication_strategy = EthernetCommunicationStrategy()
+
     def open(self, *args, **kw):
-        return EthernetDeviceMixin.open(self)
+        return RemoteDeviceMixin.open(self)
 
     def _test_connection_hook(self):
         r = self.opened()

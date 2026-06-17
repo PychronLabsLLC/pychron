@@ -28,9 +28,11 @@ from pychron.core.regression.mean_regressor import (
 from pychron.core.regression.new_york_regressor import (
     NewYorkRegressor,
     ReedYorkRegressor,
+    YorkRegressor,
 )
 from pychron.core.regression.ols_regressor import (
     MultipleLinearRegressor,
+    OLSRegressor,
     PolynomialRegressor,
 )
 from pychron.core.regression.tests.standard_data import (
@@ -40,7 +42,10 @@ from pychron.core.regression.tests.standard_data import (
     pearson,
     weighted_mean_data,
 )
-from pychron.core.regression.wls_regressor import WeightedPolynomialRegressor
+from pychron.core.regression.wls_regressor import (
+    WeightedMultipleLinearRegressor,
+    WeightedPolynomialRegressor,
+)
 from pychron.core.regression.flux_regressor import (
     BowlFluxRegressor,
     BSplineRegressor,
@@ -1278,6 +1283,367 @@ class WLSEngineFactoryTest(TestCase):
         r.calculate()
         # No exception means the single-point fallback path executed.
         self.assertIsNotNone(r._result)
+
+
+class WeightedMultipleLinearRegressorTest(TestCase):
+    """z = 1*x + 3*y fit with per-point weights. With equal weights the
+    weighted multiple-linear fit must reduce to the unweighted one."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.xs = [(0, 0), (1, 0), (2, 0), (0, 1), (0, 2), (1, 1)]
+        cls.ys = [0.0, 1.0, 2.0, 3.0, 6.0, 4.0]
+
+    def test_recovers_coefficients_with_equal_weights(self):
+        yserr = np.ones(len(self.ys))
+        r = WeightedMultipleLinearRegressor(xs=self.xs, ys=self.ys, yserr=yserr, fit="linear")
+        r.calculate()
+        self.assertAlmostEqual(r.coefficients[0], 1.0, places=8)
+        self.assertAlmostEqual(r.coefficients[1], 3.0, places=8)
+        self.assertAlmostEqual(r.coefficients[2], 0.0, places=8)
+
+    def test_matches_unweighted_for_equal_weights(self):
+        yserr = np.ones(len(self.ys))
+        wls = WeightedMultipleLinearRegressor(xs=self.xs, ys=self.ys, yserr=yserr, fit="linear")
+        wls.calculate()
+        ols = MultipleLinearRegressor(xs=self.xs, ys=self.ys, fit="linear")
+        ols.calculate()
+        np.testing.assert_allclose(list(wls.coefficients), list(ols.coefficients), atol=1e-10)
+
+
+class ReedXInterceptTest(TestCase):
+    """Reed regressor x-intercept propagates slope/intercept variance via the
+    York covariance identity (mirrors the NewYork x-intercept test)."""
+
+    @classmethod
+    def setUpClass(cls):
+        xs, ys, wxs, wys = pearson()
+        exs = wxs**-0.5
+        eys = wys**-0.5
+        r = ReedYorkRegressor(xs=xs, ys=ys, xserr=exs, yserr=eys, error_calc_type="SE")
+        r.calculate()
+        cls.reg = r
+
+    def test_x_intercept_nominal(self):
+        ufx = self.reg.get_x_intercept()
+        self.assertAlmostEqual(ufx.nominal_value, -self.reg._intercept / self.reg._slope, places=10)
+
+    def test_x_intercept_error_nonzero(self):
+        self.assertGreater(self.reg.get_x_intercept().std_dev, 0)
+
+
+class YorkInterceptErrorTest(TestCase):
+    """`get_intercept_error` dispatch: SE → √(intercept variance);
+    CI → finite confidence half-width; unknown → 0."""
+
+    @classmethod
+    def setUpClass(cls):
+        xs, ys, wxs, wys = pearson()
+        cls.xs, cls.ys = xs, ys
+        cls.exs = wxs**-0.5
+        cls.eys = wys**-0.5
+
+    def _make(self, error_calc):
+        r = NewYorkRegressor(
+            xs=self.xs, ys=self.ys, xserr=self.exs, yserr=self.eys, error_calc_type=error_calc
+        )
+        r.calculate()
+        return r
+
+    def test_se_equals_sqrt_intercept_variance(self):
+        r = self._make("SE")
+        self.assertAlmostEqual(
+            r.get_intercept_error(), r.get_intercept_variance() ** 0.5, places=12
+        )
+
+    def test_ci_is_finite_and_positive(self):
+        r = self._make("CI")
+        e = r.get_intercept_error()
+        self.assertGreater(e, 0)
+        self.assertTrue(np.isfinite(e))
+
+    def test_unknown_error_calc_returns_zero(self):
+        r = self._make("SD")
+        self.assertEqual(r.get_intercept_error(), 0)
+
+
+class LeastSquaresPredictErrorCaseTest(TestCase):
+    """`predict_error` resolves the error_calc keyword case-insensitively and
+    treats None as the SEM default."""
+
+    @classmethod
+    def setUpClass(cls):
+        xs = np.linspace(0, 10, 21)
+        # add fixed scatter so the residual standard error (sef) is nonzero
+        ys = 2.0 * xs + 3.0 + np.sin(xs)
+        r = LeastSquaresRegressor(xs=xs, ys=ys)
+        r.fitfunc = lambda x, a, b: a * x + b
+        r.calculate()
+        cls.reg = r
+
+    def test_sem_case_insensitive(self):
+        lo = self.reg.predict_error(5.0, "sem")
+        hi = self.reg.predict_error(5.0, "SEM")
+        self.assertAlmostEqual(lo, hi, places=12)
+
+    def test_none_defaults_to_sem(self):
+        self.assertAlmostEqual(
+            self.reg.predict_error(5.0, None), self.reg.predict_error(5.0, "sem"), places=12
+        )
+
+    def test_sd_greater_than_sem(self):
+        self.assertGreater(self.reg.predict_error(5.0, "SD"), self.reg.predict_error(5.0, "sem"))
+
+
+class YorkBaseRegressorTest(TestCase):
+    """Base York 1969 regressor (the iterative slope solve + York-1969 basic
+    slope variance 1/Σ(W·U²)). Subclasses NewYork/Reed only change the variance
+    propagation, so the slope/intercept must match the Mahon reference."""
+
+    @classmethod
+    def setUpClass(cls):
+        xs, ys, wxs, wys = pearson()
+        exs = wxs**-0.5
+        eys = wys**-0.5
+        r = YorkRegressor(xs=xs, ys=ys, xserr=exs, yserr=eys, error_calc_type="SE")
+        r.calculate()
+        cls.reg = r
+
+    def test_slope_matches_reference(self):
+        self.assertAlmostEqual(self.reg._slope, -0.48053341, places=6)
+
+    def test_intercept_matches_reference(self):
+        self.assertAlmostEqual(self.reg._intercept, 5.47991022, places=6)
+
+    def test_slope_error_positive(self):
+        self.assertGreater(self.reg.get_slope_error(), 0)
+
+    def test_intercept_error_equals_sqrt_variance(self):
+        self.assertAlmostEqual(
+            self.reg.get_intercept_error(),
+            self.reg.get_intercept_variance() ** 0.5,
+            places=12,
+        )
+
+    def test_basic_slope_variance_identity(self):
+        """York 1969 basic form: σ_b² = 1/Σ(W·U²)."""
+        b = self.reg._slope
+        W = self.reg._calculate_W(b)
+        U, _ = self.reg._calculate_UV(W)
+        expected = 1.0 / (W * U**2).sum()
+        self.assertAlmostEqual(self.reg.get_slope_variance(), expected, places=12)
+
+
+class OLSNoResultTest(TestCase):
+    """Before `calculate`, `_result` is None: predict must degrade gracefully
+    to 0 / zeros and predict_error_matrix to zeros."""
+
+    def setUp(self):
+        xs, ys, _ = ols_data()
+        # no fit= so the degree change doesn't auto-trigger calculate()
+        self.reg = OLSRegressor(xs=xs, ys=ys)
+
+    def test_predict_scalar_zero(self):
+        self.assertEqual(self.reg.predict(5.0), 0)
+
+    def test_predict_array_zeros(self):
+        out = self.reg.predict(np.array([1.0, 2.0, 3.0]))
+        np.testing.assert_array_equal(out, np.zeros(3))
+
+    def test_predict_error_matrix_zeros(self):
+        out = self.reg.predict_error_matrix(np.array([1.0, 2.0]))
+        np.testing.assert_array_equal(out, np.zeros(2))
+
+    def test_summary_none(self):
+        self.assertIsNone(self.reg.summary)
+
+
+class OLSPredictionEnvelopeTest(TestCase):
+    """`calculate_prediction_envelope` returns statsmodels WLS prediction-std
+    bounds (lower < upper element-wise)."""
+
+    @classmethod
+    def setUpClass(cls):
+        xs, ys, _ = ols_data()
+        r = PolynomialRegressor(xs=xs, ys=ys, fit="linear")
+        r.calculate()
+        cls.reg = r
+
+    def test_lower_below_upper(self):
+        fx = np.asarray(self.reg.xs, dtype=float)
+        fy = self.reg.predict(fx)
+        lower, upper, _ = self.reg.calculate_prediction_envelope(fx, fy)
+        self.assertTrue(np.all(lower < upper))
+
+
+class OLSPredictErrorMSEMTest(TestCase):
+    """`predict_error_matrix` MSEM branch scales SEM by √MSWD when MSWD>1."""
+
+    @classmethod
+    def setUpClass(cls):
+        # scattered data so the fit MSWD-style scale (>1) is exercised
+        xs = np.linspace(0, 10, 21)
+        ys = 2.0 * xs + 3.0 + np.sin(xs) * 2.0
+        r = PolynomialRegressor(xs=xs, ys=ys, fit="linear")
+        r.calculate()
+        cls.reg = r
+
+    def test_msem_scales_sem_by_sqrt_mswd(self):
+        from pychron.pychron_constants import MSEM
+
+        sem = self.reg.predict_error_matrix(np.array([5.0]), "SEM")[0]
+        msem = self.reg.predict_error_matrix(np.array([5.0]), MSEM)[0]
+        scale = self.reg._mswd_scale()
+        self.assertAlmostEqual(msem, sem * scale, places=12)
+
+
+class BaseRegressorIQROutlierTest(TestCase):
+    """The base (OLS) `calculate_outliers` IQR branch: indices outside the
+    1.5·IQR fence. (Mean overrides this, so test it on a polynomial fit.)"""
+
+    def test_iqr_outlier_on_polynomial(self):
+        xs = np.arange(20).astype(float)
+        ys = xs.copy()
+        ys[10] = 500.0
+        r = PolynomialRegressor(
+            xs=xs, ys=ys, fit="linear", filter_outliers_dict={"use_iqr_filtering": True}
+        )
+        r.calculate()
+        self.assertIn(10, list(r.calculate_outliers()))
+
+
+class FilterBoundsBranchTest(TestCase):
+    """`calculate_filter_bounds` explicit-bound and std-deviation branches."""
+
+    @classmethod
+    def setUpClass(cls):
+        xs, ys, _ = ols_data()
+        cls.xs, cls.ys = xs, ys
+
+    def test_explicit_bound(self):
+        r = PolynomialRegressor(xs=self.xs, ys=self.ys, fit="linear")
+        r.calculate()
+        fx = np.array([30.0, 50.0])
+        fy = r.predict(fx)
+        lower, upper = r.calculate_filter_bounds(model=fy, bound=2.0)
+        np.testing.assert_allclose(upper - fy, 2.0, atol=1e-12)
+        np.testing.assert_allclose(fy - lower, 2.0, atol=1e-12)
+
+    def test_std_deviation_filtering_branch(self):
+        r = PolynomialRegressor(
+            xs=self.xs,
+            ys=self.ys,
+            fit="linear",
+            filter_outliers_dict={"use_standard_deviation_filtering": True, "std_devs": 2},
+        )
+        r.calculate()
+        fy = r.predict(np.array([50.0]))
+        lower, upper = r.calculate_filter_bounds(model=fy)
+        self.assertAlmostEqual((upper - lower)[0], 2.0 * 2.0 * r.std, places=10)
+
+
+class ConfidenceIntervalSmallNTest(TestCase):
+    """`_calculate_confidence_interval` returns None when n ≤ 2 (CI undefined)."""
+
+    def test_two_points_returns_none(self):
+        r = PolynomialRegressor(xs=np.array([0.0, 1.0]), ys=np.array([0.0, 1.0]), fit="linear")
+        out = r._calculate_confidence_interval(
+            np.array([0.0, 1.0]), np.array([0.0, 1.0]), np.array([0.5])
+        )
+        self.assertIsNone(out)
+
+
+class BaseRegressorPropertyTest(TestCase):
+    """min/max/delta, mean_mswd family, get_fit_dict, fn formatting."""
+
+    def setUp(self):
+        xs = np.arange(10, dtype=float)
+        ys = np.arange(10, dtype=float)
+        yserr = np.full(10, 0.5)
+        self.reg = MeanRegressor(xs=xs, ys=ys, yserr=yserr)
+
+    def test_min_max_delta(self):
+        self.assertEqual(self.reg.min, 0.0)
+        self.assertEqual(self.reg.max, 9.0)
+        self.assertEqual(self.reg.delta, 9.0)
+
+    def test_mean_mswd_is_number(self):
+        self.assertIsNotNone(self.reg.mean_mswd)
+        self.assertIsInstance(self.reg.valid_mean_mswd, (bool, np.bool_))
+
+    def test_mswd_pvalue_in_unit_interval(self):
+        p = self.reg.mswd_pvalue
+        self.assertGreaterEqual(p, 0.0)
+        self.assertLessEqual(p, 1.0)
+
+    def test_get_fit_dict(self):
+        d = self.reg.get_fit_dict()
+        self.assertEqual(d["fit"], self.reg.fit)
+        self.assertEqual(d["error_type"], self.reg.error_calc_type)
+
+    def test_fn_formats_fraction_when_filtered(self):
+        self.reg.user_excluded = [0]
+        self.reg.dirty = True
+        self.assertEqual(self.reg.fn, "9/10")
+
+
+class OLSFastPredictExogTest(TestCase):
+    """`fast_predict` with an explicit exog re-whitens the design matrix and
+    must still agree with `predict`."""
+
+    @classmethod
+    def setUpClass(cls):
+        xs = np.linspace(0, 10, 21)
+        ys = 2.0 * xs + 3.0
+        r = PolynomialRegressor(xs=xs, ys=ys, fit="linear")
+        r.calculate()
+        cls.reg = r
+        cls.ys = ys
+
+    def test_fast_predict_with_exog(self):
+        exog = self.reg.get_exog(np.asarray(self.reg.xs, dtype=float))
+        pexog = self.reg.get_exog(np.array([5.0]))
+        out = self.reg.fast_predict(self.ys, pexog, exog=exog)
+        self.assertAlmostEqual(out[0], self.reg.predict(5.0), places=8)
+
+
+class OLSAbortTest(TestCase):
+    """Empty data fails the integrity check (and is not a single point), so
+    `calculate` aborts and leaves `_result` None."""
+
+    def test_empty_aborts(self):
+        r = OLSRegressor(xs=np.array([]), ys=np.array([]), fit="linear")
+        r.calculate()
+        self.assertIsNone(r._result)
+
+
+class OLSMonteCarloErrorTest(TestCase):
+    """`predict_error(x, 'MC')` runs the Monte Carlo estimator and returns a
+    positive, finite error. (Stochastic — assert sign/finiteness only.)"""
+
+    @classmethod
+    def setUpClass(cls):
+        xs, ys, _ = ols_data()
+        yserr = np.full(len(xs), 0.5)
+        # MC propagates measurement error, so the regressor needs yserr
+        r = WeightedPolynomialRegressor(xs=xs, ys=ys, yserr=yserr, fit="linear")
+        r.calculate()
+        cls.reg = r
+
+    def test_mc_error_scalar_positive(self):
+        e = self.reg.predict_error(28.6, "MC")
+        self.assertGreater(e, 0)
+        self.assertTrue(np.isfinite(e))
+
+
+class WeightedMeanEmptyTest(TestCase):
+    """Empty weighted mean: weights are undefined, so sem/se collapse to 0
+    instead of raising."""
+
+    def test_empty_sem_zero(self):
+        r = WeightedMeanRegressor(xs=np.array([]), ys=np.array([]), yserr=np.array([]))
+        self.assertEqual(r.sem, 0)
+        self.assertEqual(r.se, 0)
 
 
 # ============= EOF =============================================

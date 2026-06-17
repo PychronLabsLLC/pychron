@@ -93,17 +93,11 @@ class ScanableDevice(ViewableDevice):
                     cast="boolean",
                     default=False,
                 )
-                self.set_attribute(
-                    config, "scan_period", "Scan", "period", cast="float"
-                )
+                self.set_attribute(config, "scan_period", "Scan", "period", cast="float")
                 self.set_attribute(config, "scan_width", "Scan", "width", cast="float")
                 self.set_attribute(config, "scan_units", "Scan", "units")
-                self.set_attribute(
-                    config, "record_scan_data", "Scan", "record", cast="boolean"
-                )
-                self.set_attribute(
-                    config, "graph_scan_data", "Scan", "graph", cast="boolean"
-                )
+                self.set_attribute(config, "record_scan_data", "Scan", "record", cast="boolean")
+                self.set_attribute(config, "graph_scan_data", "Scan", "graph", cast="boolean")
 
                 func = self.config_get(config, "Scan", "function", optional=True)
                 if func:
@@ -196,23 +190,22 @@ class ScanableDevice(ViewableDevice):
                         x = time.time()
 
                     ts = generate_datetimestamp()
-                    self.data_manager.write_to_frame(
-                        (ts, "{:<8s}".format("{:0.2f}".format(x))) + v
-                    )
+                    self.data_manager.write_to_frame((ts, "{:<8s}".format("{:0.2f}".format(x))) + v)
 
                 self._scan_hook(v)
 
             else:
                 """
                 scan func must return a value or we will stop the scan.
-                note: the scan timer runs on a background thread (see
-                pychron.core.helpers.timer.Timer), not the main thread
+                The Timer runs this on a worker thread (NOT the main thread),
+                so comms reads here do not block the UI.  Any UI/graph updates
+                triggered by record() reach Qt through enable's window._redraw,
+                which m3_diagnostics marshals back to the main thread -- this is
+                required on Apple Silicon (M3) where an off-main repaint faults.
                 """
                 if self._no_response_counter > 3:
                     self.timer.Stop()
-                    self.info(
-                        "no response. stopping scan func={}".format(self.scan_func)
-                    )
+                    self.info("no response. stopping scan func={}".format(self.scan_func))
                     self._scanning = False
                     self._no_response_counter = 0
 
