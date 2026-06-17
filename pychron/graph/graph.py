@@ -178,8 +178,6 @@ class Graph(ContextMenuMixin):
     # x/y/yer data names and series colors for that plot
     _series_generators = List
     series = List
-    data_len = List
-    data_limits = List
 
     def __init__(self, *args, **kw):
         """ """
@@ -326,8 +324,6 @@ class Graph(ContextMenuMixin):
         self._series_generators = [PlotSeriesGenerators() for _ in x]
 
         self.series = [[] for _ in x]
-        self.data_len = [[] for _ in x]
-        self.data_limits = [[] for _ in x]
 
         for pi in self.plots:
             for k, pp in list(pi.plots.items()):
@@ -350,8 +346,6 @@ class Graph(ContextMenuMixin):
         self._series_generators = [PlotSeriesGenerators()]
 
         self.series = []
-        self.data_len = []
-        self.data_limits = []
 
         if clear_container:
             self.plotcontainer = pc = self.container_factory()
