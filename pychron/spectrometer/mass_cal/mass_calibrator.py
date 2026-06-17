@@ -134,10 +134,10 @@ class MassCalibratorSweep(MagnetSweep):
         self.period = operiod
         self._fine_scanning = False
         if self.isAlive():
-            if self.confirmation_dialog("Save to Database"):
+            if self.db and self.confirmation_dialog("Save to Database"):
                 self._save_to_db()
-                if self.confirmation_dialog("Apply Calibration"):
-                    self._apply_calibration()
+            if self.confirmation_dialog("Apply Calibration"):
+                self._apply_calibration()
 
     def _pack(self, d):
         data = "".join([struct.pack(">ff", x, y) for x, y in d])

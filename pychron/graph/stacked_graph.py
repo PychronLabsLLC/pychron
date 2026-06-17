@@ -154,9 +154,7 @@ class StackedGraph(Graph):
 
                 if i == 0:
                     pi.index_axis.visible = True
-                    pi.padding_bottom = min(
-                        pi.padding_bottom, self.max_bottom_padding
-                    )
+                    pi.padding_bottom = min(pi.padding_bottom, self.max_bottom_padding)
                 else:
                     pi.index_axis.visible = False
                     pi.padding_bottom = 0
@@ -182,7 +180,7 @@ class StackedGraph(Graph):
         # (bounds of [0, 0] happen during initialization before layout)
         if bounds[1] <= 0:
             return
-            
+
         if self.vertical_resize:
             self._update_bounds(bounds, self.plotcontainer.components)
 
@@ -316,17 +314,5 @@ class ColumnStackedGraph(StackedGraph):
         return c
 
 
-if __name__ == "__main__":
-    g = StackedGraph(
-        resizable=True,
-        fixed_bounds=True,
-        container_dict={"padding_top": 15 * 4, "spacing": 10, "padding_bottom": 40},
-    )
-    for i in range(3):
-        p = g.new_plot(padding=[80, 10, 10, 40], resizable="", bounds=(100, 100))
-        p.fill_padding = True
-        p.bgcolor = "green"
-        # p=g.new_plot()
-        g.new_series([1, 2, 3], [4, 5, 10 * i])
-    g.configure_traits()
+# ============= EOF ====================================
 # ============= EOF ====================================

@@ -64,10 +64,10 @@ class FigureContainer(HasTraits):
                 graph = p.make_graph((i, self.rows), (j, self.cols))
                 logger.debug(f"Adding graph from panel ({i}, {j}): {graph}")
                 comp.add(graph)
-                if clear and hasattr(p.plot_options, "aux_plots"):
-                    for ap in p.plot_options.aux_plots:
-                        ap.clear_ylimits()
-                        ap.clear_xlimits()
+                # NOTE: do not clear aux-plot view limits here. A rebuild
+                # (e.g. an options change) must preserve the user's current
+                # pan/zoom. View limits are reset only on a genuine data change,
+                # via FigureEditor.set_items -> clear_aux_plot_limits.
 
         if hasattr(comp, "invalidate_and_redraw"):
             logger.debug("Calling comp.invalidate_and_redraw()")

@@ -47,13 +47,6 @@ def _db_factory(klass, base, path, remove, **kw):
     return db
 
 
-def isotope_db_factory(path, remove=True):
-    from pychron.database.adapters.isotope_adapter import IsotopeAdapter
-    from pychron.database.orms.isotope.util import Base
-
-    return _db_factory(IsotopeAdapter, Base, path, remove)
-
-
 def massspec_db_factory(path, remove=True):
     from pychron.mass_spec.database.massspec_database_adapter import (
         MassSpecDatabaseAdapter,

@@ -174,31 +174,4 @@ class GainsEditView(Controller):
         return v
 
 
-if __name__ == "__main__":
-
-    class Detector(HasTraits):
-        name = Str
-        gain = Float
-
-    class Spectrometer(HasTraits):
-        detectors = List
-
-    spec = Spectrometer()
-    spec.detectors = [Detector(name="H1"), Detector(name="AX")]
-
-    from pychron.database.adapters.isotope_adapter import IsotopeAdapter
-
-    db = IsotopeAdapter(
-        name="pychrondata_dev",
-        kind="mysql",
-        host="localhost",
-        username="root",
-        password="Argon",
-    )
-    db.connect()
-    # hist = [GainHistory(create_date=datetime.fromtimestamp(i),) for i in range(10)]
-    gv = GainsModel(db=db, spectrometer=spec)
-    gv.load_histories()
-    gev = GainsEditView(model=gv)
-    gev.configure_traits()
 # ============= EOF =============================================

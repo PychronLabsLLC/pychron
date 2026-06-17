@@ -19,7 +19,8 @@
 from chaco.default_colormaps import color_map_name_dict
 
 # ============= standard library imports ========================
-from pychron.graph.graph import Graph, name_generator
+from pychron.graph.graph import Graph
+from pychron.graph.series_manager import name_generator
 
 
 # ============= local library imports  ==========================
@@ -96,9 +97,7 @@ class DiffusionGraph(Graph):
 
     def build_arrhenius(self, t, dta, pid=2, **kw):
         """ """
-        a, _p = self.new_series(
-            t, dta, type="scatter", plotid=pid, marker_size=2.5, **kw
-        )
+        a, _p = self.new_series(t, dta, type="scatter", plotid=pid, marker_size=2.5, **kw)
 
         self.set_x_title("10000/T (K)", plotid=pid)
         ytitle = "log D/a (1/s)"
@@ -114,9 +113,8 @@ class DiffusionGraph(Graph):
         if colors:
             p1, p2 = colors
         else:
-            cg = self.color_generators[pid]
-            p1 = next(cg)
-            p2 = next(cg)
+            p1 = self.get_next_color(plotid=pid)
+            p2 = self.get_next_color(plotid=pid)
 
         if ts:
             self.new_series(ts, tsl, type="polygon", plotid=pid, color=p1)
@@ -154,9 +152,7 @@ class DiffusionGraph(Graph):
 
             pline = plot.contour_plot(zname, hide_grids=False, **rd)[0]
 
-            ppoly = plot.contour_plot(
-                zname, type="poly", poly_cmap=cmap, hide_grids=False, **rd
-            )[0]
+            ppoly = plot.contour_plot(zname, type="poly", poly_cmap=cmap, hide_grids=False, **rd)[0]
             #            self.groups['unconstrained_thermal_history'].append([pline, ppoly])
             # remove zoom
             self.plots[pid].overlays.pop()

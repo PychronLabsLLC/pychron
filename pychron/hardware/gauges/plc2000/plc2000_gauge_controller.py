@@ -13,12 +13,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+import time
+
 from pychron.hardware.core.core_device import CoreDevice
 from pychron.hardware.core.modbus import ModbusMixin
 from pychron.hardware.gauges.base_controller import BaseGaugeController
 
+# log a heartbeat summary every N update cycles
+HEARTBEAT_INTERVAL = 60
+
 
 class PLC2000GaugeController(BaseGaugeController, CoreDevice, ModbusMixin):
+    _readback_state = None
+    _update_cycle = 0
+    _last_update_time = None
+
+    def initialize(self, *args, **kw):
+        # BaseGaugeController.initialize does not chain to
+        # BaseCoreDevice.initialize, so the communicator was never
+        # initialized and its simulation flag stayed True forever
+        ret = super(PLC2000GaugeController, self).initialize(*args, **kw)
+        if self.communicator is not None:
+            if not self.communicator.initialize(*args, **kw):
+                # tolerate an offline PLC at startup; the reconnect logic in
+                # ModbusMixin recovers once it comes back
+                self.warning("modbus communicator failed to connect on initialize")
+        return ret
+
     def load_additional_args(self, config, *args, **kw):
         self.display_name = self.config_get(
             config, "General", "display_name", default=self.name
@@ -30,23 +51,100 @@ class PLC2000GaugeController(BaseGaugeController, CoreDevice, ModbusMixin):
         kw["force"] = True
         return super(PLC2000GaugeController, self).get_pressures(*args, **kw)
 
+    def update_pressures(self, verbose=False):
+        now = time.time()
+        last = self._last_update_time
+        self._last_update_time = now
+        self._update_cycle += 1
+
+        ret = super(PLC2000GaugeController, self).update_pressures(verbose=verbose)
+
+        # periodic heartbeat instead of logging every cycle. confirms the
+        # update loop is alive and shows current values without spamming
+        if self._update_cycle == 1 or self._update_cycle % HEARTBEAT_INTERVAL == 0:
+            gap = f", gap={now - last:0.1f}s" if last else ""
+            self.debug(f"heartbeat cycle={self._update_cycle}{gap}: {ret}")
+        return ret
+
+    def _record_readback(self, gname, register, pressure):
+        """Edge-triggered logging of per-gauge readback health.
+
+        Logs once on ok->fail and fail->ok transitions (with counts and the
+        time of the last good read) instead of spamming every scan period.
+        """
+        states = self._readback_state
+        if states is None:
+            states = self._readback_state = {}
+
+        state = states.get(gname)
+        if state is None:
+            state = states[gname] = {
+                "ok": None,
+                "reads": 0,
+                "failures": 0,
+                "consecutive_failures": 0,
+                "last_good_time": None,
+                "last_good_value": None,
+            }
+
+        state["reads"] += 1
+        ok = isinstance(pressure, float)
+        now = time.time()
+        if ok:
+            if state["ok"] is False:
+                self.info(
+                    f"gauge {gname} (register={register}) readback recovered "
+                    f"after {state['consecutive_failures']} consecutive failures. "
+                    f"pressure={pressure:0.2e}"
+                )
+            state["consecutive_failures"] = 0
+            state["last_good_time"] = now
+            state["last_good_value"] = pressure
+        else:
+            state["failures"] += 1
+            state["consecutive_failures"] += 1
+            if state["ok"] in (True, None):
+                lt = state["last_good_time"]
+                age = f"{now - lt:0.1f}s ago" if lt else "never"
+                self.warning(
+                    f"gauge {gname} (register={register}) readback failed. "
+                    f"got {pressure!r}. last good read: {age} "
+                    f"(value={state['last_good_value']}). "
+                    f"totals: {state['failures']} failures/{state['reads']} reads. "
+                    f"display will hold last value until recovery"
+                )
+        state["ok"] = ok
+
     def _read_pressure(self, name=None, verbose=False):
         pressure = "err"
 
+        gname = name
         if isinstance(name, str):
             gauge = self.get_gauge(name)
             channel = gauge.channel
         else:
             channel = name.channel
+            gname = name.name
 
         if name is not None:
             # register = channel-1
             register = int(channel) - 1
+            st = time.time()
             try:
                 pressure = self._read_float(register)
             except BaseException as e:
                 self.debug_exception()
-                self.debug("failed reading register={}, error={}".format(register, e))
+                self.debug(f"failed reading register={register}, error={e}")
+
+            if verbose:
+                self.debug(
+                    f"read gauge={gname} channel={channel} "
+                    f"register={register} pressure={pressure!r} "
+                    f"elapsed={time.time() - st:0.3f}s"
+                )
+
+            self._record_readback(gname, register, pressure)
+
         return pressure
 
 

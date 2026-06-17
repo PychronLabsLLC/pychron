@@ -27,7 +27,7 @@ from numpy import array
 
 # =============local library imports  ==========================
 from .graph import Graph
-from .graph import name_generator
+from .series_manager import name_generator
 
 
 class ContourGraph(Graph):

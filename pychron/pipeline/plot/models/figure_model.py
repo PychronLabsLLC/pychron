@@ -52,6 +52,11 @@ class FigureModel(HasTraits):
             panels_rebuilt = self.refresh_panels(force=True)
         elif self._panels_need_refresh():
             panels_rebuilt = self.refresh_panels()
+        elif self.panels:
+            # topology unchanged: reuse the existing panels but push the new
+            # analyses into them so reused figures don't keep stale data
+            self._sync_panels()
+            self.reset_panel_gen()
 
         for p in self.panels:
             if not p.figures or force:
@@ -100,9 +105,7 @@ class FigureModel(HasTraits):
     def _make_panel_groups(self):
         if self.analysis_groups:
             gs = [
-                self._panel_factory(
-                    analyses=ag, plot_options=self.plot_options, graph_id=gid
-                )
+                self._panel_factory(analyses=ag, plot_options=self.plot_options, graph_id=gid)
                 for gid, ag in enumerate(self.analysis_groups)
             ]
         else:

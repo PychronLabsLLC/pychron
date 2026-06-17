@@ -20,7 +20,7 @@ from traitsui.api import HGroup, VGroup, Item, spring, ButtonEditor
 # ============= standard library imports ========================
 import os
 import time
-from threading import Lock
+from threading import Lock, current_thread
 
 # ============= local library imports  ==========================
 from pychron.core.helpers.datetime_tools import generate_datetimestamp
@@ -62,6 +62,8 @@ class ScanableDevice(ViewableDevice):
     _scanning = Bool(False)
     _auto_started = False
     _last_update = None
+    _scan_exception_counter = 0
+    _scan_thread_logged = False
 
     def is_scanning(self):
         return self._scanning
@@ -91,17 +93,11 @@ class ScanableDevice(ViewableDevice):
                     cast="boolean",
                     default=False,
                 )
-                self.set_attribute(
-                    config, "scan_period", "Scan", "period", cast="float"
-                )
+                self.set_attribute(config, "scan_period", "Scan", "period", cast="float")
                 self.set_attribute(config, "scan_width", "Scan", "width", cast="float")
                 self.set_attribute(config, "scan_units", "Scan", "units")
-                self.set_attribute(
-                    config, "record_scan_data", "Scan", "record", cast="boolean"
-                )
-                self.set_attribute(
-                    config, "graph_scan_data", "Scan", "graph", cast="boolean"
-                )
+                self.set_attribute(config, "record_scan_data", "Scan", "record", cast="boolean")
+                self.set_attribute(config, "graph_scan_data", "Scan", "graph", cast="boolean")
 
                 func = self.config_get(config, "Scan", "function", optional=True)
                 if func:
@@ -119,11 +115,52 @@ class ScanableDevice(ViewableDevice):
 
     def _scan_(self, *args):
         if self.scan_func:
+            if not self._scan_thread_logged:
+                self._scan_thread_logged = True
+                t = current_thread()
+                self.info(
+                    "scan func={} running on thread={} (daemon={}). "
+                    "NOTE: trait/UI updates triggered by this scan happen on "
+                    "this thread, not the GUI thread".format(
+                        self.scan_func, t.name, t.daemon
+                    )
+                )
+
             try:
                 v = getattr(self, self.scan_func)()
             except AttributeError as e:
                 print("exception", e)
                 return
+            except BaseException as e:
+                # previously any other exception propagated into Timer.run and
+                # killed the scan thread silently. log it and keep scanning;
+                # bail out only if it repeats every tick
+                self._scan_exception_counter += 1
+                self.debug_exception()
+                self.warning(
+                    "scan func={} raised {!r}. consecutive exceptions={}".format(
+                        self.scan_func, e, self._scan_exception_counter
+                    )
+                )
+                if self._scan_exception_counter > 10:
+                    self.warning(
+                        "scan func={} failed {} consecutive times. "
+                        "stopping scan".format(
+                            self.scan_func, self._scan_exception_counter
+                        )
+                    )
+                    self.timer.Stop()
+                    self._scanning = False
+                    self._scan_exception_counter = 0
+                return
+            else:
+                if self._scan_exception_counter:
+                    self.info(
+                        "scan func={} recovered after {} exceptions".format(
+                            self.scan_func, self._scan_exception_counter
+                        )
+                    )
+                self._scan_exception_counter = 0
 
             if v is not None:
                 # self.debug('current scan value={}'.format(v))
@@ -153,23 +190,22 @@ class ScanableDevice(ViewableDevice):
                         x = time.time()
 
                     ts = generate_datetimestamp()
-                    self.data_manager.write_to_frame(
-                        (ts, "{:<8s}".format("{:0.2f}".format(x))) + v
-                    )
+                    self.data_manager.write_to_frame((ts, "{:<8s}".format("{:0.2f}".format(x))) + v)
 
                 self._scan_hook(v)
 
             else:
                 """
-                scan func must return a value or we will stop the scan
-                since the timer runs on the main thread any long comms timeouts
-                slow user interaction
+                scan func must return a value or we will stop the scan.
+                The Timer runs this on a worker thread (NOT the main thread),
+                so comms reads here do not block the UI.  Any UI/graph updates
+                triggered by record() reach Qt through enable's window._redraw,
+                which m3_diagnostics marshals back to the main thread -- this is
+                required on Apple Silicon (M3) where an off-main repaint faults.
                 """
                 if self._no_response_counter > 3:
                     self.timer.Stop()
-                    self.info(
-                        "no response. stopping scan func={}".format(self.scan_func)
-                    )
+                    self.info("no response. stopping scan func={}".format(self.scan_func))
                     self._scanning = False
                     self._no_response_counter = 0
 
@@ -185,12 +221,16 @@ class ScanableDevice(ViewableDevice):
         """
         su = True
         if self._last_update:
-            if (
-                time.time() - self._last_update
-                < self.scan_period * self.time_dict[self.scan_units]
-            ):
+            # scan_period * time_dict is in milliseconds; time.time() deltas
+            # are seconds
+            period = self.scan_period * self.time_dict[self.scan_units] / 1000.0
+            if time.time() - self._last_update < period:
                 su = False
-        self._last_update = time.time()
+        if su:
+            # only restart the window when an update actually happens.
+            # resetting unconditionally let a fast manager poll slide the
+            # window forward forever, so the device updated exactly once
+            self._last_update = time.time()
         return su
 
     def lock_scan(self):

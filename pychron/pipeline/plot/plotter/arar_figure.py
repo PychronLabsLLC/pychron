@@ -148,8 +148,6 @@ class BaseArArFigure(SelectionFigure):
         layout = self.options.layout
         fw = layout.fixed_width
         fh = layout.fixed_height
-        
-        print(f"[arar_figure.make_plots] fw={fw}, fh={fh}")
 
         # stretch_vertical = layout.stretch_vertical
 
@@ -284,17 +282,10 @@ class BaseArArFigure(SelectionFigure):
         options = self.options
         show_all_axes = bool(getattr(options, "show_all_axes", True))
 
-        # print('aaa', pp.padding_left, pp.width, pp.outer_width)
+        # interior columns get a narrower left padding, unless the user has
+        # asked to keep all axes visible
         if col[0] > 0 and not show_all_axes:
             pp.padding_left = max(20, int(pp.padding_left * 0.5))
-
-        # print('bbb', pp.padding_left, pp.width, pp.outer_width)
-
-        # print('aaa', pp.padding_left, pp.width, pp.outer_width)
-        if col[0] > 0:
-            pp.padding_left = max(20, int(pp.padding_left * 0.5))
-
-        # print('bbb', pp.padding_left, pp.width, pp.outer_width)
 
         pp.bgcolor = options.plot_bgcolor
         pp.x_grid.visible = options.use_xgrid
@@ -306,9 +297,7 @@ class BaseArArFigure(SelectionFigure):
                 try:
                     setattr(axis, attr, value)
                 except TraitError as e:
-                    logger.warning(
-                        "error setting attr={},value={} error={}".format(attr, value, e)
-                    )
+                    logger.warning("error setting attr={},value={} error={}".format(attr, value, e))
 
             axis.tick_label_font = getattr(options, "{}tick_font".format(k))
 
@@ -326,9 +315,7 @@ class BaseArArFigure(SelectionFigure):
 
             if po.yticks_both_sides:
                 if self.group_id == 0 and self.subgroup_id == 0:
-                    alt_axis = PlotAxis(
-                        pp, orientation="left" if po.y_axis_right else "right"
-                    )
+                    alt_axis = PlotAxis(pp, orientation="left" if po.y_axis_right else "right")
                     alt_axis.tick_label_formatter = lambda x: ""
                     alt_axis.axis_line_visible = False
                     alt_axis.tick_in = options.ytick_in
@@ -345,11 +332,7 @@ class BaseArArFigure(SelectionFigure):
                 if alt_axis and not po.ytitle_visible:
                     alt_axis.tick_visible = False
             else:
-                if (
-                    po.has_fixed_ylimits()
-                    and col[0] > 0
-                    and not show_all_axes
-                ):
+                if po.has_fixed_ylimits() and col[0] > 0 and not show_all_axes:
                     pp.y_axis.tick_label_formatter = lambda x: ""
 
                 pp.value_scale = po.scale
@@ -386,9 +369,7 @@ class BaseArArFigure(SelectionFigure):
     def _cmp_analyses(self, x):
         return x.timestamp or 0
 
-    def _unpack_attr(
-        self, attr, scalar=1, exclude_omit=False, nonsorted=False, ans=None
-    ):
+    def _unpack_attr(self, attr, scalar=1, exclude_omit=False, nonsorted=False, ans=None):
         if ans is None:
             ans = self.sorted_analyses
 
@@ -414,9 +395,7 @@ class BaseArArFigure(SelectionFigure):
 
         ma = max_ if max_ is not None else max(ma, b)
 
-        self.graph.set_y_limits(
-            min_=mi, max_=ma, pad=pad, plotid=pid, pad_style="upper"
-        )
+        self.graph.set_y_limits(min_=mi, max_=ma, pad=pad, plotid=pid, pad_style="upper")
 
     def update_options_limits(self, pid):
         if not self.suppress_xlimits_update:
@@ -642,9 +621,7 @@ class BaseArArFigure(SelectionFigure):
                     additional_info=additional_info,
                 )
 
-                pinspector_overlay = PointInspectorOverlay(
-                    component=scatter, tool=inspector
-                )
+                pinspector_overlay = PointInspectorOverlay(component=scatter, tool=inspector)
                 scatter.overlays.append(pinspector_overlay)
                 # broadcaster.tools.append(inspector)
                 scatter.tools.append(inspector)
@@ -711,7 +688,7 @@ class BaseArArFigure(SelectionFigure):
         label_position="top right",
         color=None,
         append=True,
-        **kw
+        **kw,
     ):
         if color is None:
             color = s.color
@@ -729,7 +706,7 @@ class BaseArArFigure(SelectionFigure):
             # setting the arrow to visible causes an error when reading with illustrator
             # if the arrow is not drawn
             arrow_visible=False,
-            **kw
+            **kw,
         )
         s.overlays.append(label)
         tool = DataLabelTool(label)
@@ -788,9 +765,7 @@ class BaseArArFigure(SelectionFigure):
             age_units = self._get_age_units()
             pe = ""
             if percent_error:
-                pe = "({})".format(
-                    format_percent_error(x, we, include_percent_sign=True)
-                )
+                pe = "({})".format(format_percent_error(x, we, include_percent_sign=True))
 
             me = "{} {} {}{} {}".format(sx, PLUSMINUS, swe, pe, age_units)
 
@@ -839,9 +814,7 @@ class BaseArArFigure(SelectionFigure):
     # ===============================================================================
     @cached_property
     def _get_sorted_analyses(self):
-        return sorted(
-            self.analyses, key=self._cmp_analyses, reverse=self._reverse_sorted_analyses
-        )
+        return sorted(self.analyses, key=self._cmp_analyses, reverse=self._reverse_sorted_analyses)
 
     @cached_property
     def _get_analysis_group(self):

@@ -24,7 +24,7 @@ from pychron.envisage.tasks.base_task_plugin import BaseTaskPlugin
 
 class ImagePlugin(BaseTaskPlugin):
     id = "pychron.image.plugin"
-    name = "Image"
+    name = "Image"  # type: ignore[assignment]
 
     # watcher = Instance('pychron.image.watcher.DirectoryWatcher')
 
@@ -60,15 +60,6 @@ class ImagePlugin(BaseTaskPlugin):
     #
     #         task.handle_new_images(new)
 
-    def _sample_image_factory(self):
-        from pychron.image.tasks.sample_image_task import SampleImageTask
-
-        man = self.application.get_service(
-            "pychron.database.isotope_database_manager.IsotopeDatabaseManager"
-        )
-        s = SampleImageTask(manager=man)
-        return s
-
     # def _upload_image_factory(self):
     #     from pychron.image.tasks.upload_task import ImageUploadTask
     #
@@ -77,13 +68,7 @@ class ImagePlugin(BaseTaskPlugin):
     #     return s
 
     def _tasks_default(self):
-        ts = [
-            TaskFactory(
-                factory=self._sample_image_factory,
-                id="pychron.image.sample_imager",
-                name="Sample Imager",
-            )
-        ]
+        ts = []
 
         # if self.application.get_plugin('pychron.database'):
         #     ts.append(TaskFactory(factory=self._upload_image_factory,

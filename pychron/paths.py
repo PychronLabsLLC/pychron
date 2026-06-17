@@ -67,6 +67,7 @@ balls = os.path.join(icons, "balls")
 octicons = os.path.join(icons, "octicons")
 
 images = os.path.join(resources, "images")
+fonts = os.path.join(resources, "fonts")
 splashes = os.path.join(resources, "splashes")
 labspy_templates = os.path.join(resources, "labspy_templates")
 abouts = os.path.join(resources, "abouts")

@@ -56,28 +56,9 @@ class TimeSeriesGraph(Graph):
         return autocorrelation(y, **kw)
 
     def downsample(self, x, y, d, plotid=0, series=0):
-        #        x = self.get_data(plotid, series)
-        #        y = self.get_data(plotid, series, axis=1)
-
         self.set_data(downsample_1d(array(x), d), plotid, series)
         self.set_data(downsample_1d(array(y), d), plotid, series, axis=1)
         self.redraw()
-
-    #    def _convert_index(self, ind):
-    #        '''
-    #            ind is in secs since first epoch
-    #            convert to a timestamp
-    #            return a str
-    #        '''
-    #        return convert_timestamp(ind)
-
-    # def set_x_title(self, t, plotid=0):
-    #     '''
-    #     '''
-    #     axis = self._get_x_axis(plotid)
-    #     axis.title = t
-    #     # print axis.title, axis, t
-    #     super(TimeSeriesGraph, self).set_x_title(t, plotid=plotid)
 
     def set_axis_label_color(self, *args, **kw):
         """ """
@@ -92,18 +73,9 @@ class TimeSeriesGraph(Graph):
             kw["axis"] = self._get_x_axis(kw["plotid"])
         super(TimeSeriesGraph, self).set_axis_tick_color(*args, **kw)
 
-    #        StackedGraph.set_axis_tick_color(self, *args, **kw)
-
     def _get_x_axis(self, plotid):
         plot = self.plots[plotid]
-        # print plot.index_axis.title
         return plot.index_axis
-
-    #        for underlay in plot.underlays:
-    #            if underlay.orientation == 'bottom':
-    #                #print t,underlay,underlay.title
-    #
-    #                return underlay
 
     def new_plot(self, *args, **kw):
         """ """
@@ -171,8 +143,6 @@ class TimeSeriesGraph(Graph):
 
         plota = plot.plot(names, **rd)[0]
 
-        #        plota.unified_draw = True
-        #        plota.use_downsampling = True
         # if the plot is not visible dont remove the underlays
         if plota.visible:
             self._set_bottom_axis(plota, plot, plotid, timescale=timescale)
@@ -258,21 +228,3 @@ class TimeSeriesStreamStackedGraph(TimeSeriesGraph, StreamStackedGraph):
 
 
 # ============= EOF ============================================
-# def create_dates(numpoints, units = "days"):
-#    '''
-#            @type units: C{str}
-#            @param units:
-#    '''
-#        """ Returns **numpoints** number of dates that evenly bracket the current
-#        date and time.  **units** should be one of "weeks", "days", "hours"
-#        "minutes", or "seconds".
-#        """
-#        units_map = { "weeks" : 7 * 24 * 3600,
-#                      "days" : 24 * 3600,
-#                      "hours" : 3600,
-#                      "minutes" : 60,
-#                      "seconds" : 1 }
-#        now = time.time()
-#        dt = units_map[units]
-#        dates = linspace(now, now + numpoints * dt, numpoints)
-#        return dates

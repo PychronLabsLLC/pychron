@@ -73,12 +73,4 @@ class CalculationView(HasTraits):
         return v
 
 
-if __name__ == "__main__":
-    from pychron.database.test_database import get_test_analysis
-
-    a, man = get_test_analysis()
-    cv = CalculationView()
-    cv.load_view(a)
-    cv.configure_traits()
-
 # ============= EOF =============================================

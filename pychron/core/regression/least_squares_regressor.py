@@ -127,7 +127,7 @@ class LeastSquaresRegressor(BaseRegressor):
         Xk = x[:, None].repeat(n_params, axis=1)
         varY_hat = (Xk.dot(cov) * Xk).sum(axis=1)
 
-        if error_calc == "sem":
+        if (error_calc or "sem").lower() == "sem":
             out = sef * sqrt(varY_hat)
         else:
             # SD: sqrt(sef^2 + sef^2 * varY_hat) = sef * sqrt(1 + varY_hat)

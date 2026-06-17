@@ -24,22 +24,20 @@ from traits.api import (
     Property,
     on_trait_change,
     Dict,
-    Tuple,
     Enum,
     List,
     Any,
     Trait,
     Button,
+    Instance,
 )
 from traitsui.api import Color
+
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 from pychron.core.pychron_traits import FilterPredicate
+from pychron.options.axis_limits_state import AxisLimitsState, has_limits
 from pychron.pychron_constants import NULL_STR
-
-
-def has_limits(lims):
-    return lims is not None and lims[0] != lims[1]
 
 
 YTITLES = {
@@ -97,17 +95,23 @@ class AuxPlot(HasTraits):
     use_time_axis = False
     initialized = False
 
+    # fixed, user-entered limits (edited in the options UI)
     ymin = Float
     ymax = Float
     xmin = Float
     xmax = Float
 
-    ylimits = Tuple(Float, Float, transient=True)
-    xlimits = Tuple(Float, Float, transient=True)
+    # captured view-limit state, composed one per axis
+    _xstate = Instance(AxisLimitsState, (), transient=True)
+    _ystate = Instance(AxisLimitsState, (), transient=True)
+
+    # backward-compatible surface delegating to the composed state objects
+    xlimits = Property(transient=True)
+    ylimits = Property(transient=True)
+    _has_xlimits = Property(transient=True)
+    _has_ylimits = Property(transient=True)
 
     overlay_positions = Dict(transient=True)
-    _has_ylimits = Bool(False, transient=True)
-    _has_xlimits = Bool(False, transient=True)
 
     marker = Str("circle")
     marker_size = Float(2)
@@ -135,30 +139,57 @@ class AuxPlot(HasTraits):
         self.overlay_positions[k] = v
 
     def has_xlimits(self):
-        return self._has_xlimits or has_limits(self.xlimits)
+        return self._xstate.has()
 
     def has_ylimits(self):
-        return self._has_ylimits or has_limits(self.ylimits)
+        return self._ystate.has()
 
     def has_fixed_ylimits(self):
         return self.ymin or self.ymax
+
+    def capture_limits(self, xlims=None, ylims=None):
+        """Record the current view limits so a rebuild can restore them."""
+        if xlims is not None:
+            self._xstate.capture(xlims)
+        if ylims is not None:
+            self._ystate.capture(ylims)
 
     @on_trait_change("clear_ylimits_button")
     def handle_clear_ylimits(self):
         self.ymin, self.ymax = 0, 0
         self.clear_ylimits()
-        # self.ylimits = (self.ymin, self.ymax)
-        # self._has_ylimits = has_limits(self.ylimits)
 
     def clear_ylimits(self):
-        # self.ymin, self.ymax = 0, 0
-        self.ylimits = (self.ymin, self.ymax)
-        self._has_ylimits = has_limits(self.ylimits)
+        # reset the view to the fixed ymin/ymax (does not touch ymin/ymax)
+        self._ystate.reset((self.ymin, self.ymax))
 
     def clear_xlimits(self):
         self.xmin, self.xmax = 0, 0
-        self.xlimits = (self.xmin, self.xmax)
-        self._has_xlimits = has_limits(self.xlimits)
+        self._xstate.reset((self.xmin, self.xmax))
+
+    def _get_xlimits(self):
+        return self._xstate.limits
+
+    def _set_xlimits(self, v):
+        self._xstate.limits = v
+
+    def _get_ylimits(self):
+        return self._ystate.limits
+
+    def _set_ylimits(self, v):
+        self._ystate.limits = v
+
+    def _get__has_xlimits(self):
+        return self._xstate.explicit
+
+    def _set__has_xlimits(self, v):
+        self._xstate.explicit = v
+
+    def _get__has_ylimits(self):
+        return self._ystate.explicit
+
+    def _set__has_ylimits(self, v):
+        self._ystate.explicit = v
 
     def _name_changed(self):
         if self.initialized:
