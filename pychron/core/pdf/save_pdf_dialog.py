@@ -36,7 +36,7 @@ from pychron.core.pdf.pdf_graphics_context import PdfPlotGraphicsContext
 load_pdf_fonts()
 
 
-class myPdfPlotGraphicsContext(PdfPlotGraphicsContext):
+class myPdfPlotGraphicsContext(PdfPlotGraphicsContext):  # type: ignore[valid-type, misc]
     def get_full_text_extent(self, textstring):
         fontname = self.gc._fontname
         fontsize = self.gc._fontsize

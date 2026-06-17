@@ -93,7 +93,7 @@ _BUNDLED_FONTS = {
 DEFAULT_PDF_FONT = "Arial"
 
 # reportlab font names successfully registered this process.
-_registered = set()
+_registered: set = set()
 _loaded = False
 
 
