@@ -413,6 +413,51 @@ def install_thread_safe_marshalling() -> None:
     except Exception as e:  # pragma: no cover
         _log.error("marshalling: QTimer.singleShot patch failed: %s", e)
 
+    # --- enable.qt.base_window._Window._redraw -------------------------------
+    # THE universal Qt-paint chokepoint.  pychron's core helper Timer
+    # (pychron.core.helpers.timer.Timer) is a plain worker thread; several of
+    # its callbacks touch chaco/enable directly off the main thread:
+    #   motion_controller._inprogress_update -> canvas.set_stage_position
+    #   scanable_device._scan_ / scanner._scan -> graph.record
+    #   stream_graph_manager._update_scan_graph -> graph.record
+    # All of these funnel into enable's window._redraw, whose body calls
+    # ``self.control.update()`` -- a QWidget method that must run on the GUI
+    # thread.  On Apple Silicon (M3) an off-main update() faults (SIGSEGV/
+    # SIGBUS); Intel silently tolerates it.  This is a *separate* off-main Qt
+    # access from the QTimer-context bug handled above, so it needs its own
+    # marshalling.  Deferring the repaint one event-loop hop is harmless: the
+    # underlying data arrays are already mutated; update() only schedules a
+    # paint event.
+    _redraw_patched = False
+    for _modpath in ("enable.qt.base_window", "enable.qt4.base_window"):
+        try:
+            _mod = __import__(_modpath, fromlist=["_Window"])
+        except Exception:
+            continue
+        _Window = getattr(_mod, "_Window", None)
+        if _Window is None or not hasattr(_Window, "_redraw"):
+            continue
+        _orig_redraw = _Window._redraw
+
+        def _safe_redraw(self, coordinates=None, _orig=_orig_redraw):
+            if _on_main_thread():
+                return _orig(self, coordinates)
+            _log.debug(
+                "marshalling enable _redraw from %s",
+                threading.current_thread().name,
+            )
+            return _marshal(_orig, self, coordinates)
+
+        try:
+            _Window._redraw = _safe_redraw
+            patched.append("%s._Window._redraw" % _modpath)
+            _redraw_patched = True
+            break
+        except (TypeError, AttributeError) as e:  # pragma: no cover
+            _log.warning("marshalling: enable _redraw replacement rejected: %s", e)
+    if not _redraw_patched:
+        _log.warning("marshalling: enable window._redraw not patched (module not found)")
+
     _MARSHALLING_INSTALLED = True
     _log.info("thread-safe marshalling installed: %s", ", ".join(patched))
 

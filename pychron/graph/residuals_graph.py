@@ -21,14 +21,12 @@ from chaco.api import (
     ArrayDataSource,
     DataRange1D,
     LinearMapper,
-    add_default_axes,
 )
 
 # =============local library imports  ==========================
 from chaco.axis import PlotAxis
 
 from pychron.graph.graph import container_factory
-from pychron.graph.guide_overlay import GuideOverlay
 from pychron.graph.regression_graph import RegressionGraph
 
 
@@ -50,17 +48,6 @@ class ResidualsGraph(RegressionGraph):
         for k, v in self.container_dict.items():
             kw[k] = v
         return container_factory(**kw)
-
-        # def _metadata_changed(self, obj, name, new):
-        """
-        """
-        # super(ResidualsGraph, self)._metadata_changed(obj, name, new)
-        # self.update_residuals()
-
-    # def _update_graph(self, *args, **kw):
-    #     super(ResidualsGraph, self)._update_graph(*args, **kw)
-    #     self.update_residuals()
-    #
 
     def _regression_results_changed(self, regs):
         super(ResidualsGraph, self)._regression_results_changed()
@@ -87,31 +74,14 @@ class ResidualsGraph(RegressionGraph):
         pos = res > 0
         return x[neg], res[neg], x[pos], res[pos]
 
-    # def add_datum(self, *args, **kw):
-    #     """
-    #     """
-    #     super(ResidualsGraph, self).add_datum(*args, **kw)
-    #     self.update_residuals()
-
-    # def new_plot(self, *args, **kw):
-    #     self.xtitle = kw['xtitle'] if 'xtitle' in kw else None
-    #     return super(ResidualsGraph, self).new_plot(*args, **kw)
-
     def new_series(self, x=None, y=None, plotid=0, **kw):
         """ """
 
-        plot, scatter, line = super(ResidualsGraph, self).new_series(
-            x=x, y=y, plotid=plotid, **kw
-        )
-        # for underlay in plot.underlays:
-        #     if underlay.orientation == 'bottom':
-        #         underlay.visible = False
-        #         underlay.padding_bottom = 0
+        plot, scatter, line = super(ResidualsGraph, self).new_series(x=x, y=y, plotid=plotid, **kw)
         plot.padding_top = 0
 
         res = line.regressor.calculate_residuals()
         x = line.regressor.clean_xs
-        # self.line = line
 
         xn, rn, xp, rp = self._split_residual(x, res)
 
@@ -182,19 +152,5 @@ class ResidualsGraph(RegressionGraph):
         self.residual_plots = [neg_bar, pos_bar]
         self.plotcontainer.insert(0, container)
 
-
-if __name__ == "__main__":
-    import numpy as np
-
-    g = ResidualsGraph()
-    g.new_plot()
-
-    n = 100
-    x = np.arange(n)
-    a, b, c = -0.01, 0, 100
-    y = a * x**2 + b * x + c + 10 * np.random.random(n)
-    g.new_series(x, y)
-
-    g.configure_traits()
 
 # ============= EOF =====================================
