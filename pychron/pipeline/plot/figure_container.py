@@ -41,14 +41,16 @@ class FigureContainer(HasTraits):
     cols = Int
 
     def refresh(self, clear: bool = False) -> None:
-        logger.debug(f"FigureContainer.refresh() called with clear={clear}, rows={self.rows}, cols={self.cols}")
+        logger.debug(
+            f"FigureContainer.refresh() called with clear={clear}, rows={self.rows}, cols={self.cols}"
+        )
         comp = self.component
         if clear and hasattr(comp, "components"):
             logger.debug("Clearing component.components")
             del comp.components[:]
 
         # Reset the panel generator before iterating, in case it was exhausted from a previous iteration
-        if self.model and hasattr(self.model, 'reset_panel_gen'):
+        if self.model and hasattr(self.model, "reset_panel_gen"):
             self.model.reset_panel_gen()
 
         for i in range(self.rows):
@@ -63,10 +65,10 @@ class FigureContainer(HasTraits):
                 graph = p.make_graph((i, self.rows), (j, self.cols))
                 logger.debug(f"Adding graph from panel ({i}, {j}): {graph}")
                 comp.add(graph)
-                if clear and hasattr(p.plot_options, "aux_plots"):
-                    for ap in p.plot_options.aux_plots:
-                        ap.clear_ylimits()
-                        ap.clear_xlimits()
+                # NOTE: do not clear aux-plot view limits here. A rebuild
+                # (e.g. an options change) must preserve the user's current
+                # pan/zoom. View limits are reset only on a genuine data change,
+                # via FigureEditor.set_items -> clear_aux_plot_limits.
 
         if hasattr(comp, "invalidate_and_redraw"):
             logger.debug("Calling comp.invalidate_and_redraw()")
@@ -77,7 +79,9 @@ class FigureContainer(HasTraits):
         logger.debug("FigureContainer.refresh() complete")
 
     def model_changed(self, clear: bool = True, refresh_panels: bool = True) -> None:
-        logger.debug(f"FigureContainer.model_changed() called with clear={clear}, refresh_panels={refresh_panels}")
+        logger.debug(
+            f"FigureContainer.model_changed() called with clear={clear}, refresh_panels={refresh_panels}"
+        )
         layout = self.model.plot_options.layout
         if refresh_panels:
             logger.debug("Calling model.refresh_panels()")
