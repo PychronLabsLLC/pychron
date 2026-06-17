@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import typing
 import weakref
 
 # ============= standard library imports ========================
@@ -37,12 +38,12 @@ from pychron.core.i_datastore import IDatastore
 from pychron.core.progress import progress_loader, CancelLoadingError
 from pychron.database.adapters.isotope_adapter import IsotopeAdapter
 from pychron.database.orms.isotope.meas import meas_AnalysisTable
-from pychron.experiment.utilities.identifier import make_runid
+from pychron.experiment.utilities.runid import make_runid
 from pychron.loggable import Loggable
 from pychron.processing.analyses.dbanalysis import DBAnalysis
 
-ANALYSIS_CACHE = {}
-ANALYSIS_CACHE_COUNT = {}
+ANALYSIS_CACHE: dict[str, typing.Any] = {}
+ANALYSIS_CACHE_COUNT: dict[str, int] = {}
 CACHE_LIMIT = 1000
 
 
@@ -61,7 +62,7 @@ class BaseIsotopeDatabaseManager(Loggable):
         version_warn=False,
         attribute_warn=False,
         *args,
-        **kw
+        **kw,
     ):
         super(BaseIsotopeDatabaseManager, self).__init__(*args, **kw)
 
@@ -74,9 +75,7 @@ class BaseIsotopeDatabaseManager(Loggable):
                 traceback.print_exc()
 
         if connect:
-            self.db.connect(
-                warn=warn, version_warn=version_warn, attribute_warn=attribute_warn
-            )
+            self.db.connect(warn=warn, version_warn=version_warn, attribute_warn=attribute_warn)
 
     # IDatastore protocol
     def get_greatest_aliquot(self, identifier):
@@ -136,9 +135,7 @@ class BaseIsotopeDatabaseManager(Loggable):
     def _open_progress(self, n, close_at_end=True):
         from pychron.core.ui.progress_dialog import myProgressDialog
 
-        pd = myProgressDialog(
-            max=n - 1, close_at_end=close_at_end, can_cancel=True, can_ok=True
-        )
+        pd = myProgressDialog(max=n - 1, close_at_end=close_at_end, can_cancel=True, can_ok=True)
         pd.open()
         # pd.on_trait_change(self._progress_closed, 'closed')
         return pd
@@ -313,7 +310,7 @@ class IsotopeDatabaseManager(BaseIsotopeDatabaseManager):
         calculate_age=False,
         calculate_F=False,
         load_aux=False,
-        **kw
+        **kw,
     ):
         """
         loading the analysis' signals appears to be the most expensive operation.
@@ -329,9 +326,7 @@ class IsotopeDatabaseManager(BaseIsotopeDatabaseManager):
         db = self.db
         with db.session_ctx():
             # partition into DBAnalysis vs IsotopeRecordView
-            db_ans, no_db_ans = list(
-                map(list, partition(ans, lambda x: isinstance(x, DBAnalysis)))
-            )
+            db_ans, no_db_ans = list(map(list, partition(ans, lambda x: isinstance(x, DBAnalysis))))
             self._calculate_cached_ages(db_ans, calculate_age, calculate_F)
             if unpack:
                 for di in db_ans:
@@ -349,9 +344,7 @@ class IsotopeDatabaseManager(BaseIsotopeDatabaseManager):
             if no_db_ans:
                 if use_cache:
                     # partition into cached and non cached analyses
-                    cached_ans, no_db_ans = partition(
-                        no_db_ans, lambda x: x.uuid in ANALYSIS_CACHE
-                    )
+                    cached_ans, no_db_ans = partition(no_db_ans, lambda x: x.uuid in ANALYSIS_CACHE)
                     cached_ans = list(cached_ans)
                     no_db_ans = list(no_db_ans)
 
@@ -360,9 +353,7 @@ class IsotopeDatabaseManager(BaseIsotopeDatabaseManager):
                     # if unpack is true make sure cached analyses have raw data
                     if unpack or load_aux:
                         if unpack:
-                            a, b = self._unpack_cached_analyses(
-                                cns, calculate_age, calculate_F
-                            )
+                            a, b = self._unpack_cached_analyses(cns, calculate_age, calculate_F)
                             db_ans.extend(a)
                             no_db_ans.extend(b)
                         if load_aux:
@@ -392,7 +383,7 @@ class IsotopeDatabaseManager(BaseIsotopeDatabaseManager):
                         use_cache,
                         use_progress,
                         load_aux=load_aux,
-                        **kw
+                        **kw,
                     )
                     db_ans.extend(new_ans)
 
@@ -456,7 +447,7 @@ class IsotopeDatabaseManager(BaseIsotopeDatabaseManager):
         unpack,
         use_cache,
         use_progress,
-        **kw
+        **kw,
     ):
         uuids = [ri.uuid for ri in no_db_ans]
         # for ui in uuids:
@@ -484,7 +475,7 @@ class IsotopeDatabaseManager(BaseIsotopeDatabaseManager):
                 unpack=unpack,
                 calculate_age=calculate_age,
                 calculate_F=calculate_F,
-                **kw
+                **kw,
             )
             # print a
             if use_cache:
@@ -603,11 +594,7 @@ class IsotopeDatabaseManager(BaseIsotopeDatabaseManager):
             k, v = s[0]
             ANALYSIS_CACHE.pop(k)
             ANALYSIS_CACHE_COUNT.pop(k)
-            self.debug(
-                "Cache limit exceeded {}. removing {} n uses={}".format(
-                    CACHE_LIMIT, k, v
-                )
-            )
+            self.debug("Cache limit exceeded {}. removing {} n uses={}".format(CACHE_LIMIT, k, v))
 
     # ===============================================================================
     # property get/set
