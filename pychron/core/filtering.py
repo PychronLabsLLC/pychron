@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import re
 
 from numpy import ma
@@ -31,10 +30,7 @@ def filter_items(items, predicate_str, return_indices=True):
         match = re.search(r"(?P<name>[A-Za-z])", predicate_str)
         if match:
             variable_name = match.group("name")
-            omits = [
-                (eval(predicate_str, {variable_name: yi}), i)
-                for i, yi in enumerate(items)
-            ]
+            omits = [(eval(predicate_str, {variable_name: yi}), i) for i, yi in enumerate(items)]
             omits = [idx for ti, idx in omits if ti]
             if not return_indices:
                 omits = [items[i] for i in omits]

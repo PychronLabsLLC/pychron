@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 from envisage.ui.tasks.preferences_pane import PreferencesPane
 from traits.api import Enum, Str, Password
 from traitsui.api import View, Item, VGroup
@@ -57,11 +56,7 @@ class MediaStoragePreferencesPane(PreferencesPane):
             Item("smb_service_name", label="SMB Root Folder"),
             visible_when='backend_kind=="SMB"',
         )
-        v = View(
-            VGroup(
-                Item("backend_kind", label="Backend"), local_grp, remote_grp, smb_grp
-            )
-        )
+        v = View(VGroup(Item("backend_kind", label="Backend"), local_grp, remote_grp, smb_grp))
         return v
 
 

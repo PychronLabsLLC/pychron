@@ -21,7 +21,6 @@ from traitsui.api import View
 from traitsui.basic_editor_factory import BasicEditorFactory
 from traitsui.qt.button_editor import CustomEditor
 from traitsui.ui_traits import AView, Image
-import six
 
 
 # ============= standard library imports ========================
@@ -98,7 +97,7 @@ class ButtonEditor(BasicEditorFactory):
 
     def _set_value(self, value):
         self._value = value
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             try:
                 self._value = int(value)
             except:

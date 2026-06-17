@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import os
 
 from sqlalchemy.orm.exc import NoResultFound

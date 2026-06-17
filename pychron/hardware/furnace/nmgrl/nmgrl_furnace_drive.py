@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Str, Int, Float
 
 # ============= standard library imports ========================
@@ -25,7 +24,6 @@ import json
 # ============= local library imports  ==========================
 from pychron.core.communication_helper import trim_bool
 from pychron.hardware.core.core_device import CoreDevice
-from six.moves import range
 
 
 class NMGRLFurnaceDrive(CoreDevice):
@@ -43,17 +41,11 @@ class NMGRLFurnaceDrive(CoreDevice):
     def load_additional_args(self, config):
         self.set_attribute(config, "drive_name", "General", "drive_name")
         self.set_attribute(config, "velocity", "Motion", "velocity", cast="int")
-        self.set_attribute(
-            config, "drive_sign", "Motion", "drive_sign", cast="int", default=1
-        )
+        self.set_attribute(config, "drive_sign", "Motion", "drive_sign", cast="int", default=1)
 
         self.set_attribute(config, "jvelocity", "Jitter", "velocity", cast="int")
-        self.set_attribute(
-            config, "jacceleration", "Jitter", "acceleration", cast="int"
-        )
-        self.set_attribute(
-            config, "jdeceleration", "Jitter", "deceleration", cast="int"
-        )
+        self.set_attribute(config, "jacceleration", "Jitter", "acceleration", cast="int")
+        self.set_attribute(config, "jdeceleration", "Jitter", "deceleration", cast="int")
         self.set_attribute(config, "jperiod1", "Jitter", "period1", cast="float")
         self.set_attribute(config, "jperiod2", "Jitter", "period2", cast="float")
         self.set_attribute(config, "jturns", "Jitter", "turns", cast="float")
@@ -62,11 +54,7 @@ class NMGRLFurnaceDrive(CoreDevice):
 
     def move_absolute(self, pos, units="steps", velocity=None, block=False):
         pos *= self.drive_sign
-        self.ask(
-            self._build_command(
-                "MoveAbsolute", position=pos, units=units, velocity=velocity
-            )
-        )
+        self.ask(self._build_command("MoveAbsolute", position=pos, units=units, velocity=velocity))
         if block:
             self._block()
 
@@ -122,9 +110,7 @@ class NMGRLFurnaceDrive(CoreDevice):
         if p2 is None:
             p2 = self.jperiod2
 
-        return self.ask(
-            self._build_command("StartJitter", turns=turns, p1=p1, p2=p2, **kw)
-        )
+        return self.ask(self._build_command("StartJitter", turns=turns, p1=p1, p2=p2, **kw))
 
     def stop_jitter(self):
         return self.ask(self._build_command("StopJitter"))

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Instance, Button, Bool, Str, List, provides, Property
 
 # ============= standard library imports ========================
@@ -92,9 +91,7 @@ class SimpleApisManager(Manager):
     def load_pipette_non_blocking(self, *args, **kw):
         func = "load_pipette"
         # self.controller.set_external_pumping()
-        ret = self._load_pipette(
-            self.available_pipettes, func, block=False, *args, **kw
-        )
+        ret = self._load_pipette(self.available_pipettes, func, block=False, *args, **kw)
         # self.controller.set_external_pumping()
 
         return ret
@@ -122,9 +119,7 @@ class SimpleApisManager(Manager):
         return ret
 
     # private
-    def _load_pipette(
-        self, av, func, name, script=None, block=True, timeout=10, period=1
-    ):
+    def _load_pipette(self, av, func, name, script=None, block=True, timeout=10, period=1):
         if script is None:
             self.debug("Script is none. check ExtractionPyScript.extract_pipette")
             raise NotImplementedError

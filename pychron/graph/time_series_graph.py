@@ -16,7 +16,6 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from chaco.api import PlotAxis as ScalesPlotAxis
 from chaco.scales.api import CalendarScaleSystem, TimeScale
 from chaco.scales_tick_generator import ScalesTickGenerator

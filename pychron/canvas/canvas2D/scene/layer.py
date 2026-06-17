@@ -15,10 +15,10 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Str, List, Property, Bool
 from traitsui.api import View, Item
 from pyface.ui_traits import PyfaceColor
+
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================

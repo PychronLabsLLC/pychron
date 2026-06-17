@@ -167,7 +167,9 @@ jobs:
 
       - name: Run type checking
         if: steps.changed-python.outputs.files != ''
-        run: uv run --no-sync mypy --explicit-package-bases ${{ steps.changed-python.outputs.files }}
+        # mypy-baseline filters out the pre-existing violations recorded in
+        # mypy-baseline.txt; only newly introduced errors fail the job
+        run: uv run --no-sync mypy --explicit-package-bases ${{ steps.changed-python.outputs.files }} | uv run --no-sync mypy-baseline filter
 
       - name: Skip type checking when no Python files changed
         if: steps.changed-python.outputs.files == ''

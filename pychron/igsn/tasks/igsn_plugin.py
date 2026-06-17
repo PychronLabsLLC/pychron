@@ -19,7 +19,6 @@
 # ============= local library imports  ==========================
 # from pychron.repo.igsn import IGSNRepository
 
-from __future__ import absolute_import
 from pychron.envisage.tasks.base_task_plugin import BaseTaskPlugin
 
 # from zobs.repo.tasks.preferences import IGSNPreferencesPane

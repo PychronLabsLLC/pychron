@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pyface.tasks.traits_task_pane import TraitsTaskPane
 from traitsui.api import View, TableEditor, UItem, HGroup, Item

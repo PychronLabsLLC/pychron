@@ -15,14 +15,12 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 
-import six
 from pyface.qt import QtGui
 from traits.api import Bool, Int, Str
 from traits.trait_errors import TraitError
 from pyface.ui_traits import PyfaceColor
+
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 from traitsui.basic_editor_factory import BasicEditorFactory
@@ -98,10 +96,10 @@ class _TextEditor(Editor):
     def update_object(self):
         """Handles the user changing the contents of the edit control."""
         if isinstance(self.control, QtGui.QLineEdit):
-            self.value = six.text_type(self.control.text())
+            self.value = str(self.control.text())
         else:
             try:
-                self.value = six.text_type(self.control.document().toPlainText())
+                self.value = str(self.control.document().toPlainText())
             except TraitError as excp:
                 print("mytexteditor {}".format(excp))
 

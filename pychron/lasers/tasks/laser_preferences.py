@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from envisage.ui.tasks.preferences_pane import PreferencesPane
 from traits.api import Bool, Enum, Directory, Range, Float, Int
@@ -263,9 +262,7 @@ class LaserPreferencesPane(PreferencesPane):
             Item("crosshairs_radius", visible_when='crosshairs_kind=="UserRadius"'),
             Item("crosshairs_color", enabled_when="show_laser_position"),
             Item("crosshairs_line_width", enabled_when="show_laser_position"),
-            HGroup(
-                Item("crosshairs_offsetx", label="Offset"), UItem("crosshairs_offsety")
-            ),
+            HGroup(Item("crosshairs_offsetx", label="Offset"), UItem("crosshairs_offsety")),
             UItem("crosshairs_offset_color"),
             label="Crosshairs",
         )
@@ -306,9 +303,7 @@ class LaserPreferencesPane(PreferencesPane):
             label="Canvas",
         )
 
-        patgrp = Group(
-            Item("record_patterning"), Item("show_patterning"), label="Pattern"
-        )
+        patgrp = Group(Item("record_patterning"), Item("show_patterning"), label="Pattern")
         powergrp = Group(Item("use_calibrated_power"), label="Power")
         return [canvasgrp, videogrp, autocenter_grp, patgrp, powergrp]
 

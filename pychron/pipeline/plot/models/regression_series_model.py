@@ -19,7 +19,6 @@
 # ============= standard library imports ========================
 
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from traits.api import on_trait_change, Dict
 
 from pychron.pipeline.plot.models.figure_model import FigureModel
@@ -27,7 +26,6 @@ from pychron.pipeline.plot.models.figure_model import FigureModel
 # from pychron.processing.plot.panels.series_panel import SeriesPanel, DashboardSeriesPanel
 from pychron.pipeline.plot.panels.regression_series_panel import RegressionSeriesPanel
 from pychron.pipeline.plot.panels.series_panel import SeriesPanel, DashboardSeriesPanel
-from six.moves import zip
 
 
 class RegressionSeriesModel(FigureModel):
@@ -35,8 +33,7 @@ class RegressionSeriesModel(FigureModel):
 
     def _make_panel_groups(self):
         gs = [
-            self._panel_klass(analyses=[a], plot_options=self.plot_options)
-            for a in self.analyses
+            self._panel_klass(analyses=[a], plot_options=self.plot_options) for a in self.analyses
         ]
 
         return gs

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from envisage.ui.tasks.task_extension import TaskExtension
 from envisage.ui.tasks.task_factory import TaskFactory
@@ -48,9 +47,7 @@ class LoadingPlugin(BaseTaskPlugin):
                 factory=SaveLoadingPDFAction,
                 path="MenuBar/file.menu",
             ),
-            SchemaAddition(
-                id="save_tray", factory=SaveTrayPDFAction, path="MenuBar/file.menu"
-            ),
+            SchemaAddition(id="save_tray", factory=SaveTrayPDFAction, path="MenuBar/file.menu"),
             SchemaAddition(
                 id="generate_results",
                 factory=GenerateResultsAction,
@@ -72,9 +69,7 @@ class LoadingPlugin(BaseTaskPlugin):
 
     def _service_offers_default(self):
         load = self.service_offer_factory(protocol=LoadDockPane, factory=LoadDockPane)
-        table = self.service_offer_factory(
-            protocol=LoadTablePane, factory=LoadTablePane
-        )
+        table = self.service_offer_factory(protocol=LoadTablePane, factory=LoadTablePane)
         man = self.service_offer_factory(
             protocol=LoadingManager, factory=self._loading_manager_factory
         )

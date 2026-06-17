@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 
 # ============= enthought library imports =======================
 import math
@@ -85,9 +84,7 @@ class Switch(Connectable, Circle):
         if self.network_dominant_source_node:
             pieces.append("SourceNode={}".format(self.network_dominant_source_node))
         if self.network_blocked_boundaries:
-            pieces.append(
-                "Boundaries={}".format(",".join(self.network_blocked_boundaries))
-            )
+            pieces.append("Boundaries={}".format(",".join(self.network_blocked_boundaries)))
         if self.network_side_volumes:
             pieces.append(
                 "SideVolumes={}".format(
@@ -108,7 +105,7 @@ class Switch(Connectable, Circle):
             soffset_y=offset_y,
             # font='modern 9',
             use_border=False,
-            **kw
+            **kw,
         )
 
         self.primitives.append(lb)

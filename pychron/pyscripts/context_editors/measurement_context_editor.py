@@ -15,14 +15,12 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import ast
 
 # ============= standard library imports ========================
 import os
 
-import six
 import yaml
 from traits.api import (
     Int,
@@ -68,7 +66,7 @@ class YamlObject(HasTraits):
     def dump(self):
         def get(k):
             v = getattr(self, k)
-            if isinstance(v, six.text_type):
+            if isinstance(v, str):
                 v = str(v)
             elif hasattr(v, "__iter__"):
                 v = list(v)
@@ -234,9 +232,7 @@ class MeasurementContextEditor(ContextEditor):
 
     @cached_property
     def _get_available_default_fits(self):
-        return glob_list_directory(
-            paths.fits_dir, extension=".yaml", remove_extension=True
-        )
+        return glob_list_directory(paths.fits_dir, extension=".yaml", remove_extension=True)
 
     @cached_property
     def _get_available_hops(self):
@@ -310,12 +306,8 @@ class MeasurementContextEditor(ContextEditor):
 
         eq_grp = VGroup(
             HGroup(
-                Item(
-                    "object.equilibration.inlet", editor=ComboboxEditor(name="valves")
-                ),
-                Item(
-                    "object.equilibration.outlet", editor=ComboboxEditor(name="valves")
-                ),
+                Item("object.equilibration.inlet", editor=ComboboxEditor(name="valves")),
+                Item("object.equilibration.outlet", editor=ComboboxEditor(name="valves")),
             ),
             Item("object.equilibration.inlet_delay"),
             Item("object.equilibration.use_extraction_eqtime"),

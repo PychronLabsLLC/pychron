@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from reportlab.lib import colors
 
@@ -28,7 +27,6 @@ from reportlab.lib.units import mm
 from reportlab.platypus.doctemplate import FrameBreak
 from reportlab.platypus.flowables import Spacer
 from reportlab.platypus.frames import Frame
-from six.moves import range
 from traits.api import Bool
 from pyface.ui_traits import PyfaceColor
 from traitsui.api import Item, VGroup
@@ -61,6 +59,7 @@ class LoadingPDFOptions(BasePDFOptions):
 
     def get_alternating_background(self):
         color = self.alternating_background
+
         def _component(value):
             return value() if callable(value) else value
 
@@ -237,10 +236,7 @@ class LoadingPDFWriter(BasePDFTableWriter):
         # ts.add('VALIGN', (-3, 1), (-1, -1), 'MIDDLE')
 
         for idx, pi in enumerate(positions):
-            items = [
-                RowItem(i)
-                for i in (pi.identifier, pi.level_str, pi.sample, pi.position_str)
-            ]
+            items = [RowItem(i) for i in (pi.identifier, pi.level_str, pi.sample, pi.position_str)]
             row = Row(items=items)
 
             data.append(row)

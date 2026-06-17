@@ -7,7 +7,6 @@ rotate_ctm is the cause, other transforms (at least translate) work fine
 """
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.etsconfig.etsconfig import ETSConfig
 
 ETSConfig.toolkit = "qt4"

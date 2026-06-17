@@ -19,7 +19,6 @@
 
 
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from pychron.git_archive.repo_manager import GitRepoManager
 
 

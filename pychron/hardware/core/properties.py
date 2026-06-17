@@ -19,11 +19,6 @@
 # ============= local library imports  ==========================
 
 
-from __future__ import absolute_import
-from __future__ import print_function
-import six
-
-
 class Processor(object):
     def __init__(self, func):
         self._func = func
@@ -44,7 +39,7 @@ class MapProcessor(MappingProcessor):
 
 class ReverseMapProcessor(MappingProcessor):
     def __call__(self, value):
-        return next((k for k, v in six.iteritems(self.values) if v == value), None)
+        return next((k for k, v in self.values.items() if v == value), None)
 
 
 class DeviceProperty(object):
@@ -57,7 +52,7 @@ class DeviceProperty(object):
         frandom=None,
         read_once=False,
         *args,
-        **kw
+        **kw,
     ):
         self.fget = fget
         self.fset = fset

@@ -18,7 +18,6 @@
 # from traits.api import HasTraits
 # from traitsui.api import View, Item, TableEditor
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import math
 
 import numpy as np
@@ -27,9 +26,6 @@ import numpy as np
 from pychron.core.geometry.geometry import sort_clockwise
 from pychron.core.geometry.convex_hull import convex_hull
 from pychron.core.geometry.polygon_offset import polygon_offset
-from six.moves import map
-from six.moves import range
-from six.moves import zip
 
 
 # from pylab import plot, show, text
@@ -227,9 +223,7 @@ def rotate_lines(lines, theta, cx, cy):
 
 def rotate_poly(pts, theta, loc=None):
     theta = math.radians(theta)
-    R = np.array(
-        [[math.cos(theta), math.sin(theta)], [-math.sin(theta), math.cos(theta)]]
-    )
+    R = np.array([[math.cos(theta), math.sin(theta)], [-math.sin(theta), math.cos(theta)]])
     if loc is None:
         cx, cy = 0, 0
     else:

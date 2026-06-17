@@ -17,12 +17,10 @@
 # ============= enthought library imports =======================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
 
 import struct
 from io import BytesIO
 
-from six.moves import range
 from uncertainties import ufloat
 
 from pychron.processing.analyses.analysis import Analysis
@@ -121,9 +119,7 @@ class MassSpecAnalysis(Analysis):
             if arar:
                 try:
                     k = key[2:]
-                    tv, te = getattr(arar, "Tot{}".format(k)), getattr(
-                        arar, "Tot{}Er".format(k)
-                    )
+                    tv, te = getattr(arar, "Tot{}".format(k)), getattr(arar, "Tot{}Er".format(k))
                 except AttributeError:
                     pass
 
@@ -139,9 +135,7 @@ class MassSpecAnalysis(Analysis):
             iso.baseline = Baseline(key, det.detector_type.Label)
 
             iso.baseline.fit = "average"
-            iso.baseline.set_filter_outliers_dict(
-                filter_outliers=fo, iterations=fi, std_devs=fs
-            )
+            iso.baseline.set_filter_outliers_dict(filter_outliers=fo, iterations=fi, std_devs=fs)
 
             iso.baseline.n = dbiso.baseline.NumCnts
 
@@ -202,9 +196,7 @@ class MassSpecAnalysis(Analysis):
                 )
 
                 for k, _ in IRRADIATION_KEYS:
-                    self.interference_corrections[k] = getattr(
-                        production, k.capitalize()
-                    )
+                    self.interference_corrections[k] = getattr(production, k.capitalize())
 
     def sync_fn(self, key, pdpblob):
         if pdpblob:

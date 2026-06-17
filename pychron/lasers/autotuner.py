@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pychron.lasers.scanner import Scanner
 
 # ============= standard library imports ========================
@@ -65,9 +64,7 @@ class AutoTuner(Scanner):
 
                 if not tc.autotune_finished():
                     self.info(
-                        "autotuning not completed after {}s. Waiting until finished".format(
-                            d
-                        )
+                        "autotuning not completed after {}s. Waiting until finished".format(d)
                     )
 
                     while not self.autotune_finished():

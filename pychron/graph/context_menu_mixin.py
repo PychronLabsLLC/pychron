@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import HasTraits
 from traitsui.menu import Action, Menu as MenuManager
@@ -138,9 +137,7 @@ class RegressionContextMenuMixin(ContextMenuMixin):
             ("average {}SEM".format(PLUSMINUS), "cm_average_sem"),
         ]
 
-        menu = MenuManager(
-            *[self.action_factory(name, func) for name, func in actions], name="Fit"
-        )
+        menu = MenuManager(*[self.action_factory(name, func) for name, func in actions], name="Fit")
         actions = [
             ("SD", "cm_sd"),
             ("SEM", "cm_sem"),
@@ -154,9 +151,7 @@ class RegressionContextMenuMixin(ContextMenuMixin):
 
         fmenu = MenuManager(
             self.action_factory("Show/Hide Filter Region", "cm_toggle_filter_bounds"),
-            self.action_factory(
-                "Show/Hide All Filter Region", "cm_toggle_filter_bounds_all"
-            ),
+            self.action_factory("Show/Hide All Filter Region", "cm_toggle_filter_bounds_all"),
             self.action_factory("Toggle Filtering", "cm_toggle_filtering"),
             name="Filtering",
         )

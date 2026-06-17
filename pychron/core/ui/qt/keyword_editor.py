@@ -18,8 +18,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from pyface.qt import QtCore, QtGui
 from traits.api import Bool, Int, Dict
 from pyface.ui_traits import PyfaceColor
@@ -38,9 +36,7 @@ class _KeywordEditor(SimpleEditor):
         self.control = QtGui.QTextEdit(self.str_value)
         # self.control = QtGui.TextEdit(self.str_value)
         # self.control= QtGui.QLineEdit(self.str_value)
-        QtCore.QObject.connect(
-            self.control, QtCore.SIGNAL("editingFinished()"), self.update_object
-        )
+        QtCore.QObject.connect(self.control, QtCore.SIGNAL("editingFinished()"), self.update_object)
 
         QtCore.QObject.connect(
             self.control,

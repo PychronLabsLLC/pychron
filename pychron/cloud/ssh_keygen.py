@@ -20,7 +20,6 @@ Idempotent — :func:`ensure_keypair` returns the existing pair if both
 files exist; only generates on a miss.
 """
 
-from __future__ import absolute_import
 
 import os
 

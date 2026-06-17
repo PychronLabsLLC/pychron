@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import ast
 import os
 
@@ -91,9 +90,7 @@ def migrate_file(p, srcroot, destroot, clean):
                         continue
                     if new_method(dfp, li, "    set_fits", "set_fits()", clean):
                         continue
-                    if new_method(
-                        dfp, li, "    set_baseline_fits", "set_baseline_fits()", clean
-                    ):
+                    if new_method(dfp, li, "    set_baseline_fits", "set_baseline_fits()", clean):
                         continue
 
                     dfp.write(li)

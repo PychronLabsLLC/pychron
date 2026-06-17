@@ -16,7 +16,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.api import HPlotContainer, ArrayPlotData, Plot
 from chaco.default_colormaps import color_map_name_dict
 from chaco.tools.api import ZoomTool
@@ -199,9 +198,7 @@ class BandwidthImager(HasTraits):
 
             plot.delplot("plot0")
             plot.data.set_data("img", rgb_arr)
-            img_plot = plot.img_plot(
-                "img", colormap=color_map_name_dict[self.colormap_name_1]
-            )[0]
+            img_plot = plot.img_plot("img", colormap=color_map_name_dict[self.colormap_name_1])[0]
             plot.request_redraw()
 
     @on_trait_change("calc_area+")
@@ -280,9 +277,7 @@ class BandwidthImager(HasTraits):
         pd = ArrayPlotData()
         pd.set_data("img", odim)
         plot = Plot(data=pd, padding=[30, 5, 5, 30], default_origin="top left")
-        img_plot = plot.img_plot(
-            "img", colormap=color_map_name_dict[self.colormap_name_1]
-        )[0]
+        img_plot = plot.img_plot("img", colormap=color_map_name_dict[self.colormap_name_1])[0]
         self.add_inspector(img_plot)
 
         self.add_tools(img_plot)
@@ -384,9 +379,7 @@ class BandwidthImager(HasTraits):
             Item("path", show_label=False),
             Item(
                 "highlight_bands",
-                editor=ListEditor(
-                    mutable=False, style="custom", editor=InstanceEditor()
-                ),
+                editor=ListEditor(mutable=False, style="custom", editor=InstanceEditor()),
             ),
         )
         v = View(

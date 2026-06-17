@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import weakref
 
 # ============= local library imports  ==========================
@@ -43,9 +42,7 @@ class NotificationManager(object):
             x, y, w, h = prect.x(), prect.y(), prect.width(), prect.height()
             self._rect_tuple = x, y, w, h
 
-            dw = NotificationWidget(
-                message, parent=parent, fontsize=fontsize, color=color
-            )
+            dw = NotificationWidget(message, parent=parent, fontsize=fontsize, color=color)
 
             dw.on_close = self._update_positions
             self.messages.insert(0, weakref.ref(dw)())

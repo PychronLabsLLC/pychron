@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import ctypes
 import os
 from copy import copy
@@ -92,9 +91,7 @@ class ToupCamCamera(object):
                         break
 
     def read(self):
-        arr = frombuffer(self.buf, dtype=uint8).reshape(
-            self.h, self.w, self.pixel_depth
-        )
+        arr = frombuffer(self.buf, dtype=uint8).reshape(self.h, self.w, self.pixel_depth)
         self._arr = arr
 
         return True, self._arr.copy()

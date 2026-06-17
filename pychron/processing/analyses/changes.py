@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Date, Str, List, Int, Any, Float, Bool, Event
 
 
@@ -83,9 +82,7 @@ class BlankChange(Change):
 
         def vfactory(b):
             return [
-                ValueRecord(
-                    value=ai.value, error=ai.error, timestamp=ai.analysis.timestamp
-                )
+                ValueRecord(value=ai.value, error=ai.error, timestamp=ai.analysis.timestamp)
                 for ai in b.value_set
             ]
 
@@ -106,9 +103,7 @@ class BlankChange(Change):
             (hi for hi in self.isotopes if hi.isotope == "Ar40"), self.isotopes[-1]
         )
 
-        b = next(
-            (bi for bi in dbrecord.blanks if bi.isotope == "Ar40"), dbrecord.blanks[-1]
-        )
+        b = next((bi for bi in dbrecord.blanks if bi.isotope == "Ar40"), dbrecord.blanks[-1])
         self.selected.analyses = afactory(b)
 
     def _selected_changed(self):
@@ -121,9 +116,7 @@ class FitChange(Change):
     def _make_summary(self, dbrecord):
         s = ", ".join([fi.make_summary() for fi in dbrecord.fits])
         self.summary = s
-        self.fits = [
-            FitRecord(isotope=fi.isotope_label, fit=fi.fit) for fi in dbrecord.fits
-        ]
+        self.fits = [FitRecord(isotope=fi.isotope_label, fit=fi.fit) for fi in dbrecord.fits]
 
 
 # ============= EOF =============================================

@@ -16,8 +16,6 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 from chaco.api import ColorBar, LinearMapper
 from chaco.data_range_1d import DataRange1D

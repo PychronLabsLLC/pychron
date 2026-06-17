@@ -17,7 +17,6 @@
 # set_toolkit('qt4')
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 from sqlalchemy import Table
 from sqlalchemy.ext.declarative import declarative_base
 from traits.api import Any
@@ -99,9 +98,7 @@ class BaseDatabaseBridge(Loggable):
                 q = q.filter(getattr(table.c, attr) == pid)
             try:
                 record = q.one()
-                data = dict(
-                    [(str(column), getattr(record, column)) for column in columns]
-                )
+                data = dict([(str(column), getattr(record, column)) for column in columns])
                 dest.merge(nrec(**data))
             except NoResultFound:
                 pass

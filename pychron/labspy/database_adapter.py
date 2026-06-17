@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from datetime import datetime, timedelta
 
@@ -72,11 +71,7 @@ class LabspyDatabaseAdapter(DatabaseAdapter):
         try:
             conn = self.get_connection(appname, devname)
         except SQLAlchemyError as e:
-            self.warning(
-                "Error getting connection {}.{} exception: {}".format(
-                    appname, devname, e
-                )
-            )
+            self.warning("Error getting connection {}.{} exception: {}".format(appname, devname, e))
             return
 
         add = False
@@ -97,9 +92,7 @@ class LabspyDatabaseAdapter(DatabaseAdapter):
 
     def get_connection(self, appname, devname):
         q = self.session.query(Connections)
-        q = q.filter(
-            and_(Connections.appname == appname, Connections.devname == devname)
-        )
+        q = q.filter(and_(Connections.appname == appname, Connections.devname == devname))
         return self._query_first(q, reraise=True)
 
     def update_experiment(self, hashid, **kw):

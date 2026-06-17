@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from traits.api import Any, Int, Date, Str, on_trait_change
 from traits.api import HasTraits
 from traitsui.api import View, UItem, VGroup

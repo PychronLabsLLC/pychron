@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Float, on_trait_change, Bool, Property, List
 from traitsui.api import Item, VGroup, HGroup
 
@@ -89,9 +88,7 @@ class Transect(PolyLine):
     _cached_ptargs = None
     point_klass = LaserPoint
 
-    def add_point(
-        self, x, y, z=0, point_color=(1, 0, 0), line_color=(1, 0, 0), **ptargs
-    ):
+    def add_point(self, x, y, z=0, point_color=(1, 0, 0), line_color=(1, 0, 0), **ptargs):
         p2 = LaserPoint(x, y, z=z, default_color=point_color, **ptargs)
         self._add_point(p2, line_color)
 
@@ -147,12 +144,7 @@ class Transect(PolyLine):
                     break
                 else:
                     p = self.new_point(
-                        x,
-                        y,
-                        cnt,
-                        line_color=line_color,
-                        point_color=point_color,
-                        **ptargs
+                        x, y, cnt, line_color=line_color, point_color=point_color, **ptargs
                     )
 
                     self.step_points.append(p)

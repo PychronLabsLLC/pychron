@@ -17,7 +17,6 @@
 # =============enthought library imports=======================
 # =============standard library imports ========================
 # =============local library imports  ==========================
-from __future__ import absolute_import
 from .kerr_motor import KerrMotor
 
 

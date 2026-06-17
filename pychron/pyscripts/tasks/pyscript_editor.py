@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 # ============= standard library imports ========================
 import os
@@ -99,9 +97,7 @@ class Commands(HasTraits):
 class PyScriptEdit(HasTraits):
     text = ""
     path = ""
-    context_editor = Instance(
-        "pychron.pyscripts.context_editors.context_editor.ContextEditor"
-    )
+    context_editor = Instance("pychron.pyscripts.context_editors.context_editor.ContextEditor")
     _cached_text = ""
 
     def open_script(self, p):
@@ -193,9 +189,7 @@ class PyScriptEditor(Editor, PyScriptEdit):
             with open(p, "w") as wfile:
                 wfile.write("# Extracted Gosub\n")
                 wfile.write("# Source: from {}\n".format(self.path))
-                wfile.write(
-                    "# Date: {}\n".format(datetime.now().strftime("%m-%d-%Y %H:%M"))
-                )
+                wfile.write("# Date: {}\n".format(datetime.now().strftime("%m-%d-%Y %H:%M")))
                 wfile.write("def main():\n")
                 for li in selection.split("\u2029"):
                     wfile.write("    {}\n".format(li.lstrip()))

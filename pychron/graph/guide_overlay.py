@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from chaco.api import AbstractOverlay
 from enable.colors import ColorTrait
 from enable.enable_traits import LineStyle
@@ -108,13 +107,13 @@ class GuideOverlay(AbstractOverlay):
                 x2 = component.x2
                 mapped_y = component.value_mapper.map_screen(self.value)
                 # Handle both scalar and array returns from map_screen
-                y1 = y2 = float(mapped_y.item() if hasattr(mapped_y, 'item') else mapped_y)
+                y1 = y2 = float(mapped_y.item() if hasattr(mapped_y, "item") else mapped_y)
             else:
                 y1 = component.y
                 y2 = component.y2
                 mapped_x = component.index_mapper.map_screen(self.value)
                 # Handle both scalar and array returns from map_screen
-                x1 = x2 = float(mapped_x.item() if hasattr(mapped_x, 'item') else mapped_x)
+                x1 = x2 = float(mapped_x.item() if hasattr(mapped_x, "item") else mapped_x)
 
             gc.move_to(x1, y1)
             gc.line_to(x2, y2)
@@ -132,29 +131,25 @@ class RangeGuideOverlay(GuideOverlay):
 
             if self.orientation == "h":
                 x1 = component.x
-                mapped = component.value_mapper.map_screen(
-                    array([self.minvalue, self.maxvalue])
-                )
+                mapped = component.value_mapper.map_screen(array([self.minvalue, self.maxvalue]))
                 # Extract scalar values from mapped result
-                if hasattr(mapped, '__len__') and len(mapped) >= 2:
-                    y1 = float(mapped[0].item() if hasattr(mapped[0], 'item') else mapped[0])
-                    y2 = float(mapped[1].item() if hasattr(mapped[1], 'item') else mapped[1])
+                if hasattr(mapped, "__len__") and len(mapped) >= 2:
+                    y1 = float(mapped[0].item() if hasattr(mapped[0], "item") else mapped[0])
+                    y2 = float(mapped[1].item() if hasattr(mapped[1], "item") else mapped[1])
                 else:
-                    y1 = float(mapped.item() if hasattr(mapped, 'item') else mapped)
+                    y1 = float(mapped.item() if hasattr(mapped, "item") else mapped)
                     y2 = y1
                 height = abs(y2 - y1)
                 width = component.width
             else:
                 y1 = component.y
-                mapped = component.index_mapper.map_screen(
-                    array([self.minvalue, self.maxvalue])
-                )
+                mapped = component.index_mapper.map_screen(array([self.minvalue, self.maxvalue]))
                 # Extract scalar values from mapped result
-                if hasattr(mapped, '__len__') and len(mapped) >= 2:
-                    x1 = float(mapped[0].item() if hasattr(mapped[0], 'item') else mapped[0])
-                    x2 = float(mapped[1].item() if hasattr(mapped[1], 'item') else mapped[1])
+                if hasattr(mapped, "__len__") and len(mapped) >= 2:
+                    x1 = float(mapped[0].item() if hasattr(mapped[0], "item") else mapped[0])
+                    x2 = float(mapped[1].item() if hasattr(mapped[1], "item") else mapped[1])
                 else:
-                    x1 = float(mapped.item() if hasattr(mapped, 'item') else mapped)
+                    x1 = float(mapped.item() if hasattr(mapped, "item") else mapped)
                     x2 = x1
                 width = abs(x2 - x1)
                 height = component.height

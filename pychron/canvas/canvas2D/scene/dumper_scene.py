@@ -18,7 +18,6 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from pychron.canvas.canvas2D.scene.extraction_line_scene import ExtractionLineScene
 from pychron.canvas.canvas2D.scene.primitives.dumper_primitives import Gate, Funnel
 from pychron.canvas.canvas2D.scene.primitives.rounded import RoundedRectangle
@@ -45,9 +44,7 @@ class DumperScene(ExtractionLineScene):
         else:
             klass = XMLLoader
 
-        loader = klass(
-            pathname, origin, color_dict, valve_dimension, connection_dimension
-        )
+        loader = klass(pathname, origin, color_dict, valve_dimension, connection_dimension)
 
         loader.load_switchables(self, valvepath)
         loader.load_rects(self)
@@ -63,9 +60,7 @@ class DumperScene(ExtractionLineScene):
                     c = (0.8, 0.8, 0.8)
 
                 klass = KLASS_MAP.get(key, RoundedRectangle)
-                rect = self._new_rectangle(
-                    cp, b, c, bw=5, origin=origin, klass=klass, type_tag=key
-                )
+                rect = self._new_rectangle(cp, b, c, bw=5, origin=origin, klass=klass, type_tag=key)
                 self._load_states(rect, b)
 
     def _load_states(self, item, elem):

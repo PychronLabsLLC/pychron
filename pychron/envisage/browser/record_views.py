@@ -15,9 +15,7 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
-import six
 from sqlalchemy.exc import InternalError
 from traits.api import HasTraits, Str, Date, Int, Bool
 
@@ -167,12 +165,12 @@ class LabnumberRecordView(RecordView):
         sample = dbrecord.sample
         if sample:
             if sample.material:
-                if isinstance(sample.material, (str, six.text_type)):
+                if isinstance(sample.material, str):
                     self.material = sample.material
                 else:
                     self.material = sample.material.name
             if sample.project:
-                if isinstance(sample.material, (str, six.text_type)):
+                if isinstance(sample.material, str):
                     self.project = sample.project
                 else:
                     self.project = sample.project.name

@@ -17,10 +17,8 @@
 # ============= enthought library imports =======================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import re
 from itertools import groupby
-import six
 
 # ============= local library imports  ==========================
 FREQ_REG = re.compile(r"(\d,)*\d(,[eE])?$|(s(,\d)+(,[eE])?)$|^s$|(s,[eE])$|^e$")
@@ -131,7 +129,7 @@ def render_simple(freq, runs, sidx, before, after):
 
 def frequency_index_gen(runs, freq, incrementable, before, after, sidx=0):
     runs = compress_runs(runs, incrementable)
-    if isinstance(freq, (str, six.text_type)):
+    if isinstance(freq, str):
         return render_template(freq, runs, sidx)
     else:
         return render_simple(freq, runs, sidx, before, after)

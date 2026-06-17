@@ -16,7 +16,6 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from traits.api import Int, Bool
 from traitsui.api import View, Item, ListEditor, InstanceEditor
 
@@ -57,9 +56,7 @@ class GaugeManager(DeviceManager):
         for di in self.devices:
             if not di.test_connection():
                 self.debug(
-                    'Failed connection to "{}" (display_name={})'.format(
-                        di.name, di.display_name
-                    )
+                    'Failed connection to "{}" (display_name={})'.format(di.name, di.display_name)
                 )
                 return
             else:

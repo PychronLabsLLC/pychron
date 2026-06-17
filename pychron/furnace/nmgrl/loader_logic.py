@@ -15,12 +15,9 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 
-import six
-from six.moves import zip
 from traits.api import Any, Dict
 
 # ============= standard library imports ========================
@@ -64,7 +61,7 @@ class LoaderLogic(Loggable):
         self.switches = yd["switches"]
 
     def _convert_switch_name(self, name):
-        return next((k for k, v in six.iteritems(self.switches) if v == name), None)
+        return next((k for k, v in self.switches.items() if v == name), None)
 
     def _check_rule(self, key, rule):
         bits = []
@@ -80,9 +77,7 @@ class LoaderLogic(Loggable):
                         b = True
 
                     self.debug(
-                        "switch state: name={}, state={}, s={}, b={}".format(
-                            name, state, s, b
-                        )
+                        "switch state: name={}, state={}, s={}, b={}".format(name, state, s, b)
                     )
                 else:
                     self.debug("name not in switches {}".format(name))

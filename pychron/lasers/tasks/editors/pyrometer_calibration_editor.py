@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import os
 import time
 
@@ -31,7 +30,6 @@ from pychron.lasers.scanner import Scanner
 from pychron.lasers.tasks.editors.laser_editor import LaserEditor
 from pychron.managers.data_managers.csv_data_manager import CSVDataManager
 from pychron.paths import paths
-from six.moves import range
 
 
 class PyrometerCalibrationScanner(Scanner):

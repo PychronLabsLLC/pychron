@@ -14,8 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
-from __future__ import print_function
 
 from collections import deque
 from typing import Dict as TypingDict
@@ -160,9 +158,7 @@ class ExtractionLineGraph(HasTraits):
                     continue
                 if tag in ("valve", "rough_valve", "manual_valve"):
                     open_volume = self._get_volume(element, tag="open_volume", default=10)
-                    closed_volume = self._get_volume(
-                        element, tag="closed_volume", default=5
-                    )
+                    closed_volume = self._get_volume(element, tag="closed_volume", default=5)
                     volume = (open_volume, closed_volume)
                 else:
                     volume = self._get_volume(element)
@@ -256,9 +252,7 @@ class ExtractionLineGraph(HasTraits):
             node.name,
         )
 
-    def _dominant_source(
-        self, nodes: Iterable[RootNode]
-    ) -> Tuple[str, str, Optional[RootNode]]:
+    def _dominant_source(self, nodes: Iterable[RootNode]) -> Tuple[str, str, Optional[RootNode]]:
         candidates = [
             node for node in nodes if getattr(node, "precedence", 0) and hasattr(node, "tag")
         ]
@@ -305,9 +299,7 @@ class ExtractionLineGraph(HasTraits):
                 continue
 
             region_id = self._make_region_id(region_nodes)
-            dominant_source, dominant_name, dominant_node = self._dominant_source(
-                region_nodes
-            )
+            dominant_source, dominant_name, dominant_node = self._dominant_source(region_nodes)
             region = NetworkRegionState(
                 identifier=region_id,
                 node_names=sorted(node.name for node in region_nodes),

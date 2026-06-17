@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 
 import json
 import os
@@ -58,9 +57,7 @@ class GitHubService(GitHostService):
             self.new_session()
             close_at_end = True
 
-        self._session.headers.update(
-            ETag=sha, Accept="application/vnd.github.VERSION.sha"
-        )
+        self._session.headers.update(ETag=sha, Accept="application/vnd.github.VERSION.sha")
 
         r = self._session.get(cmd)
         rsha = r.text

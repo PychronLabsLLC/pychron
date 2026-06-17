@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import uuid
 
@@ -35,9 +34,7 @@ class InterpretedAgeEditor(FigureEditor):
             pk = "Plateau"
 
             additional["include_j_error_in_plateau"] = po.include_j_error_in_plateau
-            additional["include_j_error_in_integrated"] = (
-                po.include_j_error_in_integrated
-            )
+            additional["include_j_error_in_integrated"] = po.include_j_error_in_integrated
             additional["plateau_nsteps"] = po.pc_nsteps
             additional["plateau_gas_fraction"] = po.pc_gas_fraction
             additional["plateau_method"] = po.plateau_method
@@ -55,9 +52,7 @@ class InterpretedAgeEditor(FigureEditor):
             additional["include_j_error_in_mean"] = po.include_j_error_in_mean
 
         def func(aa):
-            p = InterpretedAgeGroup(
-                analyses=aa, use=True, uuid=str(uuid.uuid4()), **additional
-            )
+            p = InterpretedAgeGroup(analyses=aa, use=True, uuid=str(uuid.uuid4()), **additional)
             p.set_preferred_kinds()
             p.set_preferred_age(pk, ek)
             return p

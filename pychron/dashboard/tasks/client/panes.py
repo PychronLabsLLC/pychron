@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.tasks.traits_dock_pane import TraitsDockPane
 from pyface.tasks.traits_task_pane import TraitsTaskPane
 from traitsui.api import View, UItem, VGroup, HGroup
@@ -34,7 +33,11 @@ class DashboardCentralPane(TraitsTaskPane):
         state = CustomLabel("connection_state", label="State")
         config_error = CustomLabel("last_config_error", label="Config Error")
         alert = CustomLabel("active_alert", label="Alert")
-        v = View(VGroup(HGroup(url, state), config_error, alert, UItem("selected_device", style="custom")))
+        v = View(
+            VGroup(
+                HGroup(url, state), config_error, alert, UItem("selected_device", style="custom")
+            )
+        )
 
         return v
 

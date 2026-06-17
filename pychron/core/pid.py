@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 # ============= standard library imports ========================
 import os
@@ -81,9 +80,7 @@ class PID(HasTraits):
         dt = self.kdt
         self._integral_err += error * dt
         derivative = (error - self._prev_err) / dt
-        output = (
-            (self.kp * error) + (self.ki * self._integral_err) + (self.kd * derivative)
-        )
+        output = (self.kp * error) + (self.ki * self._integral_err) + (self.kd * derivative)
         self._prev_err = error
         return min(self.max_output, max(self.min_output, output))
 

@@ -15,23 +15,22 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.etsconfig.etsconfig import ETSConfig
 
-ETSConfig.toolkit = 'qt4'
+ETSConfig.toolkit = "qt4"
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 import unittest
 from pychron.database.isotope_database_manager import IsotopeDatabaseManager
 
 
-def isotope_manager_factory(name='isotopedb_dev'):
+def isotope_manager_factory(name="isotopedb_dev"):
     man = IsotopeDatabaseManager(connect=False, bind=False)
-    man.db.kind = 'mysql'
+    man.db.kind = "mysql"
     man.db.name = name
-    man.db.password = 'Argon'
-    man.db.username = 'root'
-    man.db.host = 'localhost'
+    man.db.password = "Argon"
+    man.db.username = "root"
+    man.db.host = "localhost"
     return man
 
 
@@ -41,8 +40,9 @@ class IsotopeTestCase(unittest.TestCase):
 
     def testUrl(self):
         man = self.isotope_database_manager
-        self.assertEqual(man.db.url,
-                         'mysql+pymysql://root:Argon@localhost/isotopedb_dev?connect_timeout=3')
+        self.assertEqual(
+            man.db.url, "mysql+pymysql://root:Argon@localhost/isotopedb_dev?connect_timeout=3"
+        )
 
     def testConnection(self):
         man = self.isotope_database_manager

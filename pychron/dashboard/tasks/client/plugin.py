@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from apptools.preferences.preference_binding import bind_preference
 from traits.api import Instance
 
@@ -43,9 +42,7 @@ class DashboardClientPlugin(BaseTaskPlugin):
     #     return f
 
     def _service_offers_default(self):
-        so = self.service_offer_factory(
-            protocol=DashboardClient, factory=self._client_factory
-        )
+        so = self.service_offer_factory(protocol=DashboardClient, factory=self._client_factory)
         return [so]
 
     def _client_factory(self):

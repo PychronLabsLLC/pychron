@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Float
 
 # ============= standard library imports ========================
@@ -54,9 +53,7 @@ class Detector(Rectangle):
             gc.set_line_width(3)
             gc.set_stroke_color((0, 1, 0))
             m = y + h / 2.0
-            y2 = m + h / 2.0 * self.deflection / (
-                self.max_deflection - self.min_deflection
-            )
+            y2 = m + h / 2.0 * self.deflection / (self.max_deflection - self.min_deflection)
             gc.move_to(x - 25, m)
             gc.line_to(x, y2)
             gc.stroke_path()

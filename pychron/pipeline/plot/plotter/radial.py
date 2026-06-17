@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
-from __future__ import print_function
 import logging
 from traits.api import Array
 from chaco.abstract_overlay import AbstractOverlay
@@ -23,7 +21,6 @@ from numpy import array
 
 from pychron.core.stats import calculate_weighted_mean
 from pychron.pipeline.plot.plotter.arar_figure import BaseArArFigure
-from six.moves import zip
 
 logger = logging.getLogger(__name__)
 

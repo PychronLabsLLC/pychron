@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Float
 
 # ============= standard library imports ========================
@@ -106,9 +105,7 @@ class Monitor(ConfigLoadable):
 
     def _get_checks(self):
         return [
-            getattr(self, h)
-            for h in dir(self)
-            if "_fcheck" in h and h not in self._invalid_checks
+            getattr(self, h) for h in dir(self) if "_fcheck" in h and h not in self._invalid_checks
         ]
 
     def _monitor_(self):

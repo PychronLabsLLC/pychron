@@ -22,8 +22,9 @@
 # ============= local library imports  ==========================
 
 # ============= views ===================================
-from __future__ import absolute_import
-from pychron.hardware.gauges.base_gauge import BaseGauge
+# legacy module: BaseGauge in base_gauge.py is fully commented out, so this
+# import (and the MKS gauge family that depends on it) fails at runtime
+from pychron.hardware.gauges.base_gauge import BaseGauge  # type: ignore[attr-defined]
 
 
 class BaseMKSGauge(BaseGauge):

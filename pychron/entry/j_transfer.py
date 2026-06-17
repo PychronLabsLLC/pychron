@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import HasTraits, Instance, Bool, Str, Any
 from traitsui.api import Item, VGroup, Controller, Readonly
@@ -60,9 +59,7 @@ class TransferConfigView(Controller):
 
 
 class JTransferer(Loggable):
-    pychrondb = (
-        Any  # Instance('pychron.database.adapters.isotope_adapter.IsotopeAdapter')
-    )
+    pychrondb = Any  # Instance('pychron.database.adapters.isotope_adapter.IsotopeAdapter')
     massspecdb = Instance(
         "pychron.mass_spec.database.massspec_database_adapter.MassSpecDatabaseAdapter"
     )
@@ -150,9 +147,7 @@ class JTransferer(Loggable):
                 # else:
                 #     add_flux()
             else:
-                self.warning(
-                    "Irradiation Position {} not in MassSpecDatabase".format(posstr)
-                )
+                self.warning("Irradiation Position {} not in MassSpecDatabase".format(posstr))
         else:
             self.warning("No Labnumber for {}".format(posstr))
 

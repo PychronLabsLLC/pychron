@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from traits.has_traits import Interface
 
 __author__ = "argonlab2"
@@ -33,6 +32,6 @@ class IBrowser(Interface):
         omit_key=None,
         exclude_uuids=None,
         mass_spectrometers=None,
-        **kw
+        **kw,
     ):
         pass

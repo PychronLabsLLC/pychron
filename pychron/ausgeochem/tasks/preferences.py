@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 
 import json
 
@@ -187,16 +186,16 @@ class AusGeochemPreferencesPane(PreferencesPane):
         svc.username = p.username
         svc.password = p.password
         ok = svc.test_connection()
-        self._test_status = (
-            "[OK] {}".format(p.name) if ok else "[FAIL] {}".format(p.name)
-        )
+        self._test_status = "[OK] {}".format(p.name) if ok else "[FAIL] {}".format(p.name)
 
     def traits_view(self):
         cols = [
             ObjectColumn(name="name", label="Profile"),
             ObjectColumn(name="base_url", label="Base URL"),
             ObjectColumn(name="username", label="Username"),
-            ObjectColumn(name="password", label="Password", format_func=lambda v: "•" * len(v) if v else ""),
+            ObjectColumn(
+                name="password", label="Password", format_func=lambda v: "•" * len(v) if v else ""
+            ),
         ]
         table = TableEditor(
             columns=cols,

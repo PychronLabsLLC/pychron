@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from pychron.core.ui import set_qt
 
 set_qt()
@@ -67,11 +66,7 @@ class ExperimentalRatioEditor(RatioEditor):
 
     def _get_percent_diff(self):
         try:
-            r = (
-                (self.ratio_intercept - self.intercept_ratio)
-                / self.intercept_ratio
-                * 100
-            )
+            r = (self.ratio_intercept - self.intercept_ratio) / self.intercept_ratio * 100
         except ZeroDivisionError:
             r = "NaN"
 

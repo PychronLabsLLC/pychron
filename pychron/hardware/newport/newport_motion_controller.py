@@ -20,7 +20,7 @@ import math
 import os
 import time
 
-import six.moves.cPickle as pickle
+import pickle
 
 # =============enthought library imports=======================
 from traits.api import Enum, Instance
@@ -67,11 +67,7 @@ class NewportMotionController(MotionController):
             self.read_error()
 
             self.setup_consumer()
-            r = (
-                True
-                if self.get_current_position("x", verbose=True) is not None
-                else False
-            )
+            r = True if self.get_current_position("x", verbose=True) is not None else False
             return r
 
     def load_additional_args(self, config):
@@ -81,9 +77,7 @@ class NewportMotionController(MotionController):
         group = config.get("Optional", "group")
         joystick = config.get("Optional", "joystick")
         if group:
-            self.load_optional_parameters(
-                config_path, "{}.cfg".format(group), "group", GROUP_MSG
-            )
+            self.load_optional_parameters(config_path, "{}.cfg".format(group), "group", GROUP_MSG)
         if joystick:
             self.load_optional_parameters(
                 config_path, "{}.txt".format(joystick), "joystick", JOYSTICK_MSG
@@ -237,9 +231,7 @@ class NewportMotionController(MotionController):
         else:
             v = (v2[0] - v1[0]) * direction  # * ax.sign  # + self._x_position
 
-        self.single_axis_move(
-            ax_key, v, block=False, mode="relative", verbose=False, update=True
-        )
+        self.single_axis_move(ax_key, v, block=False, mode="relative", verbose=False, update=True)
 
     def multiple_point_move(self, points, nominal_displacement=0.5, velocity=None):
         gid = self.groupobj.id
@@ -350,7 +342,7 @@ class NewportMotionController(MotionController):
         velocity_scalar=None,
         update=25,
         immediate=False,
-        **kw
+        **kw,
     ):
         args = (key, value, block, mode, velocity, velocity_scalar, update, kw)
         if block or immediate:
@@ -426,9 +418,7 @@ class NewportMotionController(MotionController):
 
         axis_objs = [a for a in self.axes.values() if a.name in axes]
 
-        cmd = ";".join(
-            [self._build_command("OR", a.id, nn=a._home_search_mode) for a in axis_objs]
-        )
+        cmd = ";".join([self._build_command("OR", a.id, nn=a._home_search_mode) for a in axis_objs])
         # force z axis home positive
         # cmd = '1OR{};2OR{};3OR{}' .format(search_mode, search_mode, 3)
         #        cmd = cmd.format(*[search_mode if v.id != 3 else 3 for k, v in self.axes.iteritems()])
@@ -603,9 +593,7 @@ class NewportMotionController(MotionController):
             self.debug("---------------------------------")
         return error
 
-    def set_group_motion_parameters(
-        self, acceleration=None, deceleration=None, velocity=None
-    ):
+    def set_group_motion_parameters(self, acceleration=None, deceleration=None, velocity=None):
         if self.groupobj is not None:
             if acceleration is not None:
                 self.groupobj.acceleration = acceleration
@@ -615,13 +603,7 @@ class NewportMotionController(MotionController):
                 self.groupobj.velocity = velocity
 
     def configure_group(
-        self,
-        group,
-        displacement=None,
-        velocity=None,
-        velocity_scalar=None,
-        force=False,
-        **kw
+        self, group, displacement=None, velocity=None, velocity_scalar=None, force=False, **kw
     ):
         self.debug("configuring group")
         gobj = self.groupobj
@@ -656,9 +638,7 @@ class NewportMotionController(MotionController):
 
     def at_velocity(self, axkey, event, tol=0.25):
         if not self.simulation:
-            desired_velocity = float(
-                self.ask(self._build_query("VA", xx=self.axes[axkey].id))
-            )
+            desired_velocity = float(self.ask(self._build_query("VA", xx=self.axes[axkey].id)))
             av = self.read_actual_velocity(axkey)
             while av is not None and abs(abs(av) - desired_velocity) > tol:
                 av = self.read_actual_velocity(axkey)
@@ -703,9 +683,7 @@ class NewportMotionController(MotionController):
                 deceleration=axis.deceleration,
             )
 
-            cmd = ";".join(
-                ["{:n}{}{{{}:0.2f}}".format(*(axis.id,) + p) for p in param_coms]
-            )
+            cmd = ";".join(["{:n}{}{{{}:0.2f}}".format(*(axis.id,) + p) for p in param_coms])
 
             # ex cmd
             # 1VA1.00;1AC2.00;1AG2.00
@@ -821,9 +799,7 @@ class NewportMotionController(MotionController):
         if displacement <= 0:
             return
         if obj.calculate_parameters:
-            change, nv, ac, dc = self.motion_profiler.check_motion(
-                displacement, obj, force=force
-            )
+            change, nv, ac, dc = self.motion_profiler.check_motion(displacement, obj, force=force)
             self.debug("calculated {} {} {} {}".format(change, nv, ac, dc))
             if change:
                 obj.trait_set(
@@ -855,7 +831,7 @@ class NewportMotionController(MotionController):
         sign_correct=True,
         start_timer=False,
         rflag=0,
-        **kw
+        **kw,
     ):
         """ """
 
@@ -891,7 +867,7 @@ class NewportMotionController(MotionController):
                     sign_correct=sign_correct,
                     start_timer=start_timer,
                     rflag=rflag + 1,
-                    **kw
+                    **kw,
                 )
         else:
             if block or start_timer:
@@ -910,9 +886,7 @@ class NewportMotionController(MotionController):
                     if abs(x - target_x) > tol or abs(y - target_y) > tol:
                         self.warning(
                             "TargetPosition warning:  "
-                            "current={},{}  target={},{}".format(
-                                x, y, target_x, target_y
-                            )
+                            "current={},{}  target={},{}".format(x, y, target_x, target_y)
                         )
 
                         xtol = self.xaxes_max - self.xaxes_min
@@ -964,9 +938,7 @@ class NewportMotionController(MotionController):
             if self.mode == "grouped":
                 return self.group_moving()
             else:
-                r = self.repeat_command(
-                    ("MD?", axis), 5, check_type=int, verbose=verbose
-                )
+                r = self.repeat_command(("MD?", axis), 5, check_type=int, verbose=verbose)
                 if r is not None and r != "":
                     # stage is moving if r==0
                     moving = not int(r)

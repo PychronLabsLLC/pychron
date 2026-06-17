@@ -15,7 +15,6 @@
 # ===============================================================================
 
 
-from __future__ import absolute_import
 import time
 
 from traits.api import HasTraits, Float
@@ -38,9 +37,7 @@ class PIDObject(HasTraits):
     def iterate(self, error, dt):
         self._integral_err += error * dt
         derivative = (error - self._prev_err) / dt
-        output = (
-            (self.Kp * error) + (self.Ki * self._integral_err) + (self.Kd * derivative)
-        )
+        output = (self.Kp * error) + (self.Ki * self._integral_err) + (self.Kd * derivative)
         self._prev_err = error
         # limit the output to
         output = max(0, min(self.max_output, output))

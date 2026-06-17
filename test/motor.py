@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import unittest
 
 # ============= standard library imports ========================
@@ -59,6 +58,7 @@ class LinearMapperTest(unittest.TestCase):
 
         ds = 4
         steps = m.map_steps(ds)
-        self.assertEqual(steps, 9500 / 2.)
+        self.assertEqual(steps, 9500 / 2.0)
+
 
 # ============= EOF =============================================

@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 from traits.api import Bool, Any
 
 from pychron.core.ui.preference_binding import bind_preference
@@ -31,9 +30,7 @@ class ClientExtractionLineManager(ExtractionLineManager):
 
     def bind_preferences(self):
         super(ClientExtractionLineManager, self).bind_preferences()
-        bind_preference(
-            self, "use_status_monitor", "pychron.extraction_line.use_status_monitor"
-        )
+        bind_preference(self, "use_status_monitor", "pychron.extraction_line.use_status_monitor")
 
     def start_status_monitor(self, oid=None):
         if oid is None:

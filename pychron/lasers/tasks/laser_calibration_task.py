@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from pyface.tasks.action.schema import SToolBar
 from traits.api import Property, Bool, Event, on_trait_change
 
@@ -79,9 +77,7 @@ class LaserCalibrationTask(BaseLaserTask):
         return [lp, ep]
 
     def get_power_maps(self):
-        ps = self.open_file_dialog(
-            action="open files", default_directory=paths.power_map_dir
-        )
+        ps = self.open_file_dialog(action="open files", default_directory=paths.power_map_dir)
         return ps
 
     def open_power_maps(self, ps):
@@ -108,9 +104,7 @@ class LaserCalibrationTask(BaseLaserTask):
                     self.debug("invalid power map file {}".format(p))
 
     def new_power_map(self):
-        n = len(
-            [ed for ed in self.editor_area.editors if isinstance(ed, PowerMapEditor)]
-        )
+        n = len([ed for ed in self.editor_area.editors if isinstance(ed, PowerMapEditor)])
 
         editor = PowerMapEditor(name="Power Map {:03d}".format(n + 1))
         if self.active_editor:
@@ -119,13 +113,7 @@ class LaserCalibrationTask(BaseLaserTask):
         self._open_editor(editor)
 
     def new_power_calibration(self):
-        n = len(
-            [
-                ed
-                for ed in self.editor_area.editors
-                if isinstance(ed, PowerCalibrationEditor)
-            ]
-        )
+        n = len([ed for ed in self.editor_area.editors if isinstance(ed, PowerCalibrationEditor)])
 
         editor = PowerCalibrationEditor(name="Power Calibration {:03d}".format(n + 1))
         self._open_editor(editor)

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Any
 from traitsui.api import View, Item, EnumEditor, HGroup, UItem, Controller
 
@@ -50,9 +49,7 @@ class UVLaserControlsClient(Controller):
                 icon_button_editor(
                     "fire", "lightning", enabled_when="not firing", tooltip="Fire laser"
                 ),
-                icon_button_editor(
-                    "stop", "stop", enabled_when="firing", tooltip="Stop firing"
-                ),
+                icon_button_editor("stop", "stop", enabled_when="firing", tooltip="Stop firing"),
                 UItem("fire_mode"),
             ),
             Item("nburst"),

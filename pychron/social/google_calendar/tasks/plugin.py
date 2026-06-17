@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import List, Instance
 
 from pychron.envisage.tasks.base_task_plugin import BaseTaskPlugin
@@ -50,9 +49,7 @@ class GoogleCalendarPlugin(BaseTaskPlugin):
         self.debug("end experiment event")
         d = {
             "end": "now",
-            "summary": "Experiment: {} {}".format(
-                ctx["experiment_name"], ctx["err_message"]
-            ),
+            "summary": "Experiment: {} {}".format(ctx["experiment_name"], ctx["err_message"]),
         }
 
         enabled = self.application.get_boolean_preference(

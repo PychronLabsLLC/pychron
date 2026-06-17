@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import List, Str, on_trait_change, Button, Instance
 
 # ============= standard library imports ========================
@@ -77,9 +76,7 @@ class SpectrometerScanGraph(TimeSeriesStreamGraph):
                         self.visual_marker_counter = -1
                         y = p.y2 - 20
 
-                    m = t.add_marker(
-                        x, y, text, bgcolor, vertical_marker=self.use_vertical_markers
-                    )
+                    m = t.add_marker(x, y, text, bgcolor, vertical_marker=self.use_vertical_markers)
                     self.visual_marker_counter += 1
                     self.markers.append(m)
                     for u in p.underlays:

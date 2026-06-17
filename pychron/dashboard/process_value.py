@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import time
 
 from traits.api import HasTraits, Str, Either, Property, Float, Int, Bool, List, Enum
@@ -62,9 +61,7 @@ class ProcessValue(HasTraits):
         tt = 60 * 60  # max time (s) allowed without a measurement taken
         # even if the current value is the same as the last value
         threshold = self.change_threshold
-        if abs(self.last_value - v) > threshold or (
-            self.last_time and ct - self.last_time > tt
-        ):
+        if abs(self.last_value - v) > threshold or (self.last_time and ct - self.last_time > tt):
             # a = abs(self.last_value - v) > threshold
             # b = (self.last_time and ct - self.last_time > tt)
             # self.debug('a={} {}-{}>{}, b={}'.format(a, self.last_value, v,threshold, b))

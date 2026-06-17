@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-
-
 def set_toolkit(name):
     from traits.etsconfig.etsconfig import ETSConfig
 
@@ -17,10 +14,12 @@ def _patch_qdialog_exec():
             return
 
     if hasattr(QDialog, "exec"):
+
         def _exec_(self):
             return self.exec()
 
         QDialog.exec_ = _exec_
+
 
 _patch_qdialog_exec()
 
@@ -45,5 +44,7 @@ def _patch_qt_ignore_action():
 
 
 _patch_qt_ignore_action()
+
+
 def set_qt():
     set_toolkit("qt4")

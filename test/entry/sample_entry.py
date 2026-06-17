@@ -1,9 +1,8 @@
-
-from __future__ import absolute_import
-__author__ = 'ross'
+__author__ = "ross"
 
 from pychron.core.ui import set_toolkit
-set_toolkit('qt4')
+
+set_toolkit("qt4")
 import unittest
 
 from pychron.entry.loaders.mb_sample_loader import SampleLoader, XLSParser
@@ -12,15 +11,15 @@ from pychron.entry.loaders.mb_sample_loader import SampleLoader, XLSParser
 class SampleLoaderTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.loader=SampleLoader()
-        cls.parser=XLSParser()
-        p='../data/sample.xls'
+        cls.loader = SampleLoader()
+        cls.parser = XLSParser()
+        p = "../data/sample.xls"
         cls.parser.load(p)
 
     def test_itervalues(self):
-        values=list(self.parser.itervalues(keys=('sample','material')))
-        self.assertEqual(values[1]['sample'],'B')
+        values = list(self.parser.itervalues(keys=("sample", "material")))
+        self.assertEqual(values[1]["sample"], "B")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

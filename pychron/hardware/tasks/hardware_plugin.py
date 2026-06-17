@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from envisage.extension_point import ExtensionPoint
 from envisage.ui.tasks.task_extension import TaskExtension
 from envisage.ui.tasks.task_factory import TaskFactory
@@ -103,9 +102,7 @@ class HardwarePlugin(BaseTaskPlugin):
             return
 
         # create the hardware proxy server
-        ehs = to_bool(
-            self.application.preferences.get("pychron.hardware.enable_hardware_server")
-        )
+        ehs = to_bool(self.application.preferences.get("pychron.hardware.enable_hardware_server"))
         if ehs:
             # use_tx = to_bool(self.application.preferences.get('pychron.hardware.use_twisted', True))
             use_tx = True
@@ -130,9 +127,7 @@ class HardwarePlugin(BaseTaskPlugin):
                         )
                         self.warning_dialog(msg)
                     else:
-                        self.info(
-                            "Added Pychron Proxy Service: {}:{}".format(protocol, port)
-                        )
+                        self.info("Added Pychron Proxy Service: {}:{}".format(protocol, port))
 
             # else:
             #     from pychron.remote_hardware.remote_hardware_manager import RemoteHardwareManager
@@ -177,9 +172,7 @@ class HardwarePlugin(BaseTaskPlugin):
         #     protocol=RemoteHardwareManager,
         #     factory=self._remote_hardware_manager_factory)
 
-        so_fm = self.service_offer_factory(
-            protocol=FlagManager, factory=self._flag_manager_factory
-        )
+        so_fm = self.service_offer_factory(protocol=FlagManager, factory=self._flag_manager_factory)
         #        return [so, so1, so2]
         # return [so_hm, so_rhm, so_fm]
         # return [so_hm, so_fm]

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 # ============= standard library imports ========================
 import os
@@ -210,11 +209,7 @@ class PyScriptTask(EditorTask, ScriptExecutorMixin):
 
         if self.use_git_repo:
             if not next(
-                (
-                    ti
-                    for ti in self.tool_bars
-                    if ti.id == "pychron.pyscript.git_toolbar"
-                ),
+                (ti for ti in self.tool_bars if ti.id == "pychron.pyscript.git_toolbar"),
                 None,
             ):
                 self.tool_bars.append(
@@ -290,9 +285,7 @@ class PyScriptTask(EditorTask, ScriptExecutorMixin):
     def bind_preferences(self):
         self._preference_binder("pychron.pyscript", ("auto_detab", "use_git_repo"))
         if self.use_git_repo:
-            self._preference_binder(
-                "pychron.pyscript", ("remote",), obj=self.repo_manager
-            )
+            self._preference_binder("pychron.pyscript", ("remote",), obj=self.repo_manager)
 
     def create_dock_panes(self):
         self.commands_pane = CommandsPane()
@@ -509,9 +502,7 @@ class PyScriptTask(EditorTask, ScriptExecutorMixin):
         if self.active_editor:
             self.commands_pane.name = self.active_editor.kind
 
-            self.commands_pane.command_objects = (
-                self.active_editor.commands.command_objects
-            )
+            self.commands_pane.command_objects = self.active_editor.commands.command_objects
             self.commands_pane.commands = self.active_editor.commands.script_commands
 
             self.script_browser_pane.root = os.path.dirname(self.active_editor.path)

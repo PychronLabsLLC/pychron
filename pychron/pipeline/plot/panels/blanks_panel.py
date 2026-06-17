@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 
 from pychron.pipeline.plot.panels.references_panel import ReferencesPanel
 from pychron.pipeline.plot.plotter.blanks import Blanks

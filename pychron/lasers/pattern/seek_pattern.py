@@ -14,8 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from chaco.abstract_overlay import AbstractOverlay
 from chaco.default_colormaps import hot
 from chaco.api import render_markers
@@ -29,7 +27,6 @@ from numpy import polyfit, linspace, hstack, average, zeros, uint8, arange
 
 # ============= local library imports  ==========================
 from pychron.lasers.pattern.patterns import Pattern
-from six.moves import zip
 
 
 class CurrentPointOverlay(AbstractOverlay):
@@ -163,9 +160,7 @@ class Triangle:
 
     def point_xy(self, idx=None):
         if idx is None:
-            pts = sorted(
-                [p for p in self._points], key=lambda px: px.score, reverse=True
-            )
+            pts = sorted([p for p in self._points], key=lambda px: px.score, reverse=True)
 
             x, y, opt = triangulator(pts, self._height)
             self._points.remove(opt)
@@ -303,9 +298,7 @@ class SeekPattern(Pattern):
 
     def validate(self, xx, yy):
         print("validate", xx, yy, self.cy, self.cy, self.perimeter_radius)
-        return (
-            (xx - self.cx) ** 2 + (yy - self.cy) ** 2
-        ) ** 0.5 <= self.perimeter_radius
+        return ((xx - self.cx) ** 2 + (yy - self.cy) ** 2) ** 0.5 <= self.perimeter_radius
 
     def reduce_vector_magnitude(self, px, py, scalar=1.0):
         vx, vy = (px - self.cx), (py - self.cy)

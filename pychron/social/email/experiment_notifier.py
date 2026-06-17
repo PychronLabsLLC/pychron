@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from apptools.preferences.preference_binding import bind_preference
 from traits.api import Instance, Bool, List
 
@@ -40,18 +39,12 @@ class ExperimentNotifier(Loggable):
     def notify(self, ctx, subject):
         mctx = self._assemble_ctx(**ctx)
 
-        self.debug(
-            "Notify with context={}".format(
-                {k: v for k, v in mctx.items() if k != "log"}
-            )
-        )
+        self.debug("Notify with context={}".format({k: v for k, v in mctx.items() if k != "log"}))
         message = email_template(**mctx)
 
         user_email = ctx.get("user_email")
         if user_email:
-            self.info(
-                "Notifying user={} email={}".format(ctx.get("username"), user_email)
-            )
+            self.info("Notifying user={} email={}".format(ctx.get("username"), user_email))
             subject = "{} {}".format(subject, datetime.now().isoformat())
             self._send(user_email, subject, message)
 

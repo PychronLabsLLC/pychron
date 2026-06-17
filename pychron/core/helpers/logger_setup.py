@@ -16,7 +16,6 @@
 
 # =============enthought library imports=======================
 # =============standard library imports ========================
-from __future__ import absolute_import
 
 import glob
 import logging
@@ -29,10 +28,8 @@ from typing import BinaryIO, Optional, Union, Tuple
 from pychron.paths import paths
 
 NAME_WIDTH = 40
-gFORMAT = (
-    "%(name)-{}s: %(asctime)s %(levelname)-9s (%(threadName)-10s) %(message)s".format(
-        NAME_WIDTH
-    )
+gFORMAT = "%(name)-{}s: %(asctime)s %(levelname)-9s (%(threadName)-10s) %(message)s".format(
+    NAME_WIDTH
 )
 gLEVEL = logging.DEBUG
 PYCHRON_MANAGED_HANDLER = "_pychron_managed_handler"
@@ -131,9 +128,7 @@ def _archive_old_logs(bdir: str, logname: str, use_archiver: bool = True) -> Non
     session_dir = os.path.join(bdir, creation_date.strftime("%y%m%d_%H%M%S"))
     counter = 1
     while os.path.exists(session_dir):
-        session_dir = os.path.join(
-            bdir, creation_date.strftime("%y%m%d_%H%M%S") + f"_{counter}"
-        )
+        session_dir = os.path.join(bdir, creation_date.strftime("%y%m%d_%H%M%S") + f"_{counter}")
         counter += 1
 
     os.makedirs(session_dir, exist_ok=True)
@@ -239,9 +234,7 @@ def new_logger(name: str) -> logging.Logger:
     return l
 
 
-def check_log_disk_usage(
-    log_dir: str, warn_threshold_gb: float = 2.0
-) -> Tuple[float, bool]:
+def check_log_disk_usage(log_dir: str, warn_threshold_gb: float = 2.0) -> Tuple[float, bool]:
     """
     Check total disk usage of log directory.
 

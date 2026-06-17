@@ -21,7 +21,6 @@
 # adapted from Chaco PdfPlotGraphicsContext
 
 # Major library imports
-from __future__ import absolute_import
 import warnings
 
 try:

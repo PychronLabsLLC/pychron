@@ -15,15 +15,11 @@
 # ===============================================================================
 
 
-from __future__ import with_statement
-
 # ============= enthought library imports =======================
 # from traits.api import HasTraits, on_trait_change,Str,Int,Float,Button
 # from traitsui.api import View,Item,Group,HGroup,VGroup
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 import ftplib
 import os
 

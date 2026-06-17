@@ -17,9 +17,8 @@
 # ============= enthought library imports =======================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import socket
-from six.moves.socketserver import ThreadingUnixStreamServer
+from socketserver import ThreadingUnixStreamServer
 
 # from threading import Thread
 # import select

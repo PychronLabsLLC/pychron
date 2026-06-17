@@ -18,7 +18,6 @@
     modified from chaco.image_inspector
 """
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from enable.api import BaseTool, KeySpec
 from traits.api import Any, Bool, Enum, Event, Tuple
 

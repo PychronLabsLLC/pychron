@@ -16,8 +16,6 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
-from __future__ import print_function
 
 import logging
 import os
@@ -138,10 +136,7 @@ def git_post(cmd, return_json=True, **kw):
     r = requests.post(cmd, **kw)
 
     if r.status_code == 401:
-        warning(
-            None,
-            "GitHub authentication failed. Please sign in again from the browser."
-        )
+        warning(None, "GitHub authentication failed. Please sign in again from the browser.")
     elif r.status_code == 403:
         warning(None, "GitHub rejected the issue submission. {}".format(r.text))
     if r.status_code in (201, 422):
@@ -153,9 +148,7 @@ def git_post(cmd, return_json=True, **kw):
     else:
         warning(
             None,
-            "Failed to submit issue to GitHub. HTTP {} {}".format(
-                r.status_code, r.reason
-            ),
+            "Failed to submit issue to GitHub. HTTP {} {}".format(r.status_code, r.reason),
         )
 
 

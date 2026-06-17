@@ -15,12 +15,10 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 
-import six.moves.cPickle as pickle
+import pickle
 from traits.api import Range, Instance, Bool, Button, Any
 
 from pychron.core.helpers.isotope_utils import sort_isotopes
@@ -188,9 +186,7 @@ class IonOpticsManager(Manager):
 
         args = (save, confirm_save, warn, message, on_end, timeout)
         if new_thread:
-            t = Thread(
-                name="ion_optics.peak_center", target=self._peak_center, args=args
-            )
+            t = Thread(name="ion_optics.peak_center", target=self._peak_center, args=args)
             t.start()
             self._centering_thread = t
             return t
@@ -232,9 +228,7 @@ class IonOpticsManager(Manager):
         pcconfig = self.peak_center_config
 
         spec.save_integration()
-        self.debug(
-            "setup peak center. detector={}, isotope={}".format(detector, isotope)
-        )
+        self.debug("setup peak center. detector={}, isotope={}".format(detector, isotope))
 
         pcc = None
         dataspace = "dac"
@@ -327,11 +321,7 @@ class IonOpticsManager(Manager):
 
         pc = self.peak_center
         klass = AccelVoltagePeakCenter if use_accel_voltage else PeakCenter
-        if (
-            not pc
-            or new
-            or (use_accel_voltage and not isinstance(pc, AccelVoltagePeakCenter))
-        ):
+        if not pc or new or (use_accel_voltage and not isinstance(pc, AccelVoltagePeakCenter)):
             pc = klass()
 
         pc.trait_set(
@@ -455,9 +445,7 @@ class IonOpticsManager(Manager):
 
                 if save:
                     if pc.use_accel_voltage:
-                        spec.source.update_field_table(
-                            det, isotope, center_value, message
-                        )
+                        spec.source.update_field_table(det, isotope, center_value, message)
                     else:
                         spec.magnet.update_field_table(
                             det, isotope, dac_a, message, update_others=pc.update_others

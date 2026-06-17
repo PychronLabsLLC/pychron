@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from pychron.core.ui import set_qt
 from pychron.processing.isotope import Isotope
 
@@ -41,9 +40,7 @@ def test_save_persister():
     run_spec.project = "Test"
 
     arar = ArArAge()
-    arar.isotopes["Ar40"] = Isotope(
-        xs=[1, 2, 3], ys=[1, 2, 3], name="Ar40", detector="H1"
-    )
+    arar.isotopes["Ar40"] = Isotope(xs=[1, 2, 3], ys=[1, 2, 3], name="Ar40", detector="H1")
     sd = {}
     dd = {"H1": 100}
     gd = {"H1": 1.021}

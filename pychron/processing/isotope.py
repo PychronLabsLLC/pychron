@@ -23,7 +23,6 @@ import struct
 from binascii import hexlify
 from math import isnan, isinf
 
-import six
 from numpy import array, inf, polyfit, gradient, array_split, mean, isfinite
 from uncertainties import ufloat, nominal_value, std_dev
 
@@ -377,7 +376,7 @@ class IsotopicMeasurement(BaseMeasurement):
             self.user_defined_value = False
             self.user_defined_error = False
 
-            if isinstance(fit, (int, str, six.text_type)):
+            if isinstance(fit, (int, str)):
                 self.attr_set(fit=fit)
             elif isinstance(fit, dict):
                 self.attr_set(**fit)

@@ -16,7 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Bool, Property
 
 # from traitsui.api import View, Item, Group, HGroup, VGroup
@@ -101,9 +100,7 @@ class IonGauge(BaseMKSGauge):
                 if elapse_time >= timeout:
                     break
 
-            self.logger.info(
-                "====== degas shutdown after %0.2f min======" % elapse_time / 60.0
-            )
+            self.logger.info("====== degas shutdown after %0.2f min======" % elapse_time / 60.0)
             self._degas = False
 
         if self._degas:

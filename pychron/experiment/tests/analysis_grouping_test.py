@@ -1,8 +1,5 @@
-from __future__ import absolute_import
-from __future__ import print_function
 from pychron.experiment.automated_run.persistence import AutomatedRunPersister
 from pychron.experiment.automated_run.spec import AutomatedRunSpec
-from six.moves import range
 
 __author__ = "ross"
 

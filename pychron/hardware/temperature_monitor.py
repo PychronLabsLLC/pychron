@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
-from __future__ import print_function
 from traits.api import Float, Property, Str
 from traits.trait_errors import TraitError
 from traitsui.api import Item, EnumEditor, VGroup
@@ -119,9 +117,7 @@ class DPi32TemperatureMonitor(ISeriesDevice):
     id_query = "*R07"
 
     def load_additional_args(self, config):
-        self.set_attribute(
-            config, "address", "General", "address", optional=True, default=None
-        )
+        self.set_attribute(config, "address", "General", "address", optional=True, default=None)
         return super(DPi32TemperatureMonitor, self).load_additional_args(config)
 
     def id_response(self, response):
@@ -163,9 +159,7 @@ class DPi32TemperatureMonitor(ISeriesDevice):
         """ """
         idx = "01"
         cmd = "V", idx
-        x = self.repeat_command(
-            cmd, check_type=float, break_val="{} ?+999".format(idx), **kw
-        )
+        x = self.repeat_command(cmd, check_type=float, break_val="{} ?+999".format(idx), **kw)
         if x is not None:
             try:
                 self.process_value = x

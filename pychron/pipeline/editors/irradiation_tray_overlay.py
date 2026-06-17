@@ -15,14 +15,12 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.abstract_overlay import AbstractOverlay
 from traits.api import Bool, Dict
 
 # ============= standard library imports ========================
 from kiva.fonttools import str_to_font
 from numpy import linspace, hstack, vstack, array
-from six.moves import zip
 
 
 # ============= local library imports  ==========================
@@ -36,9 +34,7 @@ class IrradiationTrayOverlay(AbstractOverlay):
     def overlay(self, other_component, gc, view_bounds=None, mode="normal"):
         with gc:
             comp = self.component
-            gc.clip_to_rect(
-                *(float(p) for p in (comp.x, comp.y, comp.width, comp.height))
-            )
+            gc.clip_to_rect(*(float(p) for p in (comp.x, comp.y, comp.width, comp.height)))
             # gc.clip_to_rect(comp.x, comp.y, comp.width, comp.height)
             # gc.set_fill_color((1, 0, 1))
             if self._cached_pts is None:
@@ -69,10 +65,7 @@ class IrradiationTrayOverlay(AbstractOverlay):
     def _gather_points(self):
         xy = [(x, y) for x, y, r, _ in self.geometry]
         xy = self.component.map_screen(xy)
-        pts = [
-            (x, y, self._make_point(r))
-            for (x, y), (_, _, r, _) in zip(xy, self.geometry)
-        ]
+        pts = [(x, y, self._make_point(r)) for (x, y), (_, _, r, _) in zip(xy, self.geometry)]
         return pts
 
     def _make_point(self, r):

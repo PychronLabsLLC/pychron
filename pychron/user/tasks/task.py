@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import hashlib
 import os
@@ -89,9 +88,7 @@ class UsersTask(BaseTask):
                 self.db.add_user(self.new_user_name, email=self.new_user_email)
                 self.load_users()
             else:
-                self.information_dialog(
-                    'User "{}" already exists'.format(self.new_user_name)
-                )
+                self.information_dialog('User "{}" already exists'.format(self.new_user_name))
 
     def _sync(self, users):
         path = os.path.join(paths.setup_dir, "users.yaml")
@@ -121,10 +118,7 @@ class UsersTask(BaseTask):
         # dump to users.yaml
         path = os.path.join(paths.setup_dir, "users.yaml")
         with open(path, "w") as wfile:
-            yl = [
-                {"name": i.name, "email": i.email, "enabled": i.enabled}
-                for i in self.ousers
-            ]
+            yl = [{"name": i.name, "email": i.email, "enabled": i.enabled} for i in self.ousers]
             yaml.dump(yl, wfile, default_flow_style=False)
 
         self._hash = self._generate_hash(self.ousers)

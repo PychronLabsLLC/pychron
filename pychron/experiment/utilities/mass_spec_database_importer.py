@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 import struct
@@ -23,7 +22,6 @@ import time
 from datetime import datetime
 
 from numpy import array
-from six.moves import zip
 from traits.api import Instance, Int, Str, Bool, provides
 from uncertainties import nominal_value, std_dev
 
@@ -186,9 +184,7 @@ class MassSpecDatabaseImporter(Loggable):
 
         identifier = str(spec if isinstance(spec, (int, str)) else spec.labnumber)
 
-        return self.identifier_mapper.map_to_value(
-            identifier, mass_spectrometer, "MassSpec"
-        )
+        return self.identifier_mapper.map_to_value(identifier, mass_spectrometer, "MassSpec")
 
     def add_irradiation(self, irrad, level, pid):
         sid = 0
@@ -353,9 +349,7 @@ class MassSpecDatabaseImporter(Loggable):
         # =======================================================================
         item = db.add_changeable_items(analysis, self.data_reduction_session_id)
 
-        self.debug(
-            "%%%%%%%%%%%%%%%%%%%% Comment: {} %%%%%%%%%%%%%%%%%%%".format(spec.comment)
-        )
+        self.debug("%%%%%%%%%%%%%%%%%%%% Comment: {} %%%%%%%%%%%%%%%%%%%".format(spec.comment))
         item.Comment = spec.comment
         sess.flush()
         analysis.ChangeableItemsID = item.ChangeableItemsID
@@ -496,9 +490,7 @@ class MassSpecDatabaseImporter(Loggable):
 
         bfit = spec.get_baseline_fit(iso)
         self.debug(
-            "baseline fit= {} {}. v={}, e={}".format(
-                bfit, iso, nominal_value(bs), std_dev(bs)
-            )
+            "baseline fit= {} {}. v={}, e={}".format(bfit, iso, nominal_value(bs), std_dev(bs))
         )
         infoblob = self._make_infoblob(nominal_value(bs), std_dev(bs), fncnts, pos)
         db_changeable = db.add_baseline_changeable_item(

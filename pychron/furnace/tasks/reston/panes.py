@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
 
 from threading import Thread
 
@@ -119,9 +118,7 @@ class ControlPane(TraitsDockPane):
                 ),
             ),
             HGroup(
-                icon_button_editor(
-                    "clear_button", "clear", tooltip="Clear and reset graph"
-                ),
+                icon_button_editor("clear_button", "clear", tooltip="Clear and reset graph"),
                 spring,
             ),
             HGroup(
@@ -137,9 +134,7 @@ class ControlPane(TraitsDockPane):
                     tooltip="Stop recording",
                     enabled_when="_recording",
                 ),
-                icon_button_editor(
-                    "add_marker_button", "flag", enabled_when="_recording"
-                ),
+                icon_button_editor("add_marker_button", "flag", enabled_when="_recording"),
                 show_border=True,
                 label="Record Scan",
             ),
@@ -182,9 +177,7 @@ class ExperimentFurnacePane(TraitsDockPane):
                 icon_button_editor("pane.disable_button", "cancel"),
                 Item("verbose_scan", label="Verbose Logging"),
             ),
-            VGroup(
-                UItem("temperature_readback", editor=LCDEditor(width=100, height=50))
-            ),
+            VGroup(UItem("temperature_readback", editor=LCDEditor(width=100, height=50))),
             label="Controller",
             show_border=True,
         )

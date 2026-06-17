@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 __author__ = "ross"
 
 import time
@@ -60,9 +58,7 @@ class WaitForTestCase(unittest.TestCase):
         # self.s.root = '.'
         # self.s.name = 'waitfor_test.py'
         # self.s.bootstrap()
-        self.s.setup_context(
-            analysis_type="blank", cleanup=1, extract_value=1, duration=1
-        )
+        self.s.setup_context(analysis_type="blank", cleanup=1, extract_value=1, duration=1)
 
     def test_waitfor_dev(self):
         self.s.text = """

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import (
     HasTraits,
     provides,
@@ -96,9 +95,7 @@ class CameraViewer(HasTraits):
     def _contrast_default_button_fired(self):
         self.trait_set(contrast=0, gamma=100)
 
-    @on_trait_change(
-        "hue,saturation,brightness,contrast,gamma,auto_exposure, exposure_time"
-    )
+    @on_trait_change("hue,saturation,brightness,contrast,gamma,auto_exposure, exposure_time")
     def _handle_color_change(self, name, new):
         if self._device is not None:
             if not self._no_update:
@@ -197,9 +194,7 @@ class CameraViewer(HasTraits):
             show_border=True,
             label="Exposure",
         )
-        white_balance_grp = VGroup(
-            UItem("awb_button"), show_border=True, label="White Balance"
-        )
+        white_balance_grp = VGroup(UItem("awb_button"), show_border=True, label="White Balance")
         # color_grp = VGroup(label='Color')
         meta_grp = VGroup(
             HGroup(
@@ -219,9 +214,7 @@ class CameraViewer(HasTraits):
         ctrlgrp = VFold(meta_grp, hue_grp, exposure_grp, c_gamma_grp, white_balance_grp)
 
         v = View(
-            HSplit(
-                ctrlgrp, UItem("_device", width=640, height=480, editor=CameraEditor())
-            ),
+            HSplit(ctrlgrp, UItem("_device", width=640, height=480, editor=CameraEditor())),
             toolbar=ToolBar(
                 Action(action="do_snapshot", image=icon("camera"), name="Snapshot"),
                 # Action(action='save_settings',

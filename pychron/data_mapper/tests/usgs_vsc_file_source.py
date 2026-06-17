@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import os
 import unittest
 
@@ -51,29 +50,19 @@ class USGSVSCIrradiationSourceUnittest(unittest.TestCase):
         )
 
     def test_3637(self):
-        self.assertEqual(
-            (2.810000e-4, 6.21e-6), self.spec.irradiation.levels[0].production.Ca3637
-        )
+        self.assertEqual((2.810000e-4, 6.21e-6), self.spec.irradiation.levels[0].production.Ca3637)
 
     def test_4039(self):
-        self.assertEqual(
-            (1.003e-3, 3.79e-4), self.spec.irradiation.levels[0].production.K4039
-        )
+        self.assertEqual((1.003e-3, 3.79e-4), self.spec.irradiation.levels[0].production.K4039)
 
     def test_3937(self):
-        self.assertEqual(
-            (7.10e-4, 4.96e-5), self.spec.irradiation.levels[0].production.Ca3937
-        )
+        self.assertEqual((7.10e-4, 4.96e-5), self.spec.irradiation.levels[0].production.Ca3937)
 
     def test_3837(self):
-        self.assertEqual(
-            (3.29e-5, 7.5e-6), self.spec.irradiation.levels[0].production.Ca3837
-        )
+        self.assertEqual((3.29e-5, 7.5e-6), self.spec.irradiation.levels[0].production.Ca3837)
 
     def test_3839(self):
-        self.assertEqual(
-            (1.314e-2, 1.2e-5), self.spec.irradiation.levels[0].production.K3839
-        )
+        self.assertEqual((1.314e-2, 1.2e-5), self.spec.irradiation.levels[0].production.K3839)
 
 
 class USGSVSCFileSourceUnittest(BaseFileSourceTestCase):
@@ -106,9 +95,7 @@ class USGSVSCFileSourceUnittest(BaseFileSourceTestCase):
         self.assertEqual(self.spec.run_spec.irradiation, self.expected["irradiation"])
 
     def test_level(self):
-        self.assertEqual(
-            self.spec.run_spec.irradiation_level, self.expected["irradiation_level"]
-        )
+        self.assertEqual(self.spec.run_spec.irradiation_level, self.expected["irradiation_level"])
 
     def test_sample(self):
         self.assertEqual(self.spec.run_spec.sample, self.expected["sample"])

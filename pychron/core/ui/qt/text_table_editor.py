@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Event, Str, Any, Int
 from pyface.ui_traits import PyfaceColor
 from traitsui.qt.editor import Editor
@@ -209,10 +208,7 @@ class _FastTextTableEditor(_TextTableEditor):
                     fmt.setBackground(c)
 
                 txt = "".join(
-                    [
-                        "{{:<{}s}}".format(cell.width).format(cell.text)
-                        for cell in row.cells
-                    ]
+                    ["{{:<{}s}}".format(cell.width).format(cell.text) for cell in row.cells]
                 )
                 cursor.insertText(txt + "\n", fmt)
 

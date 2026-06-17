@@ -17,14 +17,12 @@
 # ============= enthought library imports =======================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import time
 
 # ============= local library imports  ==========================
 from .aerotech_axis import AerotechAxis
 from pychron.hardware.core.data_helper import make_bitarray
 from pychron.hardware.motion_controller import MotionController
-from six.moves import map
 
 ACK = chr(6)
 NAK = chr(15)
@@ -61,7 +59,7 @@ class AerotechMotionController(MotionController):
         set_stage=True,
         buf=None,
         mode="relative",
-        **kw
+        **kw,
     ):
         """
         unidex 511 5-55 Linear
@@ -105,9 +103,7 @@ class AerotechMotionController(MotionController):
                 self.timer = self.timer_factory()
                 self.block()
             elif set_stage:
-                self.parent.canvas.set_stage_position(
-                    self._x_position, self._y_position
-                )
+                self.parent.canvas.set_stage_position(self._x_position, self._y_position)
 
     def set_single_axis_motion_parameters(self, axis=None, pdict=None):
         if pdict is not None:
@@ -291,9 +287,7 @@ class AerotechMotionController(MotionController):
         self.ask(cmd, handshake_only=True)
 
     def ask(self, cmd, **kw):
-        return super(AerotechMotionController, self).ask(
-            cmd, handshake=[ACK, NAK], **kw
-        )
+        return super(AerotechMotionController, self).ask(cmd, handshake=[ACK, NAK], **kw)
 
     def _axis_factory(self, path, **kw):
         """ """

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.action.api import Action
 from pyface.tasks.action.task_action import TaskAction
 

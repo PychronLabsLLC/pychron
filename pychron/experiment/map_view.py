@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 
@@ -24,8 +23,6 @@ from chaco.abstract_overlay import AbstractOverlay
 from chaco.tools.scatter_inspector import ScatterInspector
 from enable.markers import CircleMarker
 from kiva.constants import FILL_STROKE
-from six.moves import range
-from six.moves import zip
 from traits.api import HasTraits, Instance, on_trait_change, Str, List, Property
 from traitsui.api import View, Item, HGroup
 
@@ -49,9 +46,7 @@ class MapItemSummary(HasTraits):
         return r
 
     def traits_view(self):
-        v = View(
-            Item("display", show_label=False, style="custom"), width=200, height=100
-        )
+        v = View(Item("display", show_label=False, style="custom"), width=200, height=100)
         return v
 
 
@@ -156,9 +151,7 @@ class MapView(Viewable):
             Item("holenumber", width=30, style="readonly"),
             Item("labnumber", style="readonly"),
         )
-        v = View(
-            info, g, width=500, height=500, title="Lab Map", handler=self.handler_klass
-        )
+        v = View(info, g, width=500, height=500, title="Lab Map", handler=self.handler_klass)
         return v
 
     def set_hole_state(self, holenum, state):

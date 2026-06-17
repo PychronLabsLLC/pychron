@@ -18,7 +18,6 @@
 # ============= standard library imports ========================
 
 # ============= local library imports  ==========================
-import six
 
 from pychron.pychron_constants import AUTO_LINEAR_PARABOLIC, EXPONENTIAL
 
@@ -30,7 +29,7 @@ def fit_to_degree(f):
 
 
 def natural_name_fit(f):
-    if isinstance(f, (str, six.text_type)):
+    if isinstance(f, str):
         return f
     elif isinstance(f, int):
         return FITS[max(0, f - 1)]
@@ -40,7 +39,7 @@ def convert_fit(f):
     err = "SEM"
     if isinstance(f, tuple):
         f, err = f
-    if isinstance(f, (str, six.text_type)):
+    if isinstance(f, str):
         f = f.lower()
         if "_" in f:
             try:

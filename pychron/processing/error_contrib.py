@@ -1,9 +1,6 @@
-from __future__ import absolute_import
-from __future__ import print_function
 from uncertainties import ufloat, umath
 
 from pychron.processing.arar_constants import ArArConstants
-from six.moves import zip
 
 
 def mcalc_fractional_error(*args):
@@ -36,13 +33,9 @@ def acalc_fractional_error(*args):
     return r
 
 
-def calc_error_contrib(
-    ar40, ar39, ar38, ar37, ar36, s40, s39, s38, s37, s36, J, constants
-):
+def calc_error_contrib(ar40, ar39, ar38, ar37, ar36, s40, s39, s38, s37, s36, J, constants):
     # fraction of ar36err from s36,ar37,ar38
-    fe36_36, fe36_37, fe36_38 = acalc_fractional_error(
-        s36, ca3637 * s37, cl3638 * s38, ar36
-    )
+    fe36_36, fe36_37, fe36_38 = acalc_fractional_error(s36, ca3637 * s37, cl3638 * s38, ar36)
 
     # fraction of ar40err from 40signal, 36signal
     fe40_40, fe40_36 = acalc_fractional_error(s40, constants.atm4036_v * ar36, ar40)
@@ -122,9 +115,7 @@ if __name__ == "__main__":
     ar38 = s38
     #    k40 = ar39 * k4039
     ar40 = s40 - constants.atm4036_v * ar36
-    args = calc_error_contrib(
-        ar40, ar39, ar38, ar37, ar36, s40, s39, s38, s37, s36, J, constants
-    )
+    args = calc_error_contrib(ar40, ar39, ar38, ar37, ar36, s40, s39, s38, s37, s36, J, constants)
     for ni, ai, vi in zip(
         ("ar40", "ar39", "ar38", "ar37", "ar36", "J   ", "LambdaK"),
         args,

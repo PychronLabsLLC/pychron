@@ -1,14 +1,10 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from six.moves import range
-
-__author__ = 'ross'
+__author__ = "ross"
 
 import unittest
 
 
 def wagon_wheel(n, o):
-    if not hasattr(o, '__iter__'):
+    if not hasattr(o, "__iter__"):
         o = (o,)
 
     def gen():
@@ -45,5 +41,5 @@ class WagonwheelCase(unittest.TestCase):
         self.assertEqual(True, False)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

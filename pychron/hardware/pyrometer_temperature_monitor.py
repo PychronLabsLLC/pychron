@@ -16,7 +16,6 @@
 
 
 # =============enthought library imports=======================
-from __future__ import absolute_import
 from traits.api import Float
 
 # =============standard library imports ========================
@@ -56,9 +55,7 @@ class PyrometerTemperatureMonitor(ADCDevice):
         # print r
         amps = vi / (1000 * self.resistance)
         temp = (
-            amps
-            / (self.amps_max - self.amps_min)
-            * (self.pyrometer_max - self.pyrometer_min)
+            amps / (self.amps_max - self.amps_min) * (self.pyrometer_max - self.pyrometer_min)
             + self.pyrometer_min
         )
 
@@ -72,6 +69,5 @@ class PyrometerTemperatureMonitor(ADCDevice):
 
         # convert current to temperature
         return (
-            (amps / (self.amps_max - self.amps_min))
-            * (self.pyrometer_max - self.pyrometer_min)
+            (amps / (self.amps_max - self.amps_min)) * (self.pyrometer_max - self.pyrometer_min)
         ) + self.pyrometer_min

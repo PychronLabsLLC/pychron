@@ -14,10 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from __future__ import absolute_import
-
-from six.moves import range
-from six.moves import zip
 
 import time
 from numpy import inf

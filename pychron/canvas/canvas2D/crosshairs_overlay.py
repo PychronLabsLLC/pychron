@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.abstract_overlay import AbstractOverlay
 from kiva import Font
 from kiva.trait_defs.kiva_font_trait import KivaFont
@@ -45,9 +44,7 @@ class SimpleCrosshairsOverlay(AbstractOverlay):
 
             if comp.show_current_position:
                 pos = comp.stage_position
-                self._draw_radius_ch(
-                    gc, component, pos, self.radius, color=comp.crosshairs_color
-                )
+                self._draw_radius_ch(gc, component, pos, self.radius, color=comp.crosshairs_color)
 
     def _draw_simple_ch(self, gc, pt, length=4, color=None):
         if color is not None:
@@ -64,6 +61,7 @@ class SimpleCrosshairsOverlay(AbstractOverlay):
     def set_color(self, gc, color, stroke=True, fill=False):
         if color is not None:
             if not isinstance(color, (list, tuple)):
+
                 def _component(value):
                     return value() if callable(value) else value
 

@@ -18,7 +18,6 @@
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 
-from __future__ import absolute_import
 from pychron.core.helpers.logger_setup import logging_setup
 from pychron.headless_loggable import HeadlessLoggable
 from pychron.paths import paths

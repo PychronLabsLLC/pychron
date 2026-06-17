@@ -19,7 +19,7 @@
 # ============= standard library imports ========================
 import os
 
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 from traits.api import (
     Str,
     Property,

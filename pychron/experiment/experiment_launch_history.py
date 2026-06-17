@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 import time
@@ -88,9 +87,7 @@ class ExperimentLaunchHistory(HasTraits):
 
                 l = get_datetime(float(l)).strftime("%a %H:%M %m-%d-%Y")
 
-                return LaunchItem(
-                    name=n, path=p, last_run_time=l, total_launches=int(t)
-                )
+                return LaunchItem(name=n, path=p, last_run_time=l, total_launches=int(t))
 
         with open(paths.experiment_launch_history, "r") as rfile:
             items = [factory(line) for line in rfile]

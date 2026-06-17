@@ -18,7 +18,6 @@
 import csv
 import logging
 
-import six
 from chaco.api import (
     OverlayPlotContainer,
     VPlotContainer,
@@ -237,7 +236,7 @@ class Graph(ContextMenuMixin):
 
     def get_data(self, plotid=0, series=0, axis=0):
         """ """
-        if isinstance(series, (str, six.text_type)):
+        if isinstance(series, str):
             s = series
         else:
             s = self.series[plotid][series][axis]
@@ -1173,7 +1172,7 @@ class Graph(ContextMenuMixin):
         return change
 
     def _append_data(self, existing, values, limit=None):
-        if hasattr(values, "__iter__") and not isinstance(values, six.string_types):
+        if hasattr(values, "__iter__") and not isinstance(values, str):
             new_values = array(values)
         else:
             new_values = array([values])

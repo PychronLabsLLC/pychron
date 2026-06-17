@@ -34,7 +34,6 @@ The bridge currently exposes no delete endpoint, so the artifact persists
 in Forgejo until removed manually.
 """
 
-from __future__ import absolute_import
 
 import os
 import unittest

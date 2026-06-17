@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import os
 import socket
 from ftplib import FTP
@@ -59,9 +58,7 @@ class SFTPStorage(FTPStorage):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            ssh.connect(
-                self.host, username=self.username, password=self.password, timeout=2
-            )
+            ssh.connect(self.host, username=self.username, password=self.password, timeout=2)
         except (socket.timeout, paramiko.AuthenticationException):
             self.warning_dialog("Could not connect to server")
             return

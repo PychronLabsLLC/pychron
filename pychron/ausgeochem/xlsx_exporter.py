@@ -22,7 +22,6 @@ interchangeable with a manual template upload. Useful for dry-runs, archival,
 and offline review.
 """
 
-from __future__ import absolute_import
 
 import os
 import shutil
@@ -134,9 +133,7 @@ class EarthBankXlsxExporter(object):
         """Render a single AnalysisGroup as an ArArDataPoint workbook.
         Convenience wrapper around :meth:`export_analysis_groups`."""
 
-        return self.export_analysis_groups(
-            [(analysis_group, datapoint_key)], output_path
-        )
+        return self.export_analysis_groups([(analysis_group, datapoint_key)], output_path)
 
     def export_analysis_groups(self, items, output_path):
         """Render N AnalysisGroups into a single ArArDataPoint workbook.
@@ -180,11 +177,12 @@ class EarthBankXlsxExporter(object):
         wb = load_workbook(output_path)
 
         for ag, analyses, key in groups:
-            dp_payload = self._svc.build_data_point_payload(
-                analysis_group=ag, analysis=analyses[0]
-            )
+            dp_payload = self._svc.build_data_point_payload(analysis_group=ag, analysis=analyses[0])
             self._append_rows(
-                wb, "ArArDataPoints", [dp_payload], fk_value=key,
+                wb,
+                "ArArDataPoints",
+                [dp_payload],
+                fk_value=key,
                 fk_col="datapointName",
             )
 
@@ -199,34 +197,45 @@ class EarthBankXlsxExporter(object):
                 ap["aliquotName"] = aname
                 aliquot_rows.append(ap)
             self._append_rows(
-                wb, "ArArAliquot", aliquot_rows, fk_value=key,
+                wb,
+                "ArArAliquot",
+                aliquot_rows,
+                fk_value=key,
                 fk_col="datapointName",
             )
 
-            meas_rows = [
-                self._svc.build_measurement_payload(analysis=a) for a in analyses
-            ]
+            meas_rows = [self._svc.build_measurement_payload(analysis=a) for a in analyses]
             self._append_rows(
-                wb, "ArArMeasurement", meas_rows, fk_value=key,
+                wb,
+                "ArArMeasurement",
+                meas_rows,
+                fk_value=key,
                 fk_col="datapointName",
             )
 
             self._append_rows(
-                wb, "ArArAgeSummary",
+                wb,
+                "ArArAgeSummary",
                 [self._svc.build_age_summary_payload(ag)],
-                fk_value=key, fk_col="datapointName",
+                fk_value=key,
+                fk_col="datapointName",
             )
             self._append_rows(
-                wb, "ArArAgeCalc",
+                wb,
+                "ArArAgeCalc",
                 [self._svc.build_age_calc_payload(ag)],
-                fk_value=key, fk_col="datapointName",
+                fk_value=key,
+                fk_col="datapointName",
             )
 
             # Datapoint Props — emit pychron-specific metadata
             props = self._svc.build_datapoint_props(ag)
             if props and "Datapoint Props" in wb.sheetnames:
                 self._append_rows(
-                    wb, "Datapoint Props", props, fk_value=key,
+                    wb,
+                    "Datapoint Props",
+                    props,
+                    fk_value=key,
                     fk_col="datapointName",
                 )
 
@@ -254,7 +263,8 @@ class EarthBankXlsxExporter(object):
             for k in ("lat", "lon", "latLonPrecision"):
                 if k in location_dto:
                     target = {
-                        "lat": "latitude", "lon": "longitude",
+                        "lat": "latitude",
+                        "lon": "longitude",
                         "latLonPrecision": "latLonPrecision",
                     }[k]
                     merged.setdefault(target, location_dto[k])
@@ -280,7 +290,10 @@ class EarthBankXlsxExporter(object):
                 props = self._svc.build_sample_props(analysis=a, analysis_group=ag)
                 if props:
                     self._append_rows(
-                        wb, "Sample Props", props, fk_value=sample_name,
+                        wb,
+                        "Sample Props",
+                        props,
+                        fk_value=sample_name,
                         fk_col="sampleName",
                     )
         wb.save(output_path)
@@ -303,8 +316,9 @@ class EarthBankXlsxExporter(object):
         for k in ("lat", "lon", "latLonPrecision"):
             if k in location_dto:
                 merged.setdefault(
-                    {"lat": "latitude", "lon": "longitude",
-                     "latLonPrecision": "latLonPrecision"}[k],
+                    {"lat": "latitude", "lon": "longitude", "latLonPrecision": "latLonPrecision"}[
+                        k
+                    ],
                     location_dto[k],
                 )
 
@@ -314,26 +328,24 @@ class EarthBankXlsxExporter(object):
 
         # Sample Props
         sample_name = merged.get("name") or merged.get("sampleID")
-        props = self._svc.build_sample_props(
-            analysis=analysis, analysis_group=analysis_group
-        )
+        props = self._svc.build_sample_props(analysis=analysis, analysis_group=analysis_group)
         if props and sample_name and "Sample Props" in wb.sheetnames:
             self._append_rows(
-                wb, "Sample Props", props, fk_value=sample_name,
+                wb,
+                "Sample Props",
+                props,
+                fk_value=sample_name,
                 fk_col="sampleName",
             )
         wb.save(output_path)
         return output_path
 
     # ------------------------------------------------------------------
-    def _append_rows(self, wb, sheet_name, payloads, fk_value=None,
-                     fk_col="datapointName"):
+    def _append_rows(self, wb, sheet_name, payloads, fk_value=None, fk_col="datapointName"):
         if sheet_name not in wb.sheetnames:
             raise KeyError("template missing sheet {!r}".format(sheet_name))
         sheet = wb[sheet_name]
-        header_row, data_start = SHEET_LAYOUT.get(
-            sheet_name, (API_FIELD_ROW, DATA_START_ROW)
-        )
+        header_row, data_start = SHEET_LAYOUT.get(sheet_name, (API_FIELD_ROW, DATA_START_ROW))
         col_keys = _read_api_fields(sheet, header_row)
         # Find first empty row at or below data_start
         first = data_start
@@ -341,8 +353,12 @@ class EarthBankXlsxExporter(object):
             first += 1
         for offset, payload in enumerate(payloads):
             _write_row(
-                sheet, first + offset, payload, col_keys,
-                fk_value=fk_value, fk_col=fk_col,
+                sheet,
+                first + offset,
+                payload,
+                col_keys,
+                fk_value=fk_value,
+                fk_col=fk_col,
             )
 
 

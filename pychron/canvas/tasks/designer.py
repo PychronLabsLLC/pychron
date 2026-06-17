@@ -15,8 +15,6 @@
 # # ===============================================================================
 #
 # # ============= enthought library imports =======================
-# from __future__ import absolute_import
-# from __future__ import print_function
 # import os
 #
 # from traits.api import HasTraits, Instance
@@ -29,7 +27,6 @@
 # from pychron.canvas.canvas2D.scene.extraction_line_scene import ExtractionLineScene
 # from pychron.canvas.canvas2D.scene.primitives.valves import Valve
 # from pychron.paths import paths
-# import six
 #
 #
 # class Designer(HasTraits):
@@ -105,7 +102,7 @@
 #     def _construct_xml(self):
 #         tags = {Valve: 'valve'}
 #         cp = CanvasParser()
-#         for elem in six.iteritems(self.scene):
+#         for elem in self.scene.items():
 #             if type(elem) in tags:
 #                 tag = tags[type(elem)]
 #                 print('adsfafd', tag, elem)

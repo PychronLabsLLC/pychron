@@ -16,7 +16,6 @@
 
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.api import Float, Str, Int
 
@@ -48,20 +47,14 @@ class AgilentDAC(CoreDevice, AgilentMixin):
         self.max_value = self.config_get(
             config, "General", "max", cast="float", default=100.0, optional=True
         )
-        self.slot_number = self.config_get(
-            config, "General", "slot", default="1", optional=True
-        )
+        self.slot_number = self.config_get(config, "General", "slot", default="1", optional=True)
         self.channel_number = "{:02d}".format(
-            self.config_get(
-                config, "General", "channel", cast="int", default="4", optional=True
-            )
+            self.config_get(config, "General", "channel", cast="int", default="4", optional=True)
         )
 
         if self.channel_number not in ["04", "05"]:
             self.warning(
-                "Invalid channel number {} setting to default: 04".format(
-                    self.channel_number
-                )
+                "Invalid channel number {} setting to default: 04".format(self.channel_number)
             )
             return False
 
@@ -93,9 +86,7 @@ class AgilentDAC(CoreDevice, AgilentMixin):
         # convert real world value to dac value
         #        value = value / self.max_value * self.dac_bits
 
-        cmd = "SOURCE:VOLTAGE {:n} (@{}{})".format(
-            value, self.slot_number, self.channel_number
-        )
+        cmd = "SOURCE:VOLTAGE {:n} (@{}{})".format(value, self.slot_number, self.channel_number)
         resp = self.ask(self._build_command(cmd))
         return self._parse_response(resp)
 

@@ -15,14 +15,12 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Int, Enum, CFloat
 from traitsui.api import View, Item, Group
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
 from pychron.hardware.axis import Axis
-from six.moves import zip
 
 
 class AerotechAxis(Axis):

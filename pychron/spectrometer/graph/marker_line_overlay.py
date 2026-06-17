@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from chaco.abstract_overlay import AbstractOverlay
 from traits.trait_types import List
 
@@ -29,9 +28,7 @@ class MarkerLineOverlay(AbstractOverlay):
     _cached_lines = List
 
     def add_marker_line(self, x, bgcolor="black"):
-        l = MarkerLine(
-            data_x=self.component.index_mapper.map_data(x), x=x, bgcolor=bgcolor
-        )
+        l = MarkerLine(data_x=self.component.index_mapper.map_data(x), x=x, bgcolor=bgcolor)
         self.lines.append(l)
         self._layout_needed = True
         self.do_layout()

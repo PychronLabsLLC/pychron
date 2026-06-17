@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 from traits.api import HasTraits, Button, Bool
 from traitsui.api import View, UItem, HGroup, VGroup
 
@@ -27,7 +26,6 @@ import time
 
 # ============= local library imports  ==========================
 from pychron.paths import paths
-from six.moves import range
 
 
 class ZoomCalibrationManager(HasTraits):
@@ -57,9 +55,7 @@ class ZoomCalibrationManager(HasTraits):
         # set zoom
         self.laser_manager.set_zoom(z, block=True)
         time.sleep(3)
-        p, up = self.laser_manager.stage_manager.snapshot(
-            name="zoom_cal", inform=False, auto=True
-        )
+        p, up = self.laser_manager.stage_manager.snapshot(name="zoom_cal", inform=False, auto=True)
         zm = self.laser_manager.get_motor("zoom")
         wfile.write("{},{},{}\n".format(p, z, zm.update_position))
 

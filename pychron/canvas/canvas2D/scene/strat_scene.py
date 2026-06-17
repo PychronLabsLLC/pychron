@@ -18,12 +18,10 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 import yaml
 
 from pychron.canvas.canvas2D.scene.primitives.strat import StratItem
 from pychron.canvas.canvas2D.scene.scene import Scene
-import six
 
 
 class StratScene(Scene):
@@ -69,7 +67,7 @@ class StratScene(Scene):
         self.index_limits = (min(lowages), max(highages))
 
     def _get_dict(self, p):
-        if isinstance(p, (str, six.text_type)):
+        if isinstance(p, str):
             with open(p, "r") as rfile:
                 p = yaml.load(rfile)
 

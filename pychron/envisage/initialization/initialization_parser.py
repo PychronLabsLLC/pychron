@@ -16,8 +16,6 @@
 
 # ============= enthought library imports =======================
 # from lxml.etree import Element
-from __future__ import absolute_import
-from __future__ import print_function
 
 import inspect
 
@@ -138,9 +136,7 @@ class InitializationParser(XMLParser):
         return [t if elem else t.tag for t in list(plugin)]
 
     def get_plugin_group(self, name):
-        return next(
-            (p for p in self.get_plugin_groups(elem=True) if p.tag == name), None
-        )
+        return next((p for p in self.get_plugin_groups(elem=True) if p.tag == name), None)
 
     def get_groups(self):
         tree = self.get_root()
@@ -157,17 +153,13 @@ class InitializationParser(XMLParser):
 
     def enable_manager(self, name, parent):
         plugin = self.get_plugin(parent)
-        man = next(
-            (m for m in plugin.findall("manager") if m.text.strip() == name), None
-        )
+        man = next((m for m in plugin.findall("manager") if m.text.strip() == name), None)
         man.set("enabled", "true")
         self.save()
 
     def disable_manager(self, name, parent):
         plugin = self.get_plugin(parent)
-        man = next(
-            (m for m in plugin.findall("manager") if m.text.strip() == name), None
-        )
+        man = next((m for m in plugin.findall("manager") if m.text.strip() == name), None)
         man.set("enabled", "false")
         self.save()
 
@@ -231,9 +223,7 @@ class InitializationParser(XMLParser):
     def get_device(self, manager, devname, plugin, element=False):
         if plugin:
             man = self.get_plugin(plugin)
-            nman = next(
-                (d for d in man.findall("manager") if d.text.strip() == manager), None
-            )
+            nman = next((d for d in man.findall("manager") if d.text.strip() == manager), None)
             if nman is not None:
                 man = nman
 
@@ -251,9 +241,7 @@ class InitializationParser(XMLParser):
         # if man is None:
         #     man = self.get_plugin_group(manager)
 
-        dev = next(
-            (d for d in man.findall("device") if d.text.strip() == devname), None
-        )
+        dev = next((d for d in man.findall("device") if d.text.strip() == devname), None)
         if not element and dev:
             dev = dev.text.strip()
         return dev
@@ -275,10 +263,7 @@ class InitializationParser(XMLParser):
         pl = self.get_plugin_group("hardware")
         ps = [
             pi
-            for pi in [
-                self.get_processor(p)
-                for p in self.get_plugins("hardware", element=True)
-            ]
+            for pi in [self.get_processor(p) for p in self.get_plugins("hardware", element=True)]
             if pi
         ]
         nps = self._get_parameters(pl, "processor")
@@ -294,9 +279,7 @@ class InitializationParser(XMLParser):
     def get_servers(self):
         servers = [
             pi
-            for pi in [
-                self.get_server(p) for p in self.get_plugins("hardware", element=True)
-            ]
+            for pi in [self.get_server(p) for p in self.get_plugins("hardware", element=True)]
             if pi
         ]
         h = self.get_plugin_group("hardware")

@@ -1,13 +1,12 @@
-from __future__ import absolute_import
 import os
 
-__author__ = 'ross'
+__author__ = "ross"
 
 import unittest
 
 from pychron.core.ui import set_toolkit
 
-set_toolkit('qt4')
+set_toolkit("qt4")
 
 from pychron.processing.autoupdate_parser import AutoupdateParser
 
@@ -15,7 +14,7 @@ from pychron.processing.autoupdate_parser import AutoupdateParser
 class AutoUpdateParserTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        p = '../data/autoupdate_AF_72'
+        p = "../data/autoupdate_AF_72"
         cls._path = p
         cls.parser = AutoupdateParser()
 
@@ -24,7 +23,7 @@ class AutoUpdateParserTestCase(unittest.TestCase):
 
     def test_ar40(self):
         p = self.parser
-        s = p.samples['AF-72']
+        s = p.samples["AF-72"]
         self.assertEqual(s.analyses[0].Ar40, 2.210431)
 
     def test_nsamples(self):
@@ -34,5 +33,5 @@ class AutoUpdateParserTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(self._path))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

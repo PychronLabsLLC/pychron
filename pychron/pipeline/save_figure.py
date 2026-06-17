@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 
 from traits.api import Instance
 from traitsui.api import Item, UItem, VGroup, InstanceEditor, Tabbed
@@ -29,13 +27,12 @@ from pychron.core.pdf.save_pdf_dialog import FigurePDFOptions
 from pychron.core.save_model import SaveModel, SaveController
 from pychron.core.ui.combobox_editor import ComboboxEditor
 
+
 class SaveFigureModel(SaveModel):
     pdf_options = Instance(FigurePDFOptions)
 
     def __init__(self, analyses, *args, **kw):
-        self.repository_identifiers = tuple(
-            {ai.repository_identifier for ai in analyses}
-        )
+        self.repository_identifiers = tuple({ai.repository_identifier for ai in analyses})
         self.root_directory = self.repository_identifiers[0]
 
         identifiers = tuple({ai.identifier for ai in analyses})
@@ -63,15 +60,12 @@ class SaveFigureView(SaveController):
         path_group = self._get_path_group()
 
         options_group = VGroup(
-            UItem(
-                "pdf_options", style="custom", editor=InstanceEditor(view=PDFLayoutView)
-            ),
+            UItem("pdf_options", style="custom", editor=InstanceEditor(view=PDFLayoutView)),
             label="Layout",
         )
 
-        v = okcancel_view(
-            Tabbed(path_group, options_group), title="Save PDF Dialog", width=700
-        )
+        v = okcancel_view(Tabbed(path_group, options_group), title="Save PDF Dialog", width=700)
         return v
+
 
 # ============= EOF =============================================

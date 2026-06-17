@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 from chaco.pdf_graphics_context import PdfPlotGraphicsContext
 from enable.component_editor import ComponentEditor
 from traits.api import Instance, List, Property, Str
@@ -113,10 +112,7 @@ if __name__ == "__main__":
     paths.build("_dev")
     logging_setup("sv", use_archiver=False, use_file=False)
 
-    p = (
-        "/Users/ross/Programming/github/support_pychron/setupfiles/tray_maps"
-        "/221-hole.txt"
-    )
+    p = "/Users/ross/Programming/github/support_pychron/setupfiles/tray_maps" "/221-hole.txt"
     # p = '/Users/argonlab3/Pychron_co2/setupfiles/tray_maps/221-small_hole.txt'
 
     sm = LaserStageMap(file_path=p)

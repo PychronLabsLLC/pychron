@@ -13,13 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from uncertainties import nominal_value
 
 from pychron.core.helpers.formatting import floatfmt
 from pychron.core.ui import set_qt
 from pychron.pychron_constants import ARGON_KEYS
-from six.moves import map
 
 set_qt()
 

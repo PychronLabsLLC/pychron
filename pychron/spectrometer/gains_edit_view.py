@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.message_dialog import information
 from traits.api import HasTraits, Button, Str, Int, Float, List, Any, Date
 from traitsui.api import (

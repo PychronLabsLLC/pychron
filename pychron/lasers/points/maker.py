@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import math
 
 from enable.abstract_overlay import AbstractOverlay
@@ -35,8 +34,6 @@ from pyface.ui_traits import PyfaceColor
 from traitsui.api import View, Item, VGroup, HGroup, UItem, VSplit
 
 from pychron.loggable import Loggable
-from six.moves import map
-from six.moves import range
 
 
 # ============= standard library imports ========================
@@ -262,9 +259,7 @@ class PointMaker(BaseMaker):
         npt = self.canvas.new_point(default_color=self.point_color, **ptargs)
 
         self.info(
-            "added point {}:{:0.5f},{:0.5f} z={:0.5f}".format(
-                npt.identifier, npt.x, npt.y, npt.z
-            )
+            "added point {}:{:0.5f},{:0.5f} z={:0.5f}".format(npt.identifier, npt.x, npt.y, npt.z)
         )
 
 
@@ -306,7 +301,7 @@ class LineMaker(FinishableMaker):
             point_color=self.point_color,
             line_color=self.point_color,
             velocity=self.velocity,
-            **ptargs
+            **ptargs,
         )
 
 
@@ -451,10 +446,7 @@ class TransectMaker(FinishableMaker):
 
     def _accept_point(self, ptargs):
         self.canvas.new_transect_point(
-            point_color=self.point_color,
-            line_color=self.point_color,
-            step=self.step,
-            **ptargs
+            point_color=self.point_color, line_color=self.point_color, step=self.step, **ptargs
         )
 
 
@@ -474,9 +466,7 @@ class GridOverlay(AbstractOverlay):
     def overlay(self, other_component, gc, view_bounds=None, mode="normal"):
         with gc:
             comp = self.component
-            gc.clip_to_rect(
-                *(float(p) for p in (comp.x, comp.y, comp.width, comp.height))
-            )
+            gc.clip_to_rect(*(float(p) for p in (comp.x, comp.y, comp.width, comp.height)))
             pos = comp.get_offset_stage_screen_position()
 
             gc.translate_ctm(*pos)
@@ -608,9 +598,7 @@ class GridMaker(BaseMaker):
                 else:
                     y = oy + ri * vspacing
 
-                show_label = (ci == 0 and ri == 0) or (
-                    ci == (xs - 1) and ri == (ys - 1)
-                )
+                show_label = (ci == 0 and ri == 0) or (ci == (xs - 1) and ri == (ys - 1))
 
                 xp = x * math.cos(theta) - y * math.sin(theta)
                 yp = x * math.sin(theta) + y * math.cos(theta)
@@ -618,10 +606,7 @@ class GridMaker(BaseMaker):
                 xp, yp = set_sig_figs(xp), set_sig_figs(yp)
                 ptargs["xy"] = (xp, yp)
                 npt = self.canvas.new_point(
-                    default_color=self.point_color,
-                    show_label=show_label,
-                    redraw=False,
-                    **ptargs
+                    default_color=self.point_color, show_label=show_label, redraw=False, **ptargs
                 )
 
                 self.info(

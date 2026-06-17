@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Int
 
 # ============= standard library imports ========================
@@ -74,9 +73,7 @@ class Square(QFrame):
                 r, g, b, a = color
             else:
                 return QColor(color)
-            if all(isinstance(v, float) for v in (r, g, b, a)) and max(
-                r, g, b, a
-            ) <= 1.0:
+            if all(isinstance(v, float) for v in (r, g, b, a)) and max(r, g, b, a) <= 1.0:
                 return QColor.fromRgbF(r, g, b, a)
             if a <= 1.0:
                 a = int(round(a * 255))

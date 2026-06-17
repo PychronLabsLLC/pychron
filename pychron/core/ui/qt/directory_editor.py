@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= standard library imports ========================
-import six
 from pyface.qt import QtCore, QtGui
 
 # ============= enthought library imports =======================
@@ -82,7 +81,7 @@ class _DirectoryEditor(CustomEditor):
         self.control.header().setStretchLastSection(False)
 
     def _on_select(self, idx):
-        self.selected = six.text_type(self._model.filePath(idx))
+        self.selected = str(self._model.filePath(idx))
 
 
 class myDirectoryEditor(BasicEditorFactory):

@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 from pyface.qt.QtCore import QTimer
 from pyface.qt.QtGui import QLabel, QImage, QPixmap, QSizePolicy
 from traits.api import Int, Instance
@@ -58,7 +56,7 @@ class _CameraEditor(Editor):
                 self.timer.deleteLater()
             except (RuntimeError, AttributeError):
                 pass
-        
+
         self.timer = QTimer(self.control)
         self.timer.timeout.connect(self._update)
         print("fps", self.factory.fps)

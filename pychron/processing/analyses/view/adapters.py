@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from pyface.action.menu_manager import MenuManager
 from traits.trait_types import Int, Str
@@ -206,9 +205,7 @@ class IntermediateTabularAdapter(BaseTabularAdapter, ConfigurableMixin):
     bs_bk_corrected_text = Property
     bs_bk_corrected_error_text = Property
     bs_bk_corrected_percent_error_text = Property
-    bs_bk_corrected_tooltip = Str(
-        "Baseline (Bs) and Blank (Bk) corrected intercept. (S)ignal)"
-    )
+    bs_bk_corrected_tooltip = Str("Baseline (Bs) and Blank (Bk) corrected intercept. (S)ignal)")
 
     disc_corrected_text = Property
     disc_corrected_error_text = Property
@@ -515,9 +512,7 @@ class IsotopeTabularAdapter(BaseTabularAdapter, ConfigurableMixin):
         else:
             v, e = nominal_value(ic), std_dev(ic)
 
-        return "{}+/-{}".format(
-            floatfmt(v, n=self.sig_figs), floatfmt(e, n=self.sig_figs)
-        )
+        return "{}+/-{}".format(floatfmt(v, n=self.sig_figs), floatfmt(e, n=self.sig_figs))
 
     def _get_value_text(self, *args, **kw):
         v = self.item.get_intensity()

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from envisage.ui.tasks.preferences_pane import PreferencesPane
 from pyface.confirmation_dialog import confirm
@@ -186,9 +185,7 @@ class ArArConstantsPreferences(BasePreferencesHelper):
     delete_decay_constant = Button
     decay_constant_name = Str(NULL_STR)
     decay_constant_names = List([NULL_STR, "Min et al., 2000", "Steiger & Jager 1977"])
-    decay_constant_entry_deletable = Property(
-        depends_on="decay_constant_name", transient=True
-    )
+    decay_constant_entry_deletable = Property(depends_on="decay_constant_name", transient=True)
     total_k_decay = Property(depends_on="lambda_e, lambda_b")
 
     atm_constant_entries = Dict(
@@ -208,9 +205,7 @@ class ArArConstantsPreferences(BasePreferencesHelper):
     atm_constant_names = List([NULL_STR, "Nier 1950", "Lee et al., 2006"])
     add_atm_constant = Button
     delete_atm_constant = Button
-    atm_constant_entry_deletable = Property(
-        depends_on="atm_constant_name", transient=True
-    )
+    atm_constant_entry_deletable = Property(depends_on="atm_constant_name", transient=True)
 
     def _update_entries(self, new, entries, attrs):
         if new in entries:
@@ -220,9 +215,7 @@ class ArArConstantsPreferences(BasePreferencesHelper):
 
     def _find_entry(self, entries, attrs):
         def test_entry(v):
-            return all(
-                [getattr(self, attr) == pvalue for attr, pvalue in zip(attrs, v)]
-            )
+            return all([getattr(self, attr) == pvalue for attr, pvalue in zip(attrs, v)])
 
         return next((k for k, v in entries.items() if test_entry(v)), NULL_STR)
 
@@ -266,9 +259,7 @@ class ArArConstantsPreferences(BasePreferencesHelper):
                 for k, v in self.atm_constant_entries.items():
                     print("k={}, v={}, nv={}".format(k, v, nv))
 
-                exists = next(
-                    (k for k, v in self.atm_constant_entries.items() if nv == v), None
-                )
+                exists = next((k for k, v in self.atm_constant_entries.items() if nv == v), None)
                 if exists:
                     warning(
                         None,
@@ -293,9 +284,7 @@ class ArArConstantsPreferences(BasePreferencesHelper):
         if info.result and name:
             if name not in self.decay_constant_names:
                 nv = e.totuple()
-                exists = next(
-                    (k for k, v in self.decay_constant_entries.items() if nv == v), None
-                )
+                exists = next((k for k, v in self.decay_constant_entries.items() if nv == v), None)
                 if exists:
                     warning(
                         None,
@@ -316,9 +305,7 @@ class ArArConstantsPreferences(BasePreferencesHelper):
     def _atm_constant_name_changed(self, new):
         self._update_entries(new, self.atm_constant_entries, ATM_ATTRS)
 
-    @on_trait_change(
-        "ar40_ar36_atm,ar40_ar36_atm_error, ar40_ar38_atm,ar40_ar38_atm_error"
-    )
+    @on_trait_change("ar40_ar36_atm,ar40_ar36_atm_error, ar40_ar38_atm,ar40_ar38_atm_error")
     def _decay_constants_change(self):
         d = self._find_atm_constant_entry()
         self.atm_constant_name = d
@@ -410,7 +397,7 @@ class ArArConstantsPreferencesPane(PreferencesPane):
                 Spring(width=75, springy=False),
             ),
             *items,
-            label="Decay"
+            label="Decay",
         )
         return decay
 

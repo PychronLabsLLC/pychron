@@ -23,7 +23,6 @@ from chaco.api import AbstractOverlay
 # ============= standard library imports ========================
 from numpy import linspace, hstack, sqrt, corrcoef, column_stack, array
 from numpy.linalg import eig
-from six.moves import zip
 from traits.api import Bool, Enum
 
 from pychron.pychron_constants import ELLIPSE_KINDS, ELLIPSE_KIND_SCALE_FACTORS
@@ -93,9 +92,7 @@ class ErrorEllipseOverlay(AbstractOverlay):
         try:
             for i, (cx, cy, sx, sy, pxyi) in enumerate(zip(x, y, xer, yer, pxy)):
                 state = i not in sel
-                a, b, rot = error_ellipse(
-                    sx, sy, pxyi, self.kind, aspectratio=aspectratio
-                )
+                a, b, rot = error_ellipse(sx, sy, pxyi, self.kind, aspectratio=aspectratio)
                 with gc:
                     self._draw_ellipse(gc, component, cx, cy, a, b, rot, state)
 
@@ -164,9 +161,7 @@ if __name__ == "__main__":
     height = 1
     width = 1
     aspectratio = (dy / height) / (dx / width)
-    rotation = math.degrees(
-        0.5 * math.atan(1 / aspectratio * (2 * covar) / (ox**2 - oy**2))
-    )
+    rotation = math.degrees(0.5 * math.atan(1 / aspectratio * (2 * covar) / (ox**2 - oy**2)))
 
 #
 # #        gc.begin_path()

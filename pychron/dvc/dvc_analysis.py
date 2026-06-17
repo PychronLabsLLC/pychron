@@ -100,7 +100,7 @@ class DVCAnalysis(Analysis):
         repository_identifier: str,
         load_modifiers: Optional[Iterable[str]] = None,
         *args: Any,
-        **kw: Any
+        **kw: Any,
     ) -> None:
         super(DVCAnalysis, self).__init__(*args, **kw)
         self.record_id = record_id
@@ -123,9 +123,7 @@ class DVCAnalysis(Analysis):
 
         else:
             self.warning(
-                'Invalid analysis. RunID="{}". No extraction file {}'.format(
-                    record_id, ep
-                )
+                'Invalid analysis. RunID="{}". No extraction file {}'.format(record_id, ep)
             )
 
         if os.path.isfile(path):
@@ -135,9 +133,7 @@ class DVCAnalysis(Analysis):
 
             self.load_meta(jd)
         else:
-            self.warning(
-                'Invalid analysis. RunID="{}". No meta file {}'.format(record_id, path)
-            )
+            self.warning('Invalid analysis. RunID="{}". No meta file {}'.format(record_id, path))
 
         self.load_paths(modifiers=load_modifiers)
 
@@ -255,9 +251,7 @@ class DVCAnalysis(Analysis):
                             func(jd)
                         except BaseException as e:
                             self.warning(
-                                "Failed loading {}. path={}. error={}".format(
-                                    modifier, path, e
-                                )
+                                "Failed loading {}. path={}. error={}".format(modifier, path, e)
                             )
                             import traceback
 
@@ -444,9 +438,7 @@ class DVCAnalysis(Analysis):
                         iso = iso.sniff
 
                     sblob = encode_blob(iso.pack(endianness, as_hex=False))
-                    new.append(
-                        {"isotope": iso.name, "blob": sblob, "detector": iso.detector}
-                    )
+                    new.append({"isotope": iso.name, "blob": sblob, "detector": iso.detector})
                 else:
                     new.append(sig)
 
@@ -459,9 +451,7 @@ class DVCAnalysis(Analysis):
                         iso = iso.sniff
 
                     sblob = encode_blob(iso.pack(endianness, as_hex=False))
-                    new.append(
-                        {"isotope": iso.name, "blob": sblob, "detector": iso.detector}
-                    )
+                    new.append({"isotope": iso.name, "blob": sblob, "detector": iso.detector})
         jd["reviewed"] = reviewed
         jd["signals"] = nsignals
         jd["sniffs"] = nsniffs
@@ -518,7 +508,7 @@ class DVCAnalysis(Analysis):
                         det = {}
                         baselines[di] = det
 
-                    # bs = next((iso.baseline for iso in six.itervalues(sisos) if iso.detector == di), None)
+                    # bs = next((iso.baseline for iso in sisos.values() if iso.detector == di), None)
                     bs = self.get_isotope(detector=di, kind="baseline")
                     if bs:
                         update(det, bs)
@@ -786,11 +776,7 @@ class DVCAnalysis(Analysis):
         if not isos:
             return
 
-        cb = (
-            False
-            if any(self.analysis_type.startswith(at) for at in NO_BLANK_CORRECT)
-            else True
-        )
+        cb = False if any(self.analysis_type.startswith(at) for at in NO_BLANK_CORRECT) else True
 
         def factory(name, detector, v):
             i = Isotope(name, detector)
@@ -852,7 +838,9 @@ class DVCAnalysis(Analysis):
 
     @property
     def tag_path(self):
-        return reduction_path((self.uuid, self.record_id), self.repository_identifier, modifier=REDUCTION_TAGS)
+        return reduction_path(
+            (self.uuid, self.record_id), self.repository_identifier, modifier=REDUCTION_TAGS
+        )
 
 
 # ============= EOF ============================================

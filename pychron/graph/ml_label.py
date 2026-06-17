@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import math
 import re
@@ -57,9 +56,7 @@ def tokenize(text):
 
 
 def clean(text):
-    t = "".join(
-        (ti for ti in tokenize(text) if ti not in ("sup", "/sup", "sub", "/sub"))
-    )
+    t = "".join((ti for ti in tokenize(text) if ti not in ("sup", "/sup", "sub", "/sub")))
     return t
 
 
@@ -132,10 +129,7 @@ class MPlotAxis(PlotAxis):
             if not self.ticklabel_cache:
                 axis_offset = 25
             else:
-                axis_offset = (
-                    max([l._bounding_box[axis_index] for l in self.ticklabel_cache])
-                    * 1.3
-                )
+                axis_offset = max([l._bounding_box[axis_index] for l in self.ticklabel_cache]) * 1.3
 
         offset = (self._origin_point + self._end_axis_point) / 2
         axis_dist = self.tick_out + tl_bounds[axis_index] / 2.0 + axis_offset
@@ -190,9 +184,7 @@ class MLLabel(Label):
                             ) = gc.get_full_text_extent(line)
                         if width > max_width:
                             max_width = width
-                        new_y_pos = (
-                            prev_y_pos + prev_y_height - descent + self.line_spacing
-                        )
+                        new_y_pos = prev_y_pos + prev_y_height - descent + self.line_spacing
                     else:
                         # For blank lines, we use the height of the previous
                         # line, if there is one.  The width is 0.

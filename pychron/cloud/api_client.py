@@ -20,7 +20,6 @@ user-supplied token can actually be used to register an SSH key. P2 will
 add the ``ssh-keys`` registration call.
 """
 
-from __future__ import absolute_import
 
 import hashlib
 import logging

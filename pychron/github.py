@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import base64
 
@@ -108,9 +106,7 @@ class GithubObject(object):
             if self._oauth_token:
                 auth = "token {}".format(self._oauth_token)
             else:
-                auth = base64.encodestring(
-                    "{}:{}".format(self._usr, self._pwd)
-                ).replace("\n", "")
+                auth = base64.encodestring("{}:{}".format(self._usr, self._pwd)).replace("\n", "")
                 auth = "Basic {}".format(auth)
             headers["Authorization"] = auth
         print(headers)

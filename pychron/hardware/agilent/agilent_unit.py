@@ -15,12 +15,10 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 # ============= standard library imports ========================
 import time
 
-from six.moves import range
 from traits.api import Int
 
 # ============= local library imports  ==========================

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import math
 import os
@@ -99,7 +98,6 @@ class BaseStageMap(Loggable):
 
                 if "#" in line:
                     line = line.split("#")[0]
-
 
                 if cnt == 0:
                     # line 0 shape, dimension
@@ -224,9 +222,7 @@ class BaseStageMap(Loggable):
 
         pt = transform_point(pos, cpos, rot, scale)
         self.debug(
-            "map to calibration. pos={}, cpos={}, rot={}. new pos={}".format(
-                pos, cpos, rot, pt
-            )
+            "map to calibration. pos={}, cpos={}, rot={}. new pos={}".format(pos, cpos, rot, pt)
         )
         # if self.secondary_calibration and include_secondary:
         #     c, r, s = self.secondary_calibration
@@ -322,9 +318,7 @@ Check that the file is UTF-8 and Unix (LF) linefeed""".format(
                 cpos = self.corrected_affine["translation"]
                 rot = self.corrected_affine["rotation"]
                 scale = 1
-                self.debug(
-                    f"applying corrected affine pos={pos} cpos={cpos}, rot={rot}"
-                )
+                self.debug(f"applying corrected affine pos={pos} cpos={cpos}, rot={rot}")
                 pos = transform_point(pos, cpos, rot, scale)
                 self.debug(f"new pos {pos}")
         return pos
@@ -368,7 +362,7 @@ Check that the file is UTF-8 and Unix (LF) linefeed""".format(
                 x, y, ah = args
                 ah = ah.strip()
                 ah = ah[1:-1]
-            elif y.startswith('r'):
+            elif y.startswith("r"):
                 hole = str(hi + 1)
                 x, y, d = args
                 print(line)
@@ -437,5 +431,6 @@ Check that the file is UTF-8 and Unix (LF) linefeed""".format(
         lines[0] = "{},{}\n".format(self.g_shape, self.g_dimension)
         with open(self.file_path, "w") as f:
             f.writelines(lines)
+
 
 # ============= EOF =============================================

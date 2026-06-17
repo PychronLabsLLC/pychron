@@ -18,7 +18,7 @@ import os
 import re
 from datetime import date as date_cls, datetime, timedelta
 
-import six.moves.cPickle as pickle
+import pickle
 
 # ============= enthought library imports =======================
 from traits.api import (

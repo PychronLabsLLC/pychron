@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Enum, Int, Float, Str
 from traitsui.api import View, Item, UItem, HGroup, VGroup
 
@@ -26,7 +25,6 @@ from chaco.default_colormaps import hot
 # ============= local library imports  ==========================
 from pychron.lasers.pattern.pattern_generators import line_spiral_pattern
 from pychron.lasers.pattern.seek_pattern import SeekPattern
-from six.moves import range
 
 
 def outward_square_spiral(base):
@@ -79,9 +77,7 @@ class DragonFlyPeakPattern(SeekPattern):
         g = self.execution_graph
 
         def new_plot():
-            imgplot = g.new_plot(
-                padding_right=5, padding_left=5, padding_top=5, padding_bottom=5
-            )
+            imgplot = g.new_plot(padding_right=5, padding_left=5, padding_top=5, padding_bottom=5)
             imgplot.aspect_ratio = 1.0
             imgplot.x_axis.visible = False
             imgplot.y_axis.visible = False

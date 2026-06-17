@@ -21,8 +21,6 @@ add a path verification function
 make sure directory exists and build if not
 """
 # ============= standard library imports ========================
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 import pickle

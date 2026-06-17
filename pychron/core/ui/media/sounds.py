@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 import os
 
 from pyface.qt.QtGui import QSound
@@ -25,7 +24,7 @@ from pyface.qt.QtGui import QSound
 from pychron.core.helpers.filetools import add_extension
 from pychron.paths import paths
 
-__SOUNDS__ = {}
+__SOUNDS__: dict[str, QSound] = {}
 
 
 def _get_sound(name):

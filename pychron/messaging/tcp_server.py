@@ -18,10 +18,9 @@
 # ============= enthought library imports =======================
 
 # ============= standard library imports ========================
-from __future__ import absolute_import
 import select
 import socket
-from six.moves.socketserver import ThreadingTCPServer
+from socketserver import ThreadingTCPServer
 from threading import Thread
 
 # ============= local library imports  ==========================
@@ -72,9 +71,7 @@ class TCPServer(ThreadingTCPServer, MessagingServer):
             # running = True
             _input = [sock]
             while self._running:
-                inputready, _outputready, _exceptready = select.select(
-                    _input, [], [], 0.25
-                )
+                inputready, _outputready, _exceptready = select.select(_input, [], [], 0.25)
                 for s in inputready:
                     if s == sock:
                         # handle the sock socket

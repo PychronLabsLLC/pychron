@@ -16,7 +16,6 @@
 
 # ============= enthought library imports =======================
 
-from __future__ import absolute_import
 from traits.api import (
     HasTraits,
     Float,
@@ -58,8 +57,6 @@ from pychron.core.stats.peak_detection import (
     PeakCenterError,
 )
 from pychron.core.ui.gui import invoke_in_main_thread
-import six
-from six.moves import zip
 
 DELTA_TOOLTIP = """The minimum difference between a peak and
 the following points, before a peak may be considered a peak"""
@@ -244,7 +241,7 @@ class MassCalibratorSweep(MagnetSweep):
 
         _R = -Inf
         # get the max range and normalize all series
-        for p in six.itervalues(plot.plots):
+        for p in plot.plots.values():
             p = p[0]
             high, low = max(p.odata), min(p.odata)
             tR = high - low
@@ -252,7 +249,7 @@ class MassCalibratorSweep(MagnetSweep):
                 _R = tR
                 miR = low
 
-        for p in six.itervalues(plot.plots):
+        for p in plot.plots.values():
             p = p[0]
             oys = p.odata
             high, low = max(p.odata), min(p.odata)

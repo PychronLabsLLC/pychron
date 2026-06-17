@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 
@@ -475,15 +474,9 @@ class DiffEditor(BaseTraitsEditor):
             vs.append(Value(name=func("N"), lvalue=iso.n, rvalue=riso.n))
             vs.append(Value(name=func("fN"), lvalue=iso.fn, rvalue=riso.fn))
 
+            vs.append(StrValue(name=func("Fit"), lvalue=iso.fit.lower(), rvalue=riso.fit.lower()))
             vs.append(
-                StrValue(
-                    name=func("Fit"), lvalue=iso.fit.lower(), rvalue=riso.fit.lower()
-                )
-            )
-            vs.append(
-                StrValue(
-                    name=func("Filter"), lvalue=filter_str(iso), rvalue=filter_str(riso)
-                )
+                StrValue(name=func("Filter"), lvalue=filter_str(iso), rvalue=filter_str(riso))
             )
             vs.append(
                 Value(
@@ -518,9 +511,7 @@ class DiffEditor(BaseTraitsEditor):
             baseline = left.isotopes[a].baseline
             rbaseline = right.isotopes[a].baseline
 
-            vs.append(
-                Value(name=func("Bs"), lvalue=baseline.value, rvalue=rbaseline.value)
-            )
+            vs.append(Value(name=func("Bs"), lvalue=baseline.value, rvalue=rbaseline.value))
             vs.append(
                 Value(
                     name=func("Bs {}".format(PLUSMINUS_ONE_SIGMA)),
@@ -529,13 +520,9 @@ class DiffEditor(BaseTraitsEditor):
                 )
             )
             vs.append(Value(name=func("Bs N"), lvalue=baseline.n, rvalue=rbaseline.n))
-            vs.append(
-                Value(name=func("Bs fN"), lvalue=baseline.fn, rvalue=rbaseline.fn)
-            )
+            vs.append(Value(name=func("Bs fN"), lvalue=baseline.fn, rvalue=rbaseline.fn))
 
-            fv = StrValue(
-                name=func("Bs Filter"), lvalue=filter_str(iso), rvalue=filter_str(iso)
-            )
+            fv = StrValue(name=func("Bs Filter"), lvalue=filter_str(iso), rvalue=filter_str(iso))
             vs.append(fv)
             if not (fv.lvalue == "no" and fv.rvalue == "no"):
                 vs.append(

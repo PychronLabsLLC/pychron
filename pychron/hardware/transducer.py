@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from pychron.hardware.adc.adc_device import ADCDevice
 
 
@@ -52,9 +51,7 @@ if __name__ == "__main__":
     from pychron.paths import paths
 
     paths.build("_dev")
-    aa = ThermocoupleTransducer(
-        name="thermocouple_transducer", configuration_dir_name="sandbox"
-    )
+    aa = ThermocoupleTransducer(name="thermocouple_transducer", configuration_dir_name="sandbox")
     aa.bootstrap()
     aa.get_temperature()
     # mapped_name = Str

@@ -15,8 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
-from __future__ import print_function
 import os
 from datetime import datetime, timedelta
 
@@ -51,9 +49,7 @@ class GoogleCalendarClient(Loggable):
     def bind_preferences(self):
         prefid = "pychron.google_calendar"
         bind_preference(self, "calendar", "{}.calendar".format(prefid))
-        bind_preference(
-            self, "client_secret_path", "{}.client_secret_path".format(prefid)
-        )
+        bind_preference(self, "client_secret_path", "{}.client_secret_path".format(prefid))
 
     def test_api(self):
         try:
@@ -138,9 +134,7 @@ class GoogleCalendarClient(Loggable):
         cals = []
         while True:
             calendar_list = service.calendarList().list(pageToken=page_token).execute()
-            cals.extend(
-                (calendar_list_entry for calendar_list_entry in calendar_list["items"])
-            )
+            cals.extend((calendar_list_entry for calendar_list_entry in calendar_list["items"]))
             page_token = calendar_list.get("nextPageToken")
             if not page_token:
                 break

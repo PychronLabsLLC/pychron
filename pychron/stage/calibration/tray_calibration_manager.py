@@ -15,12 +15,11 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 import shutil
 
-import six.moves.cPickle as pickle
+import pickle
 from traits.api import Float, Event, String, Any, Enum, Button, List, Instance
 
 from pychron.loggable import Loggable
@@ -243,22 +242,14 @@ class TrayCalibrationManager(Loggable):
         if self.calibrator:
             self.calibrator.stage_manager = None
             self.calibrator.stage_map = None
-            self.calibrator.on_trait_change(
-                self._handle_step, "calibration_step", remove=True
-            )
-            self.calibrator.on_trait_change(
-                self._handle_rotation, "rotation", remove=True
-            )
-            self.calibrator.on_trait_change(
-                self._handle_save, "save_event", remove=True
-            )
+            self.calibrator.on_trait_change(self._handle_step, "calibration_step", remove=True)
+            self.calibrator.on_trait_change(self._handle_rotation, "rotation", remove=True)
+            self.calibrator.on_trait_change(self._handle_save, "save_event", remove=True)
 
     def _calibrator_factory(self):
         self._destroy_calibrator()
         self.debug(
-            "New calibrator {} for stage_map={}".format(
-                self.style, self.parent.stage_map_name
-            )
+            "New calibrator {} for stage_map={}".format(self.style, self.parent.stage_map_name)
         )
         kw = dict(
             name=self.parent.stage_map_name or "",

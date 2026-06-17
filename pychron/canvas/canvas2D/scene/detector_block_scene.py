@@ -17,7 +17,6 @@
 # ============= enthought library imports =======================
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
 from pychron.canvas.canvas2D.scene.primitives.detector_block import Detector
 from pychron.canvas.canvas2D.scene.scene import Scene
 from pychron.core.xml.xml_parser import XMLParser
@@ -51,9 +50,7 @@ class DetectorBlockScene(Scene):
         mid, mad = self._get_floats(elem, "deflection_range")
         w, h = 5, 5
         name = elem.text.strip()
-        det = Detector(
-            x, y, width=w, height=h, min_deflection=mid, max_deflection=mad, name=name
-        )
+        det = Detector(x, y, width=w, height=h, min_deflection=mid, max_deflection=mad, name=name)
         self.add_item(det)
 
 

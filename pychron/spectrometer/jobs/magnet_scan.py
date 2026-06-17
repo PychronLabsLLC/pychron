@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.timer.do_later import do_after
 from traits.api import Any, Float, DelegatesTo, List, Bool, Property
 from traitsui.api import View, Item, EnumEditor, Group, HGroup, spring, ButtonEditor
@@ -238,12 +237,8 @@ class MagnetScan(SpectrometerTask):
         mag = spec.magnet
         if map_mass:
             detname = self.reference_detector.name
-            ds = spec.correct_dac(
-                self.reference_detector, mag.map_mass_to_dac(sm, detname)
-            )
-            de = spec.correct_dac(
-                self.reference_detector, mag.map_mass_to_dac(em, detname)
-            )
+            ds = spec.correct_dac(self.reference_detector, mag.map_mass_to_dac(sm, detname))
+            de = spec.correct_dac(self.reference_detector, mag.map_mass_to_dac(em, detname))
 
             massdev = abs(sm - em)
             dacdev = abs(ds - de)
@@ -288,9 +283,7 @@ class MagnetScan(SpectrometerTask):
         v = View(
             Group(
                 Item("reference_detector", editor=EnumEditor(name="detectors")),
-                Item(
-                    "start_value", label="Start Mass", tooltip="Start scan at this mass"
-                ),
+                Item("start_value", label="Start Mass", tooltip="Start scan at this mass"),
                 Item(
                     "stop_value",
                     label="Stop Mass",

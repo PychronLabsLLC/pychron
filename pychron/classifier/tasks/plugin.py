@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 from envisage.ui.tasks.task_extension import TaskExtension
 from pyface.tasks.action.schema_addition import SchemaAddition
 
@@ -64,9 +63,7 @@ class ClassifierPlugin(BaseTaskPlugin):
 
     def _task_extensions_default(self):
         actions = [
-            SchemaAddition(
-                factory=TrainIsotopeClassifierAction, path="MenuBar/tools.menu"
-            ),
+            SchemaAddition(factory=TrainIsotopeClassifierAction, path="MenuBar/tools.menu"),
         ]
 
         return [

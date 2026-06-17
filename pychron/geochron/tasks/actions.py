@@ -16,8 +16,6 @@
 
 # ============= standard library imports ========================
 # ============= local library imports  ==========================
-from __future__ import absolute_import
-from __future__ import print_function
 from pyface.message_dialog import information
 from pyface.tasks.action.task_action import TaskAction
 
@@ -32,9 +30,7 @@ class UploadAction(TaskAction):
         information(None, "Upload to Geochron is not fully implemented")
 
         app = event.task.application
-        geochron_service = app.get_service(
-            "pychron.geochron.geochron_service.GeochronService"
-        )
+        geochron_service = app.get_service("pychron.geochron.geochron_service.GeochronService")
 
         dvc = app.get_service(DVC_PROTOCOL)
         with dvc.session_ctx():

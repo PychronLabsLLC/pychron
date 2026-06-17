@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import HasTraits, Str, Password
 from traitsui.api import View, Item, VGroup
 
@@ -46,9 +45,7 @@ class DBConnectionSpec(HasTraits):
     database = property(get_database, set_database)
 
     def make_url(self):
-        return "{}:{}@{}/{}".format(
-            self.username, self.password, self.host, self.database
-        )
+        return "{}:{}@{}/{}".format(self.username, self.password, self.host, self.database)
 
     def make_connection_dict(self):
         return dict(

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from traits.api import Instance
 from traitsui.api import View, UItem, InstanceEditor
 
@@ -35,9 +34,7 @@ class MassCalibrationEditor(BaseTraitsEditor):
         return v
 
     def _graph_default(self):
-        return Graph(
-            container_dict=dict(stack_order="top_to_bottom", padding=5, spacing=0)
-        )
+        return Graph(container_dict=dict(stack_order="top_to_bottom", padding=5, spacing=0))
 
 
 # ============= EOF =============================================

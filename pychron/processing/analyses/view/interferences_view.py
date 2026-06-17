@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from operator import itemgetter
 
@@ -93,9 +92,7 @@ class InterferencesView(HasTraits):
         p = []
         for k, v in an.production_ratios.items():
             p.append(
-                Interference(
-                    name=k.replace("_", "/"), value=nominal_value(v), error=std_dev(v)
-                )
+                Interference(name=k.replace("_", "/"), value=nominal_value(v), error=std_dev(v))
             )
         self.productions = p
 

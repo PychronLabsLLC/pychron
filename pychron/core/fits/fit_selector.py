@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 from traits.has_traits import HasTraits, on_trait_change
 from traits.trait_types import List, Event, Bool, Button, Str, Any
@@ -120,9 +119,7 @@ class FitSelector(HasTraits):
                     tooltip="Replot the isotope evolutions. "
                     "This may take awhile if many analyses are selected",
                 ),
-                icon_button_editor(
-                    "save_event", "database_save", tooltip="Save fits to database"
-                ),
+                icon_button_editor("save_event", "database_save", tooltip="Save fits to database"),
                 Item(
                     "auto_update",
                     label="Auto Plot",
@@ -137,11 +134,7 @@ class FitSelector(HasTraits):
         )
 
     def traits_view(self):
-        v = View(
-            VGroup(
-                self._get_auto_group(), self._get_toggle_group(), self._get_fit_group()
-            )
-        )
+        v = View(VGroup(self._get_auto_group(), self._get_toggle_group(), self._get_fit_group()))
         return v
 
     def _get_toggle_group(self):
@@ -159,9 +152,7 @@ class FitSelector(HasTraits):
             CheckboxColumn(name="show"),
             CheckboxColumn(name="use", label="Save"),
             ObjectColumn(name="fit", editor=EnumEditor(name="fit_types"), width=150),
-            ObjectColumn(
-                name="error_type", editor=EnumEditor(name="error_types"), width=50
-            ),
+            ObjectColumn(name="error_type", editor=EnumEditor(name="error_types"), width=50),
         ]
 
         return cols
@@ -205,9 +196,7 @@ class FitSelector(HasTraits):
             pf.filter_outliers = fod.get("filter_outliers", False)
             pf.filter_iterations = fod.get("iterations", 0)
             pf.filter_std_devs = fod.get("std_devs", 0)
-            pf.use_standard_deviation_filtering = fod.get(
-                "use_standard_deviation_filtering", False
-            )
+            pf.use_standard_deviation_filtering = fod.get("use_standard_deviation_filtering", False)
             pf.use_iqr_filtering = fod.get("use_iqr_filtering", False)
             pf.error_type = et
 

@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 
 import os
 import time
@@ -156,11 +155,7 @@ class ThermoSpectrometer(BaseSpectrometer):
         :return: list
         """
         if history:
-            self.debug(
-                "setting gains to {}, user={}".format(
-                    history.create_date, history.username
-                )
-            )
+            self.debug("setting gains to {}, user={}".format(history.create_date, history.username))
         for di in self.detectors:
             di.set_gain()
 
@@ -226,9 +221,7 @@ class ThermoSpectrometer(BaseSpectrometer):
         if det:
             det.deflection = value
         else:
-            self.warning(
-                'Could not find detector "{}". Deflection Not Possible'.format(name)
-            )
+            self.warning('Could not find detector "{}". Deflection Not Possible'.format(name))
 
     def get_deflection(self, name, current=False):
         """
@@ -250,16 +243,12 @@ class ThermoSpectrometer(BaseSpectrometer):
         return deflection
 
     def read_deflection_word(self, keys):
-        x = self.ask(
-            "GetDeflections {}".format(",".join(keys)), verbose=False, quiet=True
-        )
+        x = self.ask("GetDeflections {}".format(",".join(keys)), verbose=False, quiet=True)
         x = self._parse_word(x)
         return x
 
     def read_parameter_word(self, keys):
-        x = self.ask(
-            "GetParameters {}".format(",".join(keys)), verbose=True, quiet=False
-        )
+        x = self.ask("GetParameters {}".format(",".join(keys)), verbose=True, quiet=False)
         x = self._parse_word(x)
         return x
 
@@ -350,9 +339,7 @@ class ThermoSpectrometer(BaseSpectrometer):
                 ds = ds.split(",")
                 self.magnet.protected_detectors = ds
                 for di in ds:
-                    self.info(
-                        'Making protection available for detector "{}"'.format(di)
-                    )
+                    self.info('Making protection available for detector "{}"'.format(di))
 
         if config.has_section("Deflections"):
             if config.has_option("Deflections", "max"):
@@ -458,9 +445,7 @@ class ThermoSpectrometer(BaseSpectrometer):
                         dev = self._get_config_dev(current, v, comp)
                         if dev:
                             self.warning(
-                                "verify failed {}. current={}, config={}".format(
-                                    k, current, v
-                                )
+                                "verify failed {}. current={}, config={}".format(k, current, v)
                             )
                             mismatch = True
 
@@ -468,9 +453,7 @@ class ThermoSpectrometer(BaseSpectrometer):
                     try:
                         mk = hardware_names[k]
                     except KeyError:
-                        self.debug(
-                            "--- Not checking {}. Not in hardware_names".format(k)
-                        )
+                        self.debug("--- Not checking {}. Not in hardware_names".format(k))
                         self.debug("hardware names: {}".format(hardware_names))
 
                         continue
@@ -481,17 +464,13 @@ class ThermoSpectrometer(BaseSpectrometer):
                         try:
                             current = float(current)
                         except ValueError:
-                            self.warning(
-                                "invalid float value {}, {}".format(mk, current)
-                            )
+                            self.warning("invalid float value {}, {}".format(mk, current))
                             continue
 
                         dev = self._get_config_dev(current, v, comp)
                         if dev:
                             self.warning(
-                                "verify failed {}. current={}, config={}".format(
-                                    mk, current, v
-                                )
+                                "verify failed {}. current={}, config={}".format(mk, current, v)
                             )
                             mismatch = True
 
@@ -601,9 +580,7 @@ class ThermoSpectrometer(BaseSpectrometer):
                     try:
                         mk = hardware_names[k]
                     except KeyError:
-                        self.debug(
-                            "--- Not setting {}. Not in hardware_names".format(k)
-                        )
+                        self.debug("--- Not setting {}. Not in hardware_names".format(k))
                         self.debug("hardware names: {}".format(hardware_names))
                         continue
 
@@ -645,9 +622,7 @@ class ThermoSpectrometer(BaseSpectrometer):
                                         not_setting(ttag, current, v)
                                         v = None
                                 except (ValueError, TypeError):
-                                    self.warning(
-                                        "invalid value {}, {}".format(ttag, current)
-                                    )
+                                    self.warning("invalid value {}, {}".format(ttag, current))
                             else:
                                 v = None
 
@@ -675,9 +650,7 @@ class ThermoSpectrometer(BaseSpectrometer):
                 self.debug("======== Configuration Finished ========")
                 self.source.sync_parameters()
 
-    def _ramp_trap_current(
-        self, v, step, period, use_ramp=False, tol=10, confirm=False
-    ):
+    def _ramp_trap_current(self, v, step, period, use_ramp=False, tol=10, confirm=False):
         if use_ramp:
             self.debug("ramping trap current")
             current = self.source.read_trap_current()
@@ -714,9 +687,7 @@ class ThermoSpectrometer(BaseSpectrometer):
                             return True
 
                     self.debug(
-                        "current={}, target={}, step={}, period={}".format(
-                            current, v, step, period
-                        )
+                        "current={}, target={}, step={}, period={}".format(current, v, step, period)
                     )
                     r.ramp(func, current, v, step, period)
                     if show_progress:

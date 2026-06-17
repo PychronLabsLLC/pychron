@@ -15,7 +15,6 @@
 # ===============================================================================
 
 # ============= enthought library imports =======================
-from __future__ import absolute_import
 from pyface.tasks.traits_task_pane import TraitsTaskPane
 from traitsui.api import View, UItem, VGroup, HGroup, spring, EnumEditor, Item
 
@@ -51,17 +50,13 @@ class ExternalPipettePane(TraitsTaskPane):
             UItem("test_command_response", style="custom"),
             HGroup(UItem("test_script_button", enabled_when="not testing"), spring),
             HGroup(
-                icon_button_editor(
-                    "clear_test_response_button", "clear", tooltip="Clear console"
-                ),
+                icon_button_editor("clear_test_response_button", "clear", tooltip="Clear console"),
                 Item("display_response_info", label="Display Debug Info."),
                 spring,
             ),
         )
 
-        connection_grp = Item(
-            "object.controller.connection_url", style="readonly", label="URL"
-        )
+        connection_grp = Item("object.controller.connection_url", style="readonly", label="URL")
         v = View(VGroup(connection_grp, command_entry, response))
 
         # testing_grp = VGroup(HGroup(UItem('test_load_1', ),

@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from __future__ import absolute_import
 
 from pychron.hardware import get_float
 from pychron.spectrometer.isotopx.magnet.base import IsotopxMagnet
@@ -54,9 +53,7 @@ class NGXMagnet(IsotopxMagnet):
         if self.use_beam_blank:
             deflect = dv > self.beam_blank_threshold
 
-        self.debug(
-            f"use beam blank={deflect}. dv={dv}, threshold={self.beam_blank_threshold}"
-        )
+        self.debug(f"use beam blank={deflect}. dv={dv}, threshold={self.beam_blank_threshold}")
 
         deflect = ",deflect" if deflect else ""
         self.ask(f"SetMass {v},{delay}{deflect}")
