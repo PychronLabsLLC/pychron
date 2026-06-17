@@ -17,7 +17,6 @@
 # =============enthought library imports=======================
 import csv
 import logging
-import math
 
 import six
 from chaco.api import (
@@ -41,6 +40,7 @@ from pychron.core.helpers.color_utils import normalize_color_name
 from pychron.core.helpers.filetools import add_extension
 from pychron.graph.context_menu_mixin import ContextMenuMixin
 from pychron.graph.graph_exporter import GraphExporter, get_file_path
+from pychron.graph.limits_manager import LimitsManager
 from pychron.graph.series_manager import PlotSeriesGenerators
 from pychron.graph.ml_label import MPlotAxis
 from pychron.graph.offset_plot_label import OffsetPlotLabel
@@ -150,8 +150,9 @@ class Graph(ContextMenuMixin):
     container_dict = Dict
     plots = List(Plot)
 
-    # composed collaborator for image/pdf export
+    # composed collaborators
     _exporter = Instance(GraphExporter, ())
+    _limits_manager = Instance(LimitsManager, ())
 
     selected_plotid = Property(depends_on="selected_plot")
     selected_plot = Instance(Plot)
@@ -1158,118 +1159,15 @@ class Graph(ContextMenuMixin):
 
     def _get_limits(self, axis, plotid):
         """ """
-        plot = self.plots[plotid]
-        try:
-            ra = getattr(plot, "%s_range" % axis)
-            return ra.low, ra.high
-        except AttributeError as e:
-            logger.debug("get_limits failed error=%s", e)
+        return self._limits_manager.get(self.plots[plotid], axis)
 
     def _set_limits(self, mi, ma, axis, plotid, pad, pad_style="symmetric", force=False):
         if not plotid < len(self.plots):
             return
 
-        plot = self.plots[plotid]
-        ra = getattr(plot, "{}_range".format(axis))
-        scale = getattr(plot, "{}_scale".format(axis))
-
-        if isinstance(pad, str):
-            # interpret pad as a percentage of the range
-            # ie '0.1' => 0.1*(ma-mi)
-            if ma is None:
-                ma = ra.high
-            if mi is None:
-                mi = ra.low
-
-            if mi == -inf:
-                mi = 0
-            if ma == inf:
-                ma = 100
-
-            if ma is not None and mi is not None:
-                dev = ma - mi
-
-                def convert(p):
-                    p = float(p) * dev
-                    if abs(p) < 1e-10:
-                        p = 1
-                    return p
-
-                if "," in pad:
-                    pad = [convert(p) for p in pad.split(",")]
-                else:
-                    pad = convert(pad)
-            if not pad:
-                pad = 0
-
-            # print(type(mi), isinstance(mi, (int, float)), pad_style)
-            # if isinstance(mi, (int, float)):
-            try:
-                if isinstance(pad, list):
-                    mi -= pad[0]
-                elif pad_style in ("symmetric", "lower"):
-                    mi -= pad
-            except TypeError:
-                pass
-
-            # if isinstance(ma, (int, float)):
-            try:
-                if isinstance(pad, list):
-                    ma += pad[1]
-                elif pad_style in ("symmetric", "upper"):
-                    ma += pad
-            except TypeError:
-                pass
-
-        if scale == "log":
-            try:
-                if mi <= 0:
-                    mi = inf
-                    data = plot.data
-                    for di in data.list_data():
-                        if "y" in di:
-                            ya = sorted(data.get_data(di))
-
-                            i = 0
-                            try:
-                                while ya[i] <= 0:
-                                    i += 1
-                                if ya[i] < mi:
-                                    mi = ya[i]
-
-                            except IndexError:
-                                mi = 0.01
-
-                mi = 10 ** math.floor(math.log(mi, 10))
-
-                ma = 10 ** math.ceil(math.log(ma, 10))
-            except ValueError:
-                return
-
-        change = False
-        if mi == ma:
-            if not pad:
-                pad = 1
-
-            ra.high = ma + pad
-            ra.low = ma - pad
-        else:
-            if mi is not None:
-                change = ra.low != mi
-                if isinstance(mi, (int, float)):
-                    if mi < ra.high or (ma is not None and mi < ma):
-                        ra.low = mi
-                else:
-                    ra.low = mi
-
-            if ma is not None:
-                change = change or ra.high != ma
-                if isinstance(ma, (int, float)):
-                    if ma > ra.low or (mi is not None and ma > mi):
-                        ra.high = ma
-                else:
-                    ra.high = ma
-
+        change = self._limits_manager.set(
+            self.plots[plotid], mi, ma, axis, pad, pad_style=pad_style
+        )
         if change:
             self.redraw(force=force)
         return change

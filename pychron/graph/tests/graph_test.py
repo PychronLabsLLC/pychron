@@ -116,6 +116,31 @@ class SeriesGenerationTestCase(unittest.TestCase):
         self.assertNotEqual(g.get_next_color(exclude=c1, plotid=0), c1)
 
 
+class LimitsTestCase(unittest.TestCase):
+    """Graph delegates limit get/set to the composed LimitsManager."""
+
+    def _graph(self):
+        g = Graph()
+        g.new_plot()
+        g.new_series([0, 1, 2, 3, 4], [10, 20, 30, 40, 50])
+        return g
+
+    def test_set_get_x_limits(self):
+        g = self._graph()
+        g.set_x_limits(0, 4)
+        self.assertEqual(g.get_x_limits(), (0.0, 4.0))
+
+    def test_set_get_y_limits(self):
+        g = self._graph()
+        g.set_y_limits(0, 50)
+        self.assertEqual(g.get_y_limits(), (0.0, 50.0))
+
+    def test_percentage_pad(self):
+        g = self._graph()
+        g.set_y_limits(0, 100, pad="0.1")
+        self.assertEqual(g.get_y_limits(), (-10.0, 110.0))
+
+
 class StackedGraphTestCase(unittest.TestCase):
     def test_stacks_multiple_plots(self):
         g = StackedGraph()
