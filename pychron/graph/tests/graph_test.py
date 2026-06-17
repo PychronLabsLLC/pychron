@@ -87,6 +87,35 @@ class GraphExporterTestCase(unittest.TestCase):
         self.assertGreater(os.path.getsize(path), 0)
 
 
+class SeriesGenerationTestCase(unittest.TestCase):
+    """Per-plot series naming + color generation (composed PlotSeriesGenerators)."""
+
+    def test_series_names_are_per_plot(self):
+        g = Graph()
+        g.new_plot()
+        g.new_plot()
+        g.new_series([1, 2, 3], [4, 5, 6], plotid=0)
+        g.new_series([1, 2, 3], [7, 8, 9], plotid=0)
+        g.new_series([1, 2, 3], [1, 1, 1], plotid=1)
+
+        # each plot numbers its own series from 0
+        self.assertEqual(g.series[0], [("x0", "y0"), ("x1", "y1")])
+        self.assertEqual(g.series[1], [("x0", "y0")])
+
+    def test_get_next_color_advances_per_plot(self):
+        g = Graph()
+        g.new_plot()
+        c1 = g.get_next_color(plotid=0)
+        c2 = g.get_next_color(plotid=0)
+        self.assertNotEqual(c1, c2)
+
+    def test_get_next_color_excludes(self):
+        g = Graph()
+        g.new_plot()
+        c1 = g.get_next_color(plotid=0)
+        self.assertNotEqual(g.get_next_color(exclude=c1, plotid=0), c1)
+
+
 class StackedGraphTestCase(unittest.TestCase):
     def test_stacks_multiple_plots(self):
         g = StackedGraph()

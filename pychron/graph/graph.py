@@ -37,11 +37,11 @@ from pyface.timer.api import do_after as do_after_timer
 from traits.api import Instance, List, Str, Property, Dict, Event, Bool
 from traitsui.api import View, Item, UItem
 
-from pychron.core.helpers.color_generators import colorname_generator as color_generator
 from pychron.core.helpers.color_utils import normalize_color_name
 from pychron.core.helpers.filetools import add_extension
 from pychron.graph.context_menu_mixin import ContextMenuMixin
 from pychron.graph.graph_exporter import GraphExporter, get_file_path
+from pychron.graph.series_manager import PlotSeriesGenerators
 from pychron.graph.ml_label import MPlotAxis
 from pychron.graph.offset_plot_label import OffsetPlotLabel
 from pychron.graph.theme import themed_container_dict, themed_plot_bgcolor
@@ -55,14 +55,6 @@ CONTAINERS = {
     "o": OverlayPlotContainer,
 }
 logger = logging.getLogger(__name__)
-
-
-def name_generator(base):
-    i = 0
-    while 1:
-        n = base + str(i)
-        yield n
-        i += 1
 
 
 def fmt(data):
@@ -182,10 +174,9 @@ class Graph(ContextMenuMixin):
     status_text = Str
     x_limits_changed = Event
 
-    xdataname_generators = List
-    ydataname_generators = List
-    yerdataname_generators = List
-    color_generators = List
+    # one PlotSeriesGenerators per plot, indexed by plotid; generates the
+    # x/y/yer data names and series colors for that plot
+    _series_generators = List
     series = List
     data_len = List
     data_limits = List
@@ -332,11 +323,7 @@ class Graph(ContextMenuMixin):
     def clear_plots(self):
         x = list(range(len(self.plots)))
 
-        self.xdataname_generators = [name_generator("x") for _ in x]
-        self.ydataname_generators = [name_generator("y") for _ in x]
-        self.yerdataname_generators = [name_generator("yer") for _ in x]
-
-        self.color_generators = [color_generator() for _ in x]
+        self._series_generators = [PlotSeriesGenerators() for _ in x]
 
         self.series = [[] for _ in x]
         self.data_len = [[] for _ in x]
@@ -360,11 +347,7 @@ class Graph(ContextMenuMixin):
 
         self.plots = []
 
-        self.xdataname_generators = [name_generator("x")]
-        self.ydataname_generators = [name_generator("y")]
-        self.yerdataname_generators = [name_generator("yer")]
-
-        self.color_generators = [color_generator()]
+        self._series_generators = [PlotSeriesGenerators()]
 
         self.series = []
         self.data_len = []
@@ -661,10 +644,7 @@ class Graph(ContextMenuMixin):
         p = plot_factory(**kw)
 
         self.plots.append(p)
-        self.color_generators.append(color_generator())
-        self.xdataname_generators.append(name_generator("x"))
-        self.ydataname_generators.append(name_generator("y"))
-        self.yerdataname_generators.append(name_generator("yer"))
+        self._series_generators.append(PlotSeriesGenerators())
 
         self.series.append([])
 
@@ -989,17 +969,7 @@ class Graph(ContextMenuMixin):
             do_after_timer(0, self._execute_pending_redraw)
 
     def get_next_color(self, exclude=None, plotid=0):
-        cg = self.color_generators[plotid]
-
-        nc = next(cg)
-        if exclude is not None:
-            if not isinstance(exclude, (list, tuple)):
-                exclude = [exclude]
-
-            while nc in exclude:
-                nc = next(cg)
-
-        return nc
+        return self._series_generators[plotid].next_color(exclude=exclude)
 
     def container_factory(self, **kw):
         """ """
@@ -1071,22 +1041,20 @@ class Graph(ContextMenuMixin):
 
         yername = None
         plot = self.plots[plotid]
+        gen = self._series_generators[plotid]
         if add:
             if "xname" in kw:
                 xname = kw["xname"]
             else:
-                xname = next(self.xdataname_generators[plotid])
+                xname = gen.next_x()
             if "yname" in kw:
                 yname = kw["yname"]
             else:
-                yname = next(self.ydataname_generators[plotid])
+                yname = gen.next_y()
 
             names = (xname, yname)
-            #             self.raw_x[plotid].append(x)
-            #             self.raw_y[plotid].append(y)
             if yer is not None:
-                # self.raw_yer[plotid].append(yer)
-                yername = next(self.yerdataname_generators[plotid])
+                yername = gen.next_yer()
                 names += (yername,)
             self.series[plotid].append(names)
         else:
@@ -1105,8 +1073,7 @@ class Graph(ContextMenuMixin):
 
         colorkey = "color"
         if "color" not in list(kw.keys()):
-            color_gen = self.color_generators[plotid]
-            c = next(color_gen)
+            c = gen.next_color()
         else:
             c = kw["color"]
         if isinstance(c, str):
