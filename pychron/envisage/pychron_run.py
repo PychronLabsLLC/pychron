@@ -327,6 +327,16 @@ def launch(klass):
     except ImportError:
         pass
 
+    # Register bundled fonts with the GUI toolkit and kiva now that the
+    # QApplication exists, so on-screen/PNG rendering uses the same font files
+    # as PDF export on every OS. Never raises.
+    try:
+        from pychron.core.pdf.font_manager import register_application_fonts
+
+        register_application_fonts()
+    except Exception as _e:  # pragma: no cover
+        logger.warning("application font registration failed: %r", _e)
+
     # --- Phase 1 M3 diagnostics: start the main-thread watchdog now that the
     # QApplication exists.  The watchdog arms a QTimer-driven heartbeat on the
     # main thread and a daemon poller that dumps every Python frame when the

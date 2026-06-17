@@ -28,9 +28,7 @@ IS_WINDOWS = platform.system() == "Windows"
 
 STARTUP_MESSAGE_POSITION = (100, 300)
 
-SPECTROMETER_PROTOCOL = (
-    "pychron.spectrometer.base_spectrometer_manager.BaseSpectrometerManager"
-)
+SPECTROMETER_PROTOCOL = "pychron.spectrometer.base_spectrometer_manager.BaseSpectrometerManager"
 ION_OPTICS_PROTOCOL = "pychron.spectrometer.ion_optics_manager.IonOpticsManager"
 SCAN_PROTOCOL = "pychron.spectrometer.scan_manager.ScanManager"
 EL_PROTOCOL = "pychron.extraction_line.extraction_line_manager.ExtractionLineManager"
@@ -41,24 +39,20 @@ IFURNACE_PROTOCOL = "pychron.furnace.ifurnace_manager.IFurnaceManager"
 IPIPETTE_PROTOCOL = "pychron.external_pipette.protocol.IPipetteManager"
 CRYO_PROTOCOL = "pychron.extraction_line.cryo_manager.CryoManager"
 
+# Only fonts bundled in resources/fonts are offered, so a figure renders
+# identically on macOS, Linux, and Windows. The historical list included many
+# Windows-only families (Calibri, Cambria, Consolas, ...) that resolved to
+# arbitrary substitutes -- or failed to export to PDF -- on other platforms.
+# These names are the canonical faces registered by core/pdf/font_manager; keep
+# the two lists in sync. Non-bundled faces in old saved options degrade
+# gracefully to the bundled default (see font_manager.resolve_pdf_fontname).
 TTF_FONTS = [
-    "Andale Mono",
     "Arial",
-    "Arial Black",
-    "Arial Unicode MS",
-    "Calibri",
-    "Cambria",
-    "Comic Sans MS",
+    "DejaVu Sans",
+    "DejaVu Serif",
     "Consolas",
-    "Courier New",
-    "Georgia",
-    "Helvetica",
-    "Impact",
-    "Trebuchet MS",
-    "Verdana",
-    "modern",
+    "DejaVu Sans Mono",
 ]
-# TTF_FONTS = [t.lower() for t in TTF_FONTS]
 FONTS = TTF_FONTS
 SIZES = [10, 6, 8, 9, 10, 11, 12, 14, 15, 18, 24, 36]
 
@@ -180,9 +174,7 @@ SUBGROUPINGS = [
 
 SUBGROUPING_ATTRS = ("age", "kca", "kcl", "radiogenic_yield", "moles_k39", "signal_k39")
 
-FLECK_PLATEAU_DEFINITION = (
-    "X contiguous Steps, Representing >Y% of the gas, Overlapping at 2 sigma"
-)
+FLECK_PLATEAU_DEFINITION = "X contiguous Steps, Representing >Y% of the gas, Overlapping at 2 sigma"
 MAHON_PLATEAU_DEFINITION = (
     "X contiguous Steps, Representing >Y% of the gas, "
     "with all plateau steps yielding a valid MSWD"
@@ -399,7 +391,7 @@ FLUX_MODEL_KINDS = (
     BRACKETING_1D,
     RBF,
     GRIDDATA,
-    IDW
+    IDW,
 )
 
 if paths.setup_dir:
@@ -588,8 +580,7 @@ CONDITIONAL_GROUP_NAMES = [
     )
 ]
 EDITABLE_RUN_CONDITIONALS = [
-    "{}s".format(t)
-    for t in (ACTION, CANCELATION, TERMINATION, TRUNCATION, EQUILIBRATION)
+    "{}s".format(t) for t in (ACTION, CANCELATION, TERMINATION, TRUNCATION, EQUILIBRATION)
 ]
 
 # ============= EOF =============================================
