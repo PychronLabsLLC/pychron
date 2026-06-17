@@ -51,7 +51,6 @@ class Datahub(Loggable):
 
     bind_mainstore = True
     massspec_enabled = Bool
-    isotopedb_enabled = Bool
 
     _new_runid = 0
     _new_step = 0
@@ -91,23 +90,10 @@ class Datahub(Loggable):
 
             self.stores["massspec"] = store
 
-        # isotopedb
-        prefid = "pychron.pychron.database"
-        bind_preference(self, "isotopedb_enabled", "{}.enabled".format(prefid))
-        if self.isotopedb_enabled:
-            from pychron.database.isotope_database_manager import IsotopeDatabaseManager
-
-            store = IsotopeDatabaseManager()
-            bind_preference(store.db, "name", "{}.name".format(prefid))
-            bind_preference(store.db, "host", "{}.host".format(prefid))
-            bind_preference(store.db, "username", "{}.username".format(prefid))
-            bind_preference(store.db, "password", "{}.password".format(prefid))
-            self.stores["isotopedb"] = store
-
         self.stores["dvc"] = self.mainstore
 
     def prepare_destory(self):
-        for s in ("massspec", "isotopedb", "dvc"):
+        for s in ("massspec", "dvc"):
             try:
                 ss = self.stores[s]
                 ss.close_session()
@@ -161,8 +147,6 @@ class Datahub(Loggable):
             # self.secondary_connect()
             self.debug("connected to massspec")
 
-        self.store_connect("isotopedb")
-
         if spec.is_step_heat():
             k = "Stepheat"
             self.debug("get greatest steps")
@@ -190,9 +174,7 @@ class Datahub(Loggable):
                 self.warning("secondary db analyses missing aliquot_pychron")
                 return "secondary db analyses missing aliquot_pychron"
 
-        self.debug(
-            "{} conflict args. precedence={}, names={}, values={}".format(k, ps, ns, vs)
-        )
+        self.debug("{} conflict args. precedence={}, names={}, values={}".format(k, ps, ns, vs))
         if not check_list(list(vs)):
             hn, hv = ns[0], vs[0]
             txt = []

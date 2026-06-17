@@ -72,9 +72,7 @@ class GainsModel(HasTraits):
 
     def _apply_history_button_fired(self):
         if self.spectrometer:
-            self.spectrometer.set_gains(
-                gains=self.selected.gains, history=self.selected
-            )
+            self.spectrometer.set_gains(gains=self.selected.gains, history=self.selected)
         db = self.db
         hist = db.get_gain_history(self.selected.hashkey)
         hist.applied_date = datetime.now()
@@ -131,9 +129,7 @@ class GainsEditView(Controller):
     def traits_view(self):
         a = UItem(
             "histories",
-            editor=TabularEditor(
-                adapter=GainHistoryAdapter(), editable=False, selected="selected"
-            ),
+            editor=TabularEditor(adapter=GainHistoryAdapter(), editable=False, selected="selected"),
         )
         b = UItem(
             "selected",
@@ -153,9 +149,7 @@ class GainsEditView(Controller):
             HGroup(icon_button_editor("apply_button", "apply")),
             UItem(
                 "object.spectrometer.detectors",
-                editor=ListEditor(
-                    mutable=False, style="custom", editor=InstanceEditor(view=dview)
-                ),
+                editor=ListEditor(mutable=False, style="custom", editor=InstanceEditor(view=dview)),
             ),
             show_border=True,
             label="Edit Detector Gains",
@@ -181,31 +175,4 @@ class GainsEditView(Controller):
         return v
 
 
-if __name__ == "__main__":
-
-    class Detector(HasTraits):
-        name = Str
-        gain = Float
-
-    class Spectrometer(HasTraits):
-        detectors = List
-
-    spec = Spectrometer()
-    spec.detectors = [Detector(name="H1"), Detector(name="AX")]
-
-    from pychron.database.adapters.isotope_adapter import IsotopeAdapter
-
-    db = IsotopeAdapter(
-        name="pychrondata_dev",
-        kind="mysql",
-        host="localhost",
-        username="root",
-        password="Argon",
-    )
-    db.connect()
-    # hist = [GainHistory(create_date=datetime.fromtimestamp(i),) for i in range(10)]
-    gv = GainsModel(db=db, spectrometer=spec)
-    gv.load_histories()
-    gev = GainsEditView(model=gv)
-    gev.configure_traits()
 # ============= EOF =============================================

@@ -115,13 +115,13 @@ class ViewReadoutAction(Action):
 class SendConfigAction(myTaskAction):
     name = "Send Configuration"
     method = "send_configuration"
-    task_ids = ["pychron.spectrometer"]
+    task_ids = ["pychron.spectrometer"]  # type: ignore[assignment]
 
 
 class PopulateMFTableAction(myTaskAction):
     name = "Populate MF Table"
     method = "populate_mftable"
-    task_ids = ["pychron.spectrometer"]
+    task_ids = ["pychron.spectrometer"]  # type: ignore[assignment]
 
 
 class EditGainsAction(Action):
@@ -272,9 +272,7 @@ class MagnetFieldTableHistoryAction(Action):
 
             mft = man.spectrometer.magnet.mftable
             archive_root = mft.mftable_archive_path
-            if os.path.isfile(
-                os.path.join(archive_root, os.path.basename(paths.mftable))
-            ):
+            if os.path.isfile(os.path.join(archive_root, os.path.basename(paths.mftable))):
                 # from pychron.git_archive.history import GitArchiveHistory, GitArchiveHistoryView
                 from pychron.spectrometer.local_mftable_history_view import (
                     LocalMFTableHistory,
@@ -288,25 +286,6 @@ class MagnetFieldTableHistoryAction(Action):
                 ghv.edit_traits(kind="livemodal")
             else:
                 man.warning_dialog("No MFTable History")
-
-
-class DBMagnetFieldTableHistoryAction(Action):
-    name = "DB MFTable History..."
-
-    def perform(self, event):
-        man = get_manager(event, SPECTROMETER_PROTOCOL)
-        if man.spectrometer:
-            from pychron.spectrometer.mftable_history_view import (
-                MFTableHistory,
-                MFTableHistoryView,
-            )
-
-            mfh = MFTableHistory(
-                checkout_path=paths.mftable, spectrometer=man.spectrometer.name
-            )
-            mfh.load_history()
-            mv = MFTableHistoryView(model=mfh)
-            mv.edit_traits()
 
 
 # ============= EOF ====================================

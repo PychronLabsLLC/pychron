@@ -282,17 +282,10 @@ class BaseArArFigure(SelectionFigure):
         options = self.options
         show_all_axes = bool(getattr(options, "show_all_axes", True))
 
-        # print('aaa', pp.padding_left, pp.width, pp.outer_width)
+        # interior columns get a narrower left padding, unless the user has
+        # asked to keep all axes visible
         if col[0] > 0 and not show_all_axes:
             pp.padding_left = max(20, int(pp.padding_left * 0.5))
-
-        # print('bbb', pp.padding_left, pp.width, pp.outer_width)
-
-        # print('aaa', pp.padding_left, pp.width, pp.outer_width)
-        if col[0] > 0:
-            pp.padding_left = max(20, int(pp.padding_left * 0.5))
-
-        # print('bbb', pp.padding_left, pp.width, pp.outer_width)
 
         pp.bgcolor = options.plot_bgcolor
         pp.x_grid.visible = options.use_xgrid
