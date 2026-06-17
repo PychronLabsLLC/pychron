@@ -17,8 +17,6 @@
 # =============enthought library imports=======================
 import csv
 import logging
-import math
-import os
 
 import six
 from chaco.api import (
@@ -38,19 +36,17 @@ from pyface.timer.api import do_after as do_after_timer
 from traits.api import Instance, List, Str, Property, Dict, Event, Bool
 from traitsui.api import View, Item, UItem
 
-from pychron.core.helpers.color_generators import colorname_generator as color_generator
 from pychron.core.helpers.color_utils import normalize_color_name
 from pychron.core.helpers.filetools import add_extension
 from pychron.graph.context_menu_mixin import ContextMenuMixin
+from pychron.graph.graph_exporter import GraphExporter, get_file_path
+from pychron.graph.limits_manager import LimitsManager
+from pychron.graph.series_manager import PlotSeriesGenerators
 from pychron.graph.ml_label import MPlotAxis
 from pychron.graph.offset_plot_label import OffsetPlotLabel
 from pychron.graph.theme import themed_container_dict, themed_plot_bgcolor
 from pychron.graph.tools.axis_tool import AxisTool
 from .tools.contextual_menu_tool import ContextualMenuTool
-
-# VALID_FONTS = ["Arial", "Lucida Grande", "Geneva", "Courier"]
-# 'Helvetica',
-# 'Times New Roman'
 
 CONTAINERS = {
     "v": VPlotContainer,
@@ -58,29 +54,11 @@ CONTAINERS = {
     "g": GridPlotContainer,
     "o": OverlayPlotContainer,
 }
-IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".tiff", ".tif", ".gif"]
-DEFAULT_IMAGE_EXT = IMAGE_EXTENSIONS[0]
 logger = logging.getLogger(__name__)
-
-
-def name_generator(base):
-    i = 0
-    while 1:
-        n = base + str(i)
-        yield n
-        i += 1
 
 
 def fmt(data):
     return ["%0.8f" % d for d in data]
-
-
-def get_file_path(action="save as", **kw):
-    from pyface.api import FileDialog, OK
-
-    dlg = FileDialog(action=action, **kw)
-    if dlg.open() == OK:
-        return dlg.path
 
 
 def add_aux_axis(po, p, title="", color="black"):
@@ -172,6 +150,10 @@ class Graph(ContextMenuMixin):
     container_dict = Dict
     plots = List(Plot)
 
+    # composed collaborators
+    _exporter = Instance(GraphExporter, ())
+    _limits_manager = Instance(LimitsManager, ())
+
     selected_plotid = Property(depends_on="selected_plot")
     selected_plot = Instance(Plot)
     window_title = ""
@@ -193,13 +175,10 @@ class Graph(ContextMenuMixin):
     status_text = Str
     x_limits_changed = Event
 
-    xdataname_generators = List
-    ydataname_generators = List
-    yerdataname_generators = List
-    color_generators = List
+    # one PlotSeriesGenerators per plot, indexed by plotid; generates the
+    # x/y/yer data names and series colors for that plot
+    _series_generators = List
     series = List
-    data_len = List
-    data_limits = List
 
     def __init__(self, *args, **kw):
         """ """
@@ -343,15 +322,9 @@ class Graph(ContextMenuMixin):
     def clear_plots(self):
         x = list(range(len(self.plots)))
 
-        self.xdataname_generators = [name_generator("x") for _ in x]
-        self.ydataname_generators = [name_generator("y") for _ in x]
-        self.yerdataname_generators = [name_generator("yer") for _ in x]
-
-        self.color_generators = [color_generator() for _ in x]
+        self._series_generators = [PlotSeriesGenerators() for _ in x]
 
         self.series = [[] for _ in x]
-        self.data_len = [[] for _ in x]
-        self.data_limits = [[] for _ in x]
 
         for pi in self.plots:
             for k, pp in list(pi.plots.items()):
@@ -371,15 +344,9 @@ class Graph(ContextMenuMixin):
 
         self.plots = []
 
-        self.xdataname_generators = [name_generator("x")]
-        self.ydataname_generators = [name_generator("y")]
-        self.yerdataname_generators = [name_generator("yer")]
-
-        self.color_generators = [color_generator()]
+        self._series_generators = [PlotSeriesGenerators()]
 
         self.series = []
-        self.data_len = []
-        self.data_limits = []
 
         if clear_container:
             self.plotcontainer = pc = self.container_factory()
@@ -633,9 +600,7 @@ class Graph(ContextMenuMixin):
         if handler:
             t.on_trait_change(handler, "limits_updated")
 
-    def add_plot_label(
-        self, txt, plotid=0, overlay_position="inside top", hjustify="left", **kw
-    ):
+    def add_plot_label(self, txt, plotid=0, overlay_position="inside top", hjustify="left", **kw):
         """ """
 
         c = self.plots[plotid]
@@ -674,10 +639,7 @@ class Graph(ContextMenuMixin):
         p = plot_factory(**kw)
 
         self.plots.append(p)
-        self.color_generators.append(color_generator())
-        self.xdataname_generators.append(name_generator("x"))
-        self.ydataname_generators.append(name_generator("y"))
-        self.yerdataname_generators.append(name_generator("yer"))
+        self._series_generators.append(PlotSeriesGenerators())
 
         self.series.append([])
 
@@ -816,18 +778,11 @@ class Graph(ContextMenuMixin):
 
     def add_aux_datum(self, datum, plotid=0, series=1, do_after=False):
         """ """
-
-        # def add():
         plot = self.plots[plotid]
 
         si = plot.plots["aux{:03d}".format(series)][0]
         si.index.set_data(self._append_data(si.index.get_data(), datum[0]))
         si.value.set_data(self._append_data(si.value.get_data(), datum[1]))
-
-        # if do_after:
-        #     do_after_timer(do_after, add)
-        # else:
-        #     add()
 
     def add_data(self, data, plotlist=None, **kw):
         """ """
@@ -837,9 +792,7 @@ class Graph(ContextMenuMixin):
         for pi, d in zip(plotlist, data):
             self.add_datum(d, plotid=pi, **kw)
 
-    def add_bulk_data(
-        self, xs, ys, plotid=0, series=0, ypadding="0.1", update_y_limits=False
-    ):
+    def add_bulk_data(self, xs, ys, plotid=0, series=0, ypadding="0.1", update_y_limits=False):
         try:
             names = self.series[plotid][series]
         except IndexError:
@@ -868,9 +821,6 @@ class Graph(ContextMenuMixin):
 
             mi -= ypad
             ma += ypad
-            # # if ymin_anchor is not None:
-            # #     mi = max(ymin_anchor, mi)
-            #
             self.set_y_limits(min_=mi, max_=ma, plotid=plotid)
 
     def add_datum(
@@ -1014,17 +964,7 @@ class Graph(ContextMenuMixin):
             do_after_timer(0, self._execute_pending_redraw)
 
     def get_next_color(self, exclude=None, plotid=0):
-        cg = self.color_generators[plotid]
-
-        nc = next(cg)
-        if exclude is not None:
-            if not isinstance(exclude, (list, tuple)):
-                exclude = [exclude]
-
-            while nc in exclude:
-                nc = next(cg)
-
-        return nc
+        return self._series_generators[plotid].next_color(exclude=exclude)
 
     def container_factory(self, **kw):
         """ """
@@ -1096,22 +1036,20 @@ class Graph(ContextMenuMixin):
 
         yername = None
         plot = self.plots[plotid]
+        gen = self._series_generators[plotid]
         if add:
             if "xname" in kw:
                 xname = kw["xname"]
             else:
-                xname = next(self.xdataname_generators[plotid])
+                xname = gen.next_x()
             if "yname" in kw:
                 yname = kw["yname"]
             else:
-                yname = next(self.ydataname_generators[plotid])
+                yname = gen.next_y()
 
             names = (xname, yname)
-            #             self.raw_x[plotid].append(x)
-            #             self.raw_y[plotid].append(y)
             if yer is not None:
-                # self.raw_yer[plotid].append(yer)
-                yername = next(self.yerdataname_generators[plotid])
+                yername = gen.next_yer()
                 names += (yername,)
             self.series[plotid].append(names)
         else:
@@ -1130,8 +1068,7 @@ class Graph(ContextMenuMixin):
 
         colorkey = "color"
         if "color" not in list(kw.keys()):
-            color_gen = self.color_generators[plotid]
-            c = next(color_gen)
+            c = gen.next_color()
         else:
             c = kw["color"]
         if isinstance(c, str):
@@ -1158,71 +1095,8 @@ class Graph(ContextMenuMixin):
         return plot, (xname, yname), kw
 
     def _save(self, type_="pic", path=None):
-        """ """
-        if path is None:
-            path = get_file_path(default_directory=os.path.expanduser("~"))
-            # from pyface.api import FileDialog, OK
-            # dlg = FileDialog(action='save as', default_directory=os.path.expanduser('~'))
-            # if dlg.open() == OK:
-            #     path = dlg.path
-            #     self.status_text = 'Image Saved: %s' % path
-
-        if path is not None:
-            if type_ == "pdf" or path.endswith(".pdf"):
-                self._render_to_pdf(filename=path)
-            else:
-                # auto add an extension to the filename if not present
-                # extension is necessary for PIL compression
-                # set default save type_ DEFAULT_IMAGE_EXT='.png'
-
-                # see http://infohost.nmt.edu/tcc/help/pubs/pil/formats.html
-                for ei in IMAGE_EXTENSIONS:
-                    if path.endswith(ei):
-                        self._render_to_pic(path)
-                        break
-                else:
-                    path = add_extension(path, DEFAULT_IMAGE_EXT)
-                    self._render_to_pic(path)
-
-                    #                base, ext = os.path.splitext(path)
-                    #
-                    #                if not ext in IMAGE_EXTENSIONS:
-                    #                    path = ''.join((base, DEFAULT_IMAGE_EXT))
-
-    def _render_to_pdf(self, save=True, canvas=None, filename=None, dest_box=None):
-        """ """
-        # save_pdf()
-        # from chaco.pdf_graphics_context import PdfPlotGraphicsContext
-        #
-        # if filename:
-        #     # if not filename.endswith('.pdf'):
-        #     #     filename += '.pdf'
-        #     filename = add_extension(filename, ext='.pdf')
-        #
-        # gc = PdfPlotGraphicsContext(filename=filename,
-        #                             pdf_canvas=canvas,
-        #                             dest_box=dest_box)
-        # pc = self.plotcontainer
-        #
-        # # pc.do_layout(force=True)
-        # # pc.use_backbuffer=False
-        # gc.render_component(pc, valign='center')
-        # if save:
-        #     gc.save()
-        #     # pc.use_backbuffer=True
-        #
-        # return gc
-
-    def _render_to_pic(self, filename):
-        """ """
-        from chaco.plot_graphics_context import PlotGraphicsContext
-
-        p = self.plotcontainer
-        gc = PlotGraphicsContext((int(p.outer_width), int(p.outer_height)))
-        # p.use_backbuffer = False
-        gc.render_component(p)
-        # p.use_backbuffer = True
-        gc.save(filename)
+        # image/pdf export is delegated to a composed GraphExporter
+        self._exporter.save(self, type_=type_, path=path)
 
     def _render_to_clipboard(self):
         """
@@ -1255,9 +1129,6 @@ class Graph(ContextMenuMixin):
         axis = getattr(self.plots[plotid], axistag)
         params = dict(title=title)
 
-        # if font not in VALID_FONTS:
-        #     font = "arial"
-
         if font is not None or size is not None:
             if size is None:
                 size = 12
@@ -1288,120 +1159,15 @@ class Graph(ContextMenuMixin):
 
     def _get_limits(self, axis, plotid):
         """ """
-        plot = self.plots[plotid]
-        try:
-            ra = getattr(plot, "%s_range" % axis)
-            return ra.low, ra.high
-        except AttributeError as e:
-            logger.debug("get_limits failed error=%s", e)
+        return self._limits_manager.get(self.plots[plotid], axis)
 
-    def _set_limits(
-        self, mi, ma, axis, plotid, pad, pad_style="symmetric", force=False
-    ):
+    def _set_limits(self, mi, ma, axis, plotid, pad, pad_style="symmetric", force=False):
         if not plotid < len(self.plots):
             return
 
-        plot = self.plots[plotid]
-        ra = getattr(plot, "{}_range".format(axis))
-        scale = getattr(plot, "{}_scale".format(axis))
-
-        if isinstance(pad, str):
-            # interpret pad as a percentage of the range
-            # ie '0.1' => 0.1*(ma-mi)
-            if ma is None:
-                ma = ra.high
-            if mi is None:
-                mi = ra.low
-
-            if mi == -inf:
-                mi = 0
-            if ma == inf:
-                ma = 100
-
-            if ma is not None and mi is not None:
-                dev = ma - mi
-
-                def convert(p):
-                    p = float(p) * dev
-                    if abs(p) < 1e-10:
-                        p = 1
-                    return p
-
-                if "," in pad:
-                    pad = [convert(p) for p in pad.split(",")]
-                else:
-                    pad = convert(pad)
-            if not pad:
-                pad = 0
-
-            # print(type(mi), isinstance(mi, (int, float)), pad_style)
-            # if isinstance(mi, (int, float)):
-            try:
-                if isinstance(pad, list):
-                    mi -= pad[0]
-                elif pad_style in ("symmetric", "lower"):
-                    mi -= pad
-            except TypeError:
-                pass
-
-            # if isinstance(ma, (int, float)):
-            try:
-                if isinstance(pad, list):
-                    ma += pad[1]
-                elif pad_style in ("symmetric", "upper"):
-                    ma += pad
-            except TypeError:
-                pass
-
-        if scale == "log":
-            try:
-                if mi <= 0:
-                    mi = inf
-                    data = plot.data
-                    for di in data.list_data():
-                        if "y" in di:
-                            ya = sorted(data.get_data(di))
-
-                            i = 0
-                            try:
-                                while ya[i] <= 0:
-                                    i += 1
-                                if ya[i] < mi:
-                                    mi = ya[i]
-
-                            except IndexError:
-                                mi = 0.01
-
-                mi = 10 ** math.floor(math.log(mi, 10))
-
-                ma = 10 ** math.ceil(math.log(ma, 10))
-            except ValueError:
-                return
-
-        change = False
-        if mi == ma:
-            if not pad:
-                pad = 1
-
-            ra.high = ma + pad
-            ra.low = ma - pad
-        else:
-            if mi is not None:
-                change = ra.low != mi
-                if isinstance(mi, (int, float)):
-                    if mi < ra.high or (ma is not None and mi < ma):
-                        ra.low = mi
-                else:
-                    ra.low = mi
-
-            if ma is not None:
-                change = change or ra.high != ma
-                if isinstance(ma, (int, float)):
-                    if ma > ra.low or (mi is not None and ma > mi):
-                        ra.high = ma
-                else:
-                    ra.high = ma
-
+        change = self._limits_manager.set(
+            self.plots[plotid], mi, ma, axis, pad, pad_style=pad_style
+        )
         if change:
             self.redraw(force=force)
         return change
@@ -1443,9 +1209,7 @@ class Graph(ContextMenuMixin):
         do_after_timer(1, self.edit_traits)
 
     def panel_view(self):
-        plot = Item(
-            "plotcontainer", style="custom", show_label=False, editor=ComponentEditor()
-        )
+        plot = Item("plotcontainer", style="custom", show_label=False, editor=ComponentEditor())
 
         v = View(plot)
         return v
@@ -1462,11 +1226,5 @@ class Graph(ContextMenuMixin):
         )
         return v
 
-
-if __name__ == "__main__":
-    m = Graph()
-    m.new_plot(zoom=True)
-    m.new_series([1, 2, 3], [1, 41, 14])
-    m.configure_traits()
 
 # ============= EOF ====================================

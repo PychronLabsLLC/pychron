@@ -29,7 +29,7 @@ from numpy import array
 
 # =============local library imports  ==========================
 from .graph import Graph
-from .graph import name_generator
+from .series_manager import name_generator
 
 
 class ContourGraph(Graph):
@@ -47,9 +47,7 @@ class ContourGraph(Graph):
 
         return p
 
-    def new_series(
-        self, x=None, y=None, z=None, colorbar=False, plotid=0, style="xy", **kw
-    ):
+    def new_series(self, x=None, y=None, z=None, colorbar=False, plotid=0, style="xy", **kw):
         plot, names, rd = self._series_factory(x, y, plotid=plotid, **kw)
 
         if style in ["xy", "cmap_scatter"]:
@@ -95,7 +93,7 @@ class ContourGraph(Graph):
                 inspect_mode="indexed",
                 is_listener=False,
                 color=color,
-                **kw
+                **kw,
             )
         )
         s.overlays.append(
@@ -106,7 +104,7 @@ class ContourGraph(Graph):
                 inspect_mode="indexed",
                 is_listener=False,
                 color=color,
-                **kw
+                **kw,
             )
         )
 
